@@ -1,7 +1,21 @@
 #!/usr/bin/perl
 #
-# This utility will create a BAT file of all the files in a dir
-# and create the TEI files from this list of TXT files.
+# SVN FILE: $Id$
+#
+# ePub Books Project (http://www.epubbooks.com)
+# Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
+#
+# Redistributions of files must retain the above copyright notice.
+#
+# @filesource
+# @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
+# @link          http://www.bendybooks.com/epub ePub Books Project
+# @package       pg2files Batch Script
+# @since         pg2tei v 0.1
+# @version       $Revision$
+# @modifiedby    $LastChangedBy$
+# @lastmodified  $Date$
+#
 
 require 5.004;
 use strict;

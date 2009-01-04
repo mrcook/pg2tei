@@ -1,26 +1,26 @@
 #!/usr/bin/perl
 #
-# pg2tei v0.19 -- Project Gutenberg eText to TEI converter
-# Copyright (C) 2007-2008 Michael Cook
+# SVN FILE: $Id$
 #
-# @version		$Id$
-# @package		Project Gutenberg eText to TEI converter
-# @copyright	Copyright (C) 2007 - 2008 Michael Cook. All rights reserved.
-# @license		GNU/GPL, see LICENSE.php
-# pg2tei.pl is free software. This version may have been modified pursuant
-# to the GNU General Public License, and as distributed it includes or
-# is derivative of works licensed under the GNU General Public License or
-# other free or open source software licenses.
+# ePub Books Project (http://www.epubbooks.com)
+# Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
 #
-# Based on The Gnutenberg Press - PGText to TEI converter by Marcello 
-# Perathoner (Copyright 2003). Many additions and fixes by Michael Cook 
-# to gut2tei, commenced in August 2007.
+# Redistributions of files must retain the above copyright notice.
+#
+# @filesource
+# @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
+# @link          http://www.bendybooks.com/epub ePub Books Project
+# @package       pg2tei v0.19 - Project Gutenberg eText to TEI converter
+# @since         pg2tei v 0.1
+# @version       $Revision$
+# @modifiedby    $LastChangedBy$
+# @lastmodified  $Date$
+#
+# Based on The Gnutenberg Press - PGText to TEI converter by 
+# Marcello Perathoner (Copyright 2003). Many additions and fixes 
+# by Michael Cook to gut2tei, commenced in August 2007.
 # Project renamed to pg2tei and versioning started at v0.1.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#
 
 
 
