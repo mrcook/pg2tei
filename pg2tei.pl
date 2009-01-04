@@ -3,7 +3,7 @@
 # pg2tei v0.19 -- Project Gutenberg eText to TEI converter
 # Copyright (C) 2007-2008 Michael Cook
 #
-# @version		$Id: pg2tei.pl 0073 2008-12-14 22:57:00Z mcook $
+# @version		$Id$
 # @package		Project Gutenberg eText to TEI converter
 # @copyright	Copyright (C) 2007 - 2008 Michael Cook. All rights reserved.
 # @license		GNU/GPL, see LICENSE.php
