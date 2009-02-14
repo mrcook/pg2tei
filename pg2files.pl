@@ -21,8 +21,8 @@ require 5.004;
 use strict;
 
 ## Perl and Book paths
-my $perl_bin = "perl";    # For U3 drive use; /xampp/perl/bin/perl.exe
-my $book_dir = ".";
+my $perl_bin = "/xampp/perl/bin/perl.exe";    # For U3 drive use; /xampp/perl/bin/perl.exe
+my $book_dir = "/BOOK-Files/";
 
 # Write the BAT file
 open (FILEOUT, "> pg2tei.bat") or die "Couldn't open $book_dir for writing: $!";
@@ -34,8 +34,9 @@ while( defined (my $txt_filename = readdir BIN) ) {
 
   my $filename = $txt_filename;
   $filename =~ s|(.*?)\.txt|$1|;
-  my $tei_filename = $filename . ".tei";
-
+  my $tei_filename = $book_dir . $filename . ".tei";
+  $txt_filename = $book_dir . $txt_filename;
+  
   print FILEOUT $perl_bin . " -w " . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
 
 }
