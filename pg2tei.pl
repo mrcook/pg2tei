@@ -29,10 +29,12 @@ use strict;
 use Getopt::Long;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
-use Data::UUID qw(:all);
 use Text::Wrap;
 use locale;
 use vars '$front_matter_block';
+
+use Data::UUID::LibUUID;
+
 
 # use encoding 'utf8';
 # use encoding "ISO-8859-1", STDOUT => "utf-8";
@@ -946,19 +948,15 @@ sub output_header () {
   $front_matter_block .= "\n\n"; # Some padding
 
 
-# this creates a new UUID in string form, based on the standard namespace
-# UUID NameSpace_URL and name "www.mycompany.com"
-#   $ug = new Data::UUID;
-#   $uuid_code = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
-$ug    = new Data::UUID;
-$uuid1 = $ug->create();
+UUID::generate($uuid); # generates a 128 bit uuid
+#$rc = UUID::parse($string, $uuid); # map string to UUID, return -1 on error
+  
 
-   
    
     print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
-<TEI xml:lang="$language_code" id="$uid_code">
+<TEI xml:lang="$language_code" id="$guid">
 <teiHeader>
   <fileDesc>
     <titleStmt>
