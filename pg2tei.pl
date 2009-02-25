@@ -33,8 +33,7 @@ use Text::Wrap;
 use locale;
 use vars '$front_matter_block';
 
-use Data::UUID::LibUUID;
-
+use UUID;
 
 # use encoding 'utf8';
 # use encoding "ISO-8859-1", STDOUT => "utf-8";
@@ -947,16 +946,10 @@ sub output_header () {
 
   $front_matter_block .= "\n\n"; # Some padding
 
-
-UUID::generate($uuid); # generates a 128 bit uuid
-#$rc = UUID::parse($string, $uuid); # map string to UUID, return -1 on error
-  
-
-   
     print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
-<TEI xml:lang="$language_code" id="$guid">
+<TEI xml:lang="$language_code" id="$guid()">
 <teiHeader>
   <fileDesc>
     <titleStmt>
@@ -1808,7 +1801,7 @@ sub change_case {
   $case =~ s/and/and/gi; # Replace 'And' with 'and'
   $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g; 
   $case =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
-  $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's
+  $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's                           '
 
   return $case;
 }
@@ -1820,6 +1813,16 @@ sub lower_case {
 
   return $case;
 }
+
+sub make_guid {
+
+  UUID::generate($uuid); # generates a 128 bit uuid
+  UUID::unparse($uuid, $string); # change $uuid to 36 byte string
+  $rc = UUID::parse($string, $uuid); # map string to UUID, return -1 on error
+
+  return $rc;
+}
+
 
 sub usage {
     print <<HERE;
