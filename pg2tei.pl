@@ -30,12 +30,12 @@ use Getopt::Long;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
 use Text::Wrap;
-use locale;
+use Data::UUID;
+
 use vars '$front_matter_block';
 
-use UUID;
-
-# use encoding 'utf8';
+use locale;
+use encoding 'utf8';
 # use encoding "ISO-8859-1", STDOUT => "utf-8";
 # It don't work....or does it??
 
@@ -944,12 +944,15 @@ sub output_header () {
 
 } # END OF $front_matter_block() PROCESSING
 
-  $front_matter_block .= "\n\n"; # Some padding
+  $front_matter_block .= "\n\n"; # Some padding 
+
+  # Create a UUID
+  my $uuid =  uuid_gen();
 
     print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
-<TEI xml:lang="$language_code" id="$guid()">
+<TEI xml:lang="$language_code" id="$uuid">
 <teiHeader>
   <fileDesc>
     <titleStmt>
@@ -1814,15 +1817,19 @@ sub lower_case {
   return $case;
 }
 
-sub make_guid {
+sub uuid_gen {
 
-  UUID::generate($uuid); # generates a 128 bit uuid
-  UUID::unparse($uuid, $string); # change $uuid to 36 byte string
-  $rc = UUID::parse($string, $uuid); # map string to UUID, return -1 on error
+  my $ug = new Data::UUID;
+  my $uuid = $ug->create_str();
 
-  return $rc;
+  # this creates a new UUID in string form, based on the standard namespace
+  # UUID NameSpace_URL and name "www.mycompany.com"
+
+  ## NOTE: This does not create a random number each time...it is always the same
+#  my $uuid = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
+
+  return $uuid;
 }
-
 
 sub usage {
     print <<HERE;
