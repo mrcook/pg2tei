@@ -10,7 +10,7 @@
 # @filesource
 # @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
 # @link          http://www.bendybooks.com/epub ePub Books Project
-# @package       pg2tei v0.19 - Project Gutenberg eText to TEI converter
+# @package       pg2tei v0.20 - Project Gutenberg eText to TEI converter
 # @since         pg2tei v 0.1
 # @version       $Revision$
 # @modifiedby    $LastChangedBy$
@@ -21,8 +21,6 @@
 # by Michael Cook to gut2tei, commenced in August 2007.
 # Project renamed to pg2tei and versioning started at v0.1.
 #
-
-
 
 require 5.004;
 use strict;
