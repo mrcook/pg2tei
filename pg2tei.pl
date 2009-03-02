@@ -17,8 +17,8 @@
 # @lastmodified  $Date$
 #
 # Based on The Gnutenberg Press - PGText to TEI converter by 
-# Marcello Perathoner (Copyright 2003). Many additions and fixes 
-# by Michael Cook to gut2tei, commenced in August 2007.
+# Marcello Perathoner (Copyright 2003).
+# Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
 # Project renamed to pg2tei and versioning started at v0.1.
 #
 
@@ -33,14 +33,13 @@ use Data::UUID;
 use vars '$front_matter_block';
 
 use locale;
-use encoding 'utf8';
-# use encoding "ISO-8859-1", STDOUT => "utf-8";
+my $locale = "en";
+#use encoding 'utf8';
+#use encoding "ISO-8859-1", STDOUT => "utf-8";
 # It don't work....or does it??
 
 $Text::Wrap::columns = 78;
 my $help   = 0;
-
-my $locale = "en_US.iso88591";
 
 # some parameters
 
@@ -196,7 +195,7 @@ while (<>) {
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
 
  # This one Checks for a PREFACE and then checks for Chapters, etc. including "The First" type stuff
-  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I\n))(.*?)\n)/output_header ($1)/egis) {
+  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I\n))(.*?)\n)/output_header($1)/egis) {
 
 # this one works - for the most part!!
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I\n)(.*?)\n)/output_header ($1)/egis) {
@@ -539,7 +538,7 @@ sub process_quotes_1 {
   }
 
   # attract user's attention to these remaining quotes
-  $c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
+  $c =~ s|([\"Â«Â»\x84])|<fixme>$1</fixme>|g;
 
   $c = do_fixes ($c);
 
@@ -556,7 +555,7 @@ sub fix_unbalanced_quotes_line {
     $balance -= ($tmp =~ s|</q>||g);
 
     if ($balance != 0) {
-	while (($line =~ s|<q>([^<]*)</q>|§q§$1§/q§|g) > 0) {};
+	while (($line =~ s|<q>([^<]*)</q>|Â§qÂ§$1Â§/qÂ§|g) > 0) {};
 
 	while ($balance > 0) {
 	    $line =~ s|<q>(.*)|<qpre>$1</q>|;
@@ -567,7 +566,7 @@ sub fix_unbalanced_quotes_line {
 	    $balance++;
 	}
 
-	$line =~ s|§(/?q)§|<$1>|g;
+	$line =~ s|Â§(/?q)Â§|<$1>|g;
 
     }
 
@@ -1276,8 +1275,8 @@ sub post_process {
     $c =~ s| *\.{3,}|&hellip;|g;
     $c =~ s| *(\. ){3,}|&hellip;|g;
 
-#substitute °, @ OR #o (lowercase O) for &deg;
-    $c =~ s|(°\|@)|&deg;|g;
+#substitute Â°, @ OR #o (lowercase O) for &deg;
+    $c =~ s|(Â°\|@)|&deg;|g;
     $c =~ s|(\d{1,3})o|$1&deg;|g;
     
 
@@ -1597,7 +1596,7 @@ sub guess_quoting_convention {
   my $openquote2  = "";
   my $closequote2 = "";
 
-  if (length ($override_quotes)) {
+  if ( length($override_quotes) ) {
   	$openquote1  = substr ($override_quotes, 0, 1);
   	$openquote2  = substr ($override_quotes, 1, 1);
   	$closequote2 = substr ($override_quotes, 2, 1);
@@ -1610,9 +1609,9 @@ sub guess_quoting_convention {
 	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
 	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
 	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
-	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
-	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
-	my $count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
+	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # Â´ ascii single closing quote (acute accent)
+	my $count_ab = ($body =~ tr/\xab/\xab/); # Â« left guillemet
+	my $count_bb = ($body =~ tr/\xbb/\xbb/); # Â» right guillemet
 
 	my $single_quotes = $count_27 + $count_60 + $count_b4;
 	my $double_quotes = $count_22 + $count_84;
