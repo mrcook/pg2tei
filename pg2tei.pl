@@ -18,8 +18,8 @@
 #
 # Based on The Gnutenberg Press - PGText to TEI converter by 
 # Marcello Perathoner (Copyright 2003).
+#
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
-# Project renamed to pg2tei and versioning started at v0.1.
 #
 
 require 5.004;
