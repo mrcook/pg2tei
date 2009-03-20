@@ -1,26 +1,38 @@
 #!/usr/bin/perl
 #
-# SVN FILE: $Id$
+# Any redistributions of files must retain the copyright notice below.
 #
-# ePub Books Project (http://www.epubbooks.com)
-# Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-#
-# Redistributions of files must retain the above copyright notice.
-#
-# @filesource
-# @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-# @link          http://www.bendybooks.com/epub ePub Books Project
-# @package       pg2files Batch Script
-# @since         pg2tei v 0.1
-# @version       $Revision$
-# @modifiedby    $LastChangedBy$
-# @lastmodified  $Date$
+# @author     Michael Cook | ePub Books (http://www.epubbooks.com)
+# @copyright  Copyright (c)2007-2009 Michael Cook
+# @package    pg2files Batch Script
+# @created    (pg2tei v 0.1)
+# @version    $Id$
 #
 
 require 5.004;
 use strict;
 
+## Default Directory Separator
+use constant DS => '/';
+
+## Setup Variables
+my ($booksdrive, $appsdrive, $booksfolder, $xsltpath, $bookspath,
+    $appspath, $saxonpath, $filename, $filenoext, $fullpath);
+
+## Default Drives
+$booksdrive = 'H:';
+$appsdrive = 'H:';
+
+## Default Paths; Books, XSLT scripts, Apps, Saxon, etc.
+$booksfolder = DS . 'BOOK-Files' . DS . '04-TEI';
+$xsltpath = 'epbProject' . DS . 'epb-tei2epub' . DS . 'xsl';
+
+$appspath = '_apps';
+$saxonpath = 'saxon';
 ## Perl and Book paths
+my $perl_drive = "/xampp/perl/bin/perl.exe";    # For U3 drive use; /xampp/perl/bin/perl.exe
+my $book_drive = "/BOOK-Files/";
+
 my $perl_bin = "/xampp/perl/bin/perl.exe";    # For U3 drive use; /xampp/perl/bin/perl.exe
 my $book_dir = "/BOOK-Files/";
 

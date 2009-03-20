@@ -1,20 +1,12 @@
 #!/usr/bin/perl
 #
-# SVN FILE: $Id$
+# Any redistributions of files must retain the copyright notice below.
 #
-# ePub Books Project (http://www.epubbooks.com)
-# Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-#
-# Redistributions of files must retain the above copyright notice.
-#
-# @filesource
-# @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-# @link          http://www.bendybooks.com/epub ePub Books Project
-# @package       pg2tei v0.20 - Project Gutenberg eText to TEI converter
-# @since         pg2tei v 0.1
-# @version       $Revision$
-# @modifiedby    $LastChangedBy$
-# @lastmodified  $Date$
+# @author     Michael Cook | ePub Books (http://www.epubbooks.com)
+# @copyright  Copyright (c)2007-2009 Michael Cook
+# @package    pg2tei v0.20 - Project Gutenberg eText to TEI converter
+# @created    May 2007
+# @version    $Id$
 #
 # Based on The Gnutenberg Press - PGText to TEI converter by 
 # Marcello Perathoner (Copyright 2003).

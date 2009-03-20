@@ -1,19 +1,11 @@
 REM
-REM SVN FILE: $Id$
+REM Any redistributions of files must retain the copyright notice below.
 REM
-REM ePub Books Project (http://www.epubbooks.com)
-REM Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-REM
-REM Redistributions of files must retain the above copyright notice.
-REM
-REM @filesource
-REM @copyright     Copyright 2007-2009, BendyBooks (http://www.bendybooks.com)
-REM @link          http://www.bendybooks.com/epub ePub Books Project
-REM @package       tei.bat
-REM @since         pg2tei v 0.1
-REM @version       $Revision$
-REM @modifiedby    $LastChangedBy$
-REM @lastmodified  $Date$
+REM @author     Michael Cook | ePub Books (http://www.epubbooks.com)
+REM @copyright  Copyright (c)2007-2009 Michael Cook
+REM @package    tei.bat
+REM @created    May 2007
+REM @version    $Id$
 REM
 
 REM
