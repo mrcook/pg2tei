@@ -11,52 +11,42 @@
 
 require 5.004;
 use strict;
+use File::Spec;
 
-## Default Directory Separator
-use constant DS => '/';
+use constant DS => '/';   ## Default Directory Separator
 
-## Setup Variables
-my ($booksdrive, $appsdrive, $booksfolder, $xsltpath, $bookspath,
-    $appspath, $saxonpath, $filename, $filenoext, $fullpath);
+my $booksdrive = 'H:';                                     ## Default Books Drive
+my $booksfolder = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
-## Default Drives
-$booksdrive = 'H:';
-$appsdrive = 'H:';
+## Get current drive
+my $cur_dir = File::Spec->curdir();
+   $cur_dir = File::Spec->rel2abs unless ( File::Spec->file_name_is_absolute($cur_dir) );
+my $cur_drive = (File::Spec->splitpath($cur_dir))[0];
 
-## Default Paths; Books, XSLT scripts, Apps, Saxon, etc.
-$booksfolder = DS . 'BOOK-Files' . DS . '04-TEI';
-$xsltpath = 'epbProject' . DS . 'epb-tei2epub' . DS . 'xsl';
-
-$appspath = '_apps';
-$saxonpath = 'saxon';
 ## Perl and Book paths
-my $perl_drive = "/xampp/perl/bin/perl.exe";    # For U3 drive use; /xampp/perl/bin/perl.exe
-my $book_drive = "/BOOK-Files/";
-
-my $perl_bin = "/xampp/perl/bin/perl.exe";    # For U3 drive use; /xampp/perl/bin/perl.exe
-my $book_dir = "/BOOK-Files/";
+my $perl_bin = $cur_drive . DS . "xampp" . DS . "perl" . DS . "bin" . DS . "perl.exe";
+my $pg2tei_path = $cur_drive . DS . "epbProject" . DS . "epb-pg2tei" . DS;
 
 # Write the BAT file
-open (FILEOUT, "> pg2tei.bat") or die "Couldn't open $book_dir for writing: $!";
+open (FILEOUT, "> " . $pg2tei_path . DS . "pg2tei.bat") or die "Couldn't open $pg2tei_path for writing: $!";
 
 # Scan BASE dir and process all TXT files
-opendir(BIN, $book_dir) or die "Can't open $book_dir: $!";
+opendir(BIN, $booksfolder) or die "Can't open $booksfolder: $!";
+
 while( defined (my $txt_filename = readdir BIN) ) {
   next unless ($txt_filename =~ /\.txt/);
 
   my $filename = $txt_filename;
-  $filename =~ s|(.*?)\.txt|$1|;
-  my $tei_filename = $book_dir . $filename . ".tei";
-  $txt_filename = $book_dir . $txt_filename;
+     $filename =~ s|(.*?)\.txt|$1|;
+  my $tei_filename = $booksfolder . $filename . ".tei";
+     $txt_filename = $booksfolder . $txt_filename;
   
-  print FILEOUT $perl_bin . " -w " . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
-
+  print FILEOUT $perl_bin . " -w " . $pg2tei_path . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
 }
 closedir(BIN);
-
 close FILEOUT;
 
 ############################
 # RUN the pg2tei.bat file. #
 ############################
-system "pg2tei.bat";
+system "$pg2tei_path/pg2tei.bat";
