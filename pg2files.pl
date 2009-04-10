@@ -38,10 +38,14 @@ while( defined (my $txt_filename = readdir BIN) ) {
 
   my $filename = $txt_filename;
      $filename =~ s|(.*?)\.txt|$1|;
-  my $tei_filename = $booksfolder . $filename . ".tei";
+  my $tei_filename = $booksfolder . $filename . DS . "tei" . DS . $filename . ".tei";
      $txt_filename = $booksfolder . $txt_filename;
-  
+ 
   print FILEOUT $perl_bin . " -w " . $pg2tei_path . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
+
+  ## create default "/##/tei/" folder structure for each book *saves a few seconds manual work* :)
+  mkdir($booksfolder . $filename . DS, 0777) || print "\nCan't create folder: $!";          
+  mkdir($booksfolder . $filename . DS . "tei", 0777) || print "\nCan't create folder: $!";
 }
 closedir(BIN);
 close FILEOUT;
