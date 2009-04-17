@@ -43,7 +43,7 @@ while( defined (my $txt_filename = readdir BIN) ) {
      $txt_filename = $booksfolder . $txt_filename;
  
   print FILEOUT $perl_bin . " -w " . $pg2tei_path . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
-
+  print FILEOUT "boo\n";
   ## create default "/##/tei/" folder structure for each book *saves a few seconds manual work* :)
   mkdir($booksfolder . $filename . DS, 0777) || print "\nCan't create folder: $!";          
   mkdir($booksfolder . $filename . DS . "pg-orig", 0777) || print "\nCan't create folder: $!";
@@ -53,6 +53,8 @@ while( defined (my $txt_filename = readdir BIN) ) {
   copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . ".txt") or die "copy failed: $!";
   
 }
+print FILEOUT "del *.txt"; ## delete all the processed .txt files.
+
 closedir(BIN);
 close FILEOUT;
 
@@ -60,4 +62,3 @@ close FILEOUT;
 # RUN the pg2tei.bat file. #
 ############################
 system "$pg2tei_path/pg2tei.bat";
-
