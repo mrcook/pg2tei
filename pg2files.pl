@@ -50,7 +50,7 @@ while( defined (my $txt_filename = readdir BIN) ) {
   mkdir($booksfolder . $filename . DS . "tei", 0777) || print "\nCan't create folder: $!";
 
   ## Make a copy of the old .txt file in the "pg-orig" folder as backup.
-  copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . "txt") or die "copy failed: $!";
+  copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . ".txt") or die "copy failed: $!";
   
 }
 closedir(BIN);
