@@ -53,7 +53,7 @@ while( defined (my $txt_filename = readdir BIN) ) {
   copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . ".txt") or die "copy failed: $!";
   
 }
-print FILEOUT $booksdrive . $booksfolder . "del *.txt"; ## delete all the processed .txt files.
+print FILEOUT "del " . $booksdrive . $booksfolder . "*.txt"; ## delete all the processed .txt files.
 
 closedir(BIN);
 close FILEOUT;
