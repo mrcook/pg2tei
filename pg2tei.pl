@@ -941,7 +941,7 @@ sub output_header () {
     print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
-<TEI xml:lang="$language_code" id="$uuid">
+<TEI>
 <teiHeader>
   <fileDesc>
     <titleStmt>
@@ -990,11 +990,7 @@ print <<HERE;
       </address>
       <date value="$dfirstposted">$firstposted</date>
       <idno type="etext-no">$etext</idno>
-HERE
-### Get rid of the 'old system' filenames and replace with actual eBook #
-$filename = $etext;
-print <<HERE;
-      <idno type="etext-file">$filename</idno>
+      <idno type="UUID">$uuid</idno>
       <availability>
         <p>This eBook is for the use of anyone anywhere at no cost and with
            almost no restrictions whatsoever. You may copy it, give it away or
