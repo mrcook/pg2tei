@@ -53,7 +53,7 @@ while( defined (my $txt_filename = readdir BIN) ) {
   copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . ".txt") or die "copy failed: $!";
   
 }
-$dospath = $booksdrive . $booksfolder;
+my $dospath = $booksdrive . $booksfolder;
 $dospath =~ s|/|\\|;   ##  Flip the Perl forward slash to a backslash for DOS "del" command
 print FILEOUT "del " . $dospath . "*.txt"; ## delete all the processed .txt files.
 
