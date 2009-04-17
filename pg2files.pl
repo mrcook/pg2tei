@@ -12,6 +12,7 @@
 require 5.004;
 use strict;
 use File::Spec;
+use File::Copy;
 
 use constant DS => '/';   ## Default Directory Separator
 
@@ -45,7 +46,12 @@ while( defined (my $txt_filename = readdir BIN) ) {
 
   ## create default "/##/tei/" folder structure for each book *saves a few seconds manual work* :)
   mkdir($booksfolder . $filename . DS, 0777) || print "\nCan't create folder: $!";          
+  mkdir($booksfolder . $filename . DS . "pg-orig", 0777) || print "\nCan't create folder: $!";
   mkdir($booksfolder . $filename . DS . "tei", 0777) || print "\nCan't create folder: $!";
+
+  ## Make a copy of the old .txt file in the "pg-orig" folder as backup.
+  copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . "txt") or die "copy failed: $!";
+  
 }
 closedir(BIN);
 close FILEOUT;
@@ -54,3 +60,4 @@ close FILEOUT;
 # RUN the pg2tei.bat file. #
 ############################
 system "$pg2tei_path/pg2tei.bat";
+
