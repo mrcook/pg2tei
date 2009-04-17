@@ -14,7 +14,7 @@ use strict;
 use File::Spec;
 use File::Copy;
 
-use constant DS => '\';   ## Default Directory Separator
+use constant DSP => '/';  ## Default Directory Separator
 
 my $booksdrive = 'V:';                                     ## Default Books Drive
 my $booksfolder = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
@@ -53,7 +53,9 @@ while( defined (my $txt_filename = readdir BIN) ) {
   copy($txt_filename, $booksfolder . $filename . DS . "pg-orig" . DS . $filename . ".txt") or die "copy failed: $!";
   
 }
-print FILEOUT "del " . $booksdrive . $booksfolder . "*.txt"; ## delete all the processed .txt files.
+$dospath = $booksdrive . $booksfolder;
+$dospath =~ s|/|\\|;   ##  Flip the Perl forward slash to a backslash for DOS "del" command
+print FILEOUT "del " . $dospath . "*.txt"; ## delete all the processed .txt files.
 
 closedir(BIN);
 close FILEOUT;
