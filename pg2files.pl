@@ -14,7 +14,7 @@ use strict;
 use File::Spec;
 use File::Copy;
 
-use constant DSP => '/';  ## Default Directory Separator
+use constant DS => '/';  ## Default Directory Separator
 
 my $booksdrive = 'V:';                                     ## Default Books Drive
 my $booksfolder = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
