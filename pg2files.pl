@@ -14,7 +14,7 @@ use strict;
 use File::Spec;
 use File::Copy;
 
-use constant DS => '/';   ## Default Directory Separator
+use constant DS => '\';   ## Default Directory Separator
 
 my $booksdrive = 'V:';                                     ## Default Books Drive
 my $booksfolder = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
@@ -43,7 +43,7 @@ while( defined (my $txt_filename = readdir BIN) ) {
      $txt_filename = $booksfolder . $txt_filename;
  
   print FILEOUT $perl_bin . " -w " . $pg2tei_path . "pg2tei.pl " . $txt_filename . " > " . $tei_filename . "\n";
-  print FILEOUT "boo\n";
+
   ## create default "/##/tei/" folder structure for each book *saves a few seconds manual work* :)
   mkdir($booksfolder . $filename . DS, 0777) || print "\nCan't create folder: $!";          
   mkdir($booksfolder . $filename . DS . "pg-orig", 0777) || print "\nCan't create folder: $!";
