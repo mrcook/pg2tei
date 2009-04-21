@@ -989,7 +989,7 @@ print <<HERE;
         <addrLine>United States</addrLine>
       </address>
       <date value="$dfirstposted">$firstposted</date>
-      <idno type="etext-no">$etext</idno>
+      <idno type="gutenberg-no">$etext</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
         <p>This eBook is for the use of anyone anywhere at no cost and with
@@ -1047,9 +1047,8 @@ print <<HERE;
   </fileDesc>
   <encodingDesc>
     <samplingDecl>
-      <p>Editorial notes from the source have not been reproduced.</p>
-      <p>Blank lines and multiple blank spaces, including paragraph 
-         indents, have not been preserved.</p>
+      <p>Editorial notes from the source may not have been reproduced.</p>
+      <p>Blank lines and multiple blank spaces, including paragraph indents, have not been preserved.</p>
     </samplingDecl>
     <editorialDecl>
 HERE
@@ -1065,13 +1064,12 @@ print <<HERE;
         <p></p>
       </normalization>
       <quotation marks="all" form="std">
-        <p>All double quotation marks rendered with q tags, most 
-           single quotation marks rendered with q tag, although 
-           some may have been left as ' [apostrophe].</p>
+        <p>All double quotation marks rendered with q tags, most single quotation 
+           marks rendered with q tag, although some may have been left as ' [apostrophe].
+        </p>
       </quotation>
       <hyphenation eol="none">
-        <p>Hyphenated words that appear at the end of the line 
-           have been reformed.</p>
+        <p>Hyphenated words that appear at the end of the line have been reformed.</p>
       </hyphenation>
       <stdVals>
         <p>Standard date values are given in ISO form: yyyy-mm-dd.</p>
@@ -1096,7 +1094,7 @@ print <<HERE;
     <textClass>
       <keywords scheme="lc">
         <list>
-          <item><!-- any keywords for PG search engine --></item>
+          <item><!-- keywords for search --></item>
         </list>
       </keywords>
       <classCode scheme="lc"><!-- LoC Class (PR, PQ, ...) --></classCode>
