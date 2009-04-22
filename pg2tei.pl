@@ -1032,7 +1032,7 @@ print <<HERE;
 HERE
 if ($sub_title ne '') {
 print <<HERE;
-            <title type="sub">$sub_title</title>
+          <title type="sub">$sub_title</title>
 HERE
 }
 print <<HERE;

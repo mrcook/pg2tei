@@ -16,7 +16,7 @@ use File::Copy;
 
 use constant DS => '/';  ## Default Directory Separator
 
-my $booksdrive = 'V:';                                     ## Default Books Drive
+my $booksdrive = 'J:';                                     ## Default Books Drive
 my $booksfolder = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 ## Get current drive
