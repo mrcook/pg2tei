@@ -36,14 +36,23 @@ Footnotes
 
 --
 
- rend="margin-left: 2"
-
 <quote>
 <lg>
  <l></l>
  <l></l>
 </lg>
 </quote>
+
+<lg rend="text-align: center">
+<lg rend="text-align: right; margin-right: 10%">
+<lg rend="font-style: italic">
+
+rend="margin-left: 2"
+rend="margin-right: 10%"
+
+rend="text-align: center"
+rend="text-align: right
+rend="text-align: right; margin-right: 10%"
 
 
   <div type="figures">
@@ -62,6 +71,7 @@ Footnotes
   </row>
 </table>
 
+## 'text-align' on a TABLE is applied in XSL to the surrounding <div>
 
 
 
