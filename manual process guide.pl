@@ -47,12 +47,12 @@ Footnotes
 <lg rend="text-align: right; margin-right: 10%">
 <lg rend="font-style: italic">
 
-rend="margin-left: 2"
-rend="margin-right: 10%"
+ rend="margin-left: 2"
+ rend="margin-right: 10%"
 
-rend="text-align: center"
-rend="text-align: right
-rend="text-align: right; margin-right: 10%"
+ rend="text-align: center"
+ rend="text-align: right
+ rend="text-align: right; margin-right: 10%"
 
 
   <div type="figures">
@@ -90,4 +90,7 @@ LoC Class:  PR: Language and Literatures: English literature
 <index index="toc" />
 <index index="pdf" />
 
-<head>BOOK THE SECOND - REAPING</head>
+
+<head></head>
+
+<head type="sub"></head>
