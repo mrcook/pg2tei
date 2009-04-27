@@ -333,15 +333,11 @@ sub output_para {
 
     #This one goes before the quote fixes below
     $p =~ s|dash;</q>|dash;<q>|g;  # Sometimes this wil be good, sometimes not -- decide which happens more
-    $p =~ s|dash;<q></q></p>|dash;</q></q></p>|g; # More </q> tag errors
+    $p =~ s|dash;<q></q></p>|dash;</q></q></p>|g; # More double </q> tag errors
 
-    # There's still a few botches....fix them.
+    # There's still a few botches....so fix them.
     $p =~ s|<p></p>||g; # Tidy up empty <p></p> tags.
     $p =~ s|<q></p>|</q></p>|g; # Tidy up </q> tags
-
-    # Get rid of silly quotes; <q>em should be 'em
-    # Can we do this within the quote detection routines?
-    $p =~ s|<q>em|\'em|g;
 
 
 #### Check that these hellip with period (&hellip;.) have been  properly fixed
@@ -361,9 +357,19 @@ sub output_para {
     $p =~ s|<emph></q>|</emph></q>|g; # silly closing tags
     $p =~ s|<emph></p>|</emph></p>|g; # silly closing tags
 
+
+    
+    $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
+    $p =~ s|<q>er|\'er|g;
+    $p =~ s| goin<q>| goin\'|g;
+
     $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
     $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
     $p =~ s|<emph>([\.,;:])\'|</emph>$1</q>|g; # Some missed single quotes?
+    $p =~ s|([\.,;:])\' |$1</q> |g; # end of sentence missed quotes
+    $p =~ s|\'([\.,;:]) |</q>$1 |g; # end of sentence missed quotes
+    
+    ### Can we do these within the quote detection routines?
 
 
     $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
