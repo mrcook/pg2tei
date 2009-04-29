@@ -338,6 +338,8 @@ sub output_para {
     # There's still a few botches....so fix them.
     $p =~ s|<p></p>||g; # Tidy up empty <p></p> tags.
     $p =~ s|<q></p>|</q></p>|g; # Tidy up </q> tags
+    $p =~ s|</q>\.</q>|\.</q>|g;
+    $p =~ s|<p>\'|<p><q>|g;
 
 
 #### Check that these hellip with period (&hellip;.) have been  properly fixed
@@ -358,16 +360,23 @@ sub output_para {
     $p =~ s|<emph></p>|</emph></p>|g; # silly closing tags
 
 
-    
+#### Maybe need to create a funtion() for these word lists
+#### Even perhaps applying them as negatives when marking up <q> tags in original function.
     $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
     $p =~ s|<q>er|\'er|g;
     $p =~ s| goin<q>| goin\'|g;
+    $p =~ s| <q>cause| \'cause|g;
+    $p =~ s| <q>ticed| \'ticed|g;
+    $p =~ s| <q>mediately| \'mediately|g;
+    $p =~ s| <q>spectable| \'spectable|g;
+    $p =~ s|<q>(un[\.,;:!]) |\'$1 |g;
 
+    
     $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
     $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
     $p =~ s|<emph>([\.,;:])\'|</emph>$1</q>|g; # Some missed single quotes?
-    $p =~ s|([\.,;:])\' |$1</q> |g; # end of sentence missed quotes
-    $p =~ s|\'([\.,;:]) |</q>$1 |g; # end of sentence missed quotes
+    $p =~ s|([\.,;:!])\' |$1</q> |g; # end of sentence missed quotes
+    $p =~ s|\'([\.,;:!]) |</q>$1 |g; # end of sentence missed quotes
     
     ### Can we do these within the quote detection routines?
 
