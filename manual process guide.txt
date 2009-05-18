@@ -51,12 +51,12 @@ Footnotes
 <lg rend="text-align: right; margin-right: 10%">
 <lg rend="font-style: italic">
 
-rend="margin-left: 2"
-rend="margin-right: 10%"
+ rend="margin-left: 2"
+ rend="margin-right: 10%"
 
-rend="text-align: center"
-rend="text-align: right
-rend="text-align: right; margin-right: 10%"
+ rend="text-align: center"
+ rend="text-align: right
+ rend="text-align: right; margin-right: 10%"
 
 
   <div type="figures">
@@ -97,3 +97,8 @@ LoC Class:  PR: Language and Literatures: English literature
 
 <head></head>
 <head type="sub"></head>
+
+
+## SPLIT Chapters into Chapter/Title - Using NotePad++
+<head>Chapter (\w+). (.*)</head>
+<head>Chapter \1</head>\r\n\r\n<head type="sub">\2</head>

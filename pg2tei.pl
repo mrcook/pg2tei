@@ -24,11 +24,10 @@ use Data::UUID;
 
 use vars '$front_matter_block';
 
+#use utf8;
+
 use locale;
 my $locale = "en";
-#use encoding 'utf8';
-#use encoding "ISO-8859-1", STDOUT => "utf-8";
-# It don't work....or does it??
 
 $Text::Wrap::columns = 78;
 my $help   = 0;
