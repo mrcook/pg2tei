@@ -363,13 +363,14 @@ sub output_para {
 #### Even perhaps applying them as negatives when marking up <q> tags in original function.
     $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
     $p =~ s|<q>er|\'er|g;
+    $p =~ s|<q>bout |\'bout |g;
     $p =~ s| goin<q>| goin\'|g;
     $p =~ s| <q>cause| \'cause|g;
     $p =~ s| <q>ticed| \'ticed|g;
     $p =~ s| <q>mediately| \'mediately|g;
     $p =~ s| <q>spectable| \'spectable|g;
     $p =~ s|<q>(un[\.,;:!]) |\'$1 |g;
-
+    $p =~ s|<q>a</q>|\'a\'|g;
     
     $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
     $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
@@ -824,8 +825,8 @@ sub output_header () {
   my $editor_reversed = crack_author ($editor);
   my $auth_reversed   = crack_author ($author);
 
-  # Ifm Author = Unknown then change to "Anon". This should be better for the listings.
-  if ($author eq 'Unknown') { $author = "Anon."; $auth_reversed = "Anon"; }
+  # If Author = Unknown then change to "Anonymous". This should be better for the listings.
+  if ($author eq 'Unknown') { $author = "Anonymous"; $auth_reversed = "Anonymous"; }
 
   if ($filename eq '') {
     $filename = "$ARGV";
