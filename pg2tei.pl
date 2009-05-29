@@ -844,12 +844,17 @@ sub output_header () {
 #      if ($edition eq '') { $edition = $2; }
 #  }
 
-### If $edition still equals nothing then assign default: 10
+### If $edition still equals nothing then assign default: 1
   if ( $edition eq '' ) {
     $edition = '1';
     if ($reldate ne $updateposted) { $edition = '2'; }
 #    print "\n\n--EDITION CHECK--\n\n\n";
   }
+### If $edition equals PG 10 or 11 change to 1 and 2 respectively.
+  my $pg_edition = $edition; # Keep the original PG edition number if it exists.
+  if ( $edition = 10 ) { $edition = '1'; }
+  if ( $edition = 11 ) { $edition = '2'; }
+
 
 
 ### Now process FRONT MATTER
@@ -1123,7 +1128,7 @@ HERE
   if ($updateposted ne $reldate) {
 print <<HERE;
     <change when="$dupdateposted" who="$produced_update_by">
-      Project Gutenberg Edition $edition.
+      Project Gutenberg Edition $pg_edition.
     </change>
 HERE
   }
