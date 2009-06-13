@@ -47,16 +47,16 @@ Footnotes
 </lg>
 </quote>
 
-<lg rend="text-align: center">
-<lg rend="text-align: right; margin-right: 10%">
-<lg rend="font-style: italic">
+<lg rend="text-align(center)">
+<lg rend="text-align(right) margin-right(10%)">
+<lg rend="font-style(italic)">
 
- rend="margin-left: 2"
- rend="margin-right: 10%"
+ rend="margin-left(2)"
+ rend="margin-right(10%)"
 
- rend="text-align: center"
- rend="text-align: right
- rend="text-align: right; margin-right: 10%"
+ rend="text-align(center)"
+ rend="text-align(right)"
+ rend="text-align(right) margin-right(10%)"
 
 
   <div type="figures">
@@ -90,9 +90,6 @@ LoC Class:  PR: Language and Literatures: English literature
 ----
 
 <div type="book" n="2">
-
-<index index="toc" />
-<index index="pdf" />
 
 
 <head></head>

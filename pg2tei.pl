@@ -305,8 +305,8 @@ sub output_para {
     $p =~ s/\s*$//g;
 
     my $rend = '';
-    $rend = ' rend="text-align: center"' if (is_para_centered ($o));
-    $rend = ' rend="text-align: right"'  if (is_para_right ($o));
+    $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
+    $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
     $p =~ s|^ (.*?)|$1|;  # remove any leading spaces
 
@@ -622,7 +622,7 @@ sub output_epigraph {
     
     $citation =~ s/&nbsp;&mdash;/&qdash;/g;
     
-    print "<p rend=\"text-align: right\">$citation</p>\n\n";
+    print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
     print "</epigraph>\n\n\n";
     return '';
@@ -1223,7 +1223,7 @@ HERE
 print <<HERE;
 </body>
 
-<back rend="page-break-before: right">
+<back>
 
 HERE
  if ($footnote_exists == 1) {
