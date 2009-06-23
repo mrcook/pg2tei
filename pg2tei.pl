@@ -39,15 +39,7 @@ my $cnt_head_sep      = "2";
 my $cnt_paragraph_sep = "1";
 
 # some hints as to what is being converted
-
-my $is_drama         = 0; # work is a drama
-my $is_verse         = 0; # work is a poem
-
-# if drama, how to catch speaker and stage directions
-my $speech1    = qr/^[^\n]+:\n/s;                 # checks if this p is a speech
-my $speaker1   = qr/^(?=[^\(])(.*?):(?=[\(\n])/s; # catch speaker name
-my $stage1     = qr/\((.*?)\)\.*/s;               # catch stage directions
-my $partline   = qr/\s*[+]$/s;                    # catch continuation line
+my $is_verse = 0;                  # work is a poem
 
 # regexps how to catch quotes (filled in later)
 my ($quotes1, $quotes1pre, $quotes2);
@@ -55,7 +47,6 @@ my ($quotes1, $quotes1pre, $quotes2);
 my $avg_line_length = 0;
 my $max_line_length = 0;
 
-my $partstat = ''; # hold status of continuation line
 
 ##############################################################
 
@@ -126,16 +117,16 @@ my %languages = (
   "pt"     => "Portuguese", 
 );
 
-my $override_quotes;
-GetOptions (  "quotes=s"    => \$override_quotes,
-	      "chapter=i"   => \$cnt_chapter_sep,
-	      "head=i"      => \$cnt_head_sep,
-	      "paragraph=i" => \$cnt_paragraph_sep,
-	      "drama!"      => \$is_drama,
-	      "verse!"      => \$is_verse,
-	      "locale=s"    => \$locale,
-	      "help|h|?!"   => \$help,
-	   );
+my $override_quotes = '';
+GetOptions (
+  "quotes=s"    => \$override_quotes,
+	"chapter=i"   => \$cnt_chapter_sep,
+	"head=i"      => \$cnt_head_sep,
+	"paragraph=i" => \$cnt_paragraph_sep,
+	"verse!"      => \$is_verse,
+	"locale=s"    => \$locale,
+	"help|h|?!"   => \$help,
+);
 
 if ($help) {
     usage (); exit;
@@ -206,7 +197,7 @@ while (<>) {
 
 
 # process body    
-  if (! s/^(.*?)[\* ]*((This is )?(The )?END of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) { 
+  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) { 
     output_body ($front_matter_block .= $_);
   }
 
@@ -220,32 +211,24 @@ sub output_line {
   my $line = shift;
   my $min_indent = shift;
   $line =~ m/\S/g;
-  my $indent = "&nbsp;" x (pos ($line) - $min_indent - 1);
+##  my $indent = "&nbsp;" x (pos ($line) - $min_indent - 1); ## OLD spacinging
+  my $indent = (pos ($line) - $min_indent - 1);
   $line =~ s/^\s*//;
 
   if (length ($line)) {
 
-    my $cl = ($line =~ s/$partline//);
-
-    if ($cl) {
-      $partstat = (($partstat eq "I") || ($partstat eq "M")) ? "M" : "I";
-    } else {
-      $partstat = (($partstat eq "I") || ($partstat eq "M")) ? "F" : "";
-    }
-    # print "partstat $partstat\n";
-
-    my $part;
-    if ($partstat eq "") {
-      $part = '';
-    } else {
-      $part = " part=\"$partstat\"";
+    my $line_indent = '';
+    if ($indent > 6) {
+      $line_indent = ' rend="margin-left(6)"';
+    } elsif ($indent > 0) {
+      $line_indent = ' rend="margin-left(' . $indent . ')"';
     }
 
     $line = process_quotes_1 ($line);
     $line = fix_unbalanced_quotes_line ($line);
     $line = post_process ($line);
 
-    print "<l$part>$indent$line</l>\n";
+    print "  <l$line_indent>$line</l>\n";
   }
   return '';
 }
@@ -261,35 +244,28 @@ sub output_para {
   $p =~ s|{(\d+)}|[$1]|g; # Change {1} footnotes to [1]
 
 
-  if ($is_verse || is_para_verse ($o)) {
+  if ($is_verse || is_para_verse($o)) {
     $p = process_quotes_1 ($p);
-    $p = process_stage_1 ($p);
 
-    print "<quote>\n<lg>\n";
+    print "<quote>\n <lg>\n";
     while (length ($p)) {
-	    # block stage
-	    if ($p =~ s/^$stage1\n//) {
-    		print "\n";
-    		output_stage ($1);
-	    }
 	    if ($p =~ s/^(.*?)\s*\n//o) {
         output_line ($1, $o->{'min_indent'});
 	    }
     }
-    print "</lg>\n</quote>\n\n";   
+    print " </lg>\n</quote>\n\n";   
   } elsif ($p =~ m|^ {3,}(.*?)|g) { # Not all <l> were captured...hack it!!
-    $p = process_stage_1 ($p);
-
+    #$p = process_stage_1 ($p);
     if ($p =~ m|^( *\*){5,}|g) {        # stop these getting captured)
       print "<milestone unit=\"tb\" />\n\n";
     } else {
-      print "<quote>\n<lg>\n";
+      print "<quote>\n <lg>\n";
       while (length ($p)) {
     	  if ($p =~ s/^(.*?)\s*\n//o) {
           output_line ($1, $o->{'min_indent'});
   	    }
     	}
-      print "</lg>\n</quote>\n\n";   
+      print " </lg>\n</quote>\n\n";   
     }
   } else {
     # paragraph is prose
@@ -401,77 +377,14 @@ sub output_para {
 }
 
 sub output_stage {
-    my $stage = shift;
+  my $stage = shift;
 
-    $stage =~ s/[ \t\n]+/ /g;
+  $stage =~ s/[ \t\n]+/ /g;
 
-    print "<stage>$stage</stage>\n\n";
-    return '';
+  print "<stage>$stage</stage>\n\n";
+  return '';
 }
 
-sub output_speaker {
-    my $sp = shift;
-    my $stage = "";
-
-    if ($sp =~ m/$stage1/) {
-	$sp =~ s|$stage1||;
-	$stage = $1;
-    }
-    $sp =~ s/[ .:]*$//;
-    print "<speaker>$sp</speaker>\n\n";
-
-    if (length ($stage)) {
-	output_stage ($stage);
-    }
-    return '';
-}
-
-sub output_speech {
-    my $s = shift;
-
-    my $is_speech = ($s =~ m/$speech1/);
-
-    if (!$is_speech) {
-	# a paragraph not representing a speech in a drama
-	if ($s =~ m/^$stage1$/) {
-	    # just a stage direction
-	    output_stage ($1);
-	    return '';
-	}
-	output_para ($1);
-	return '';
-    }
-
-    print "<sp>";
-
-    #output speaker name
-    $s =~ s/$speaker1//;
-#   do output_speaker ($1);
-    output_speaker ($1); # do is depreciated.
-
-    # now we have a sequence of text and stage direction chunks
-    # split off stage blocks only, that is, stages not inside lines
-    # 
-AGAIN:
-    while (length ($s)) {
-	if ($s =~ s/^\s*$stage1//s) {
-	    output_stage ($1);
-	    $s =~ s/^\s*\n+//s;
-	    goto AGAIN;
-	}
-	# not stage
-	if ($s =~ s/(.+?)\n\s*(?=$stage1)//s) {
-	    output_para ($1);  # para will detect prose or verse
-	    $s =~ s/^\s*\n+//s;
-	    goto AGAIN;
-	}
-	output_para ($s);
-	$s = '';
-    }
-
-    print "</sp>\n\n";
-    return '';
-}
 
 sub output_head {
   my $head = shift;
@@ -497,29 +410,16 @@ sub output_head {
     
     $subhead =~ s/^\s//gm; # Strip out leading whitespace
 
-	  if ($is_drama) {
-	    output_stage ($subhead);
+    if ($subhead =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
+      print $subhead . "\n\n";
     } else {
-      if ($subhead =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
-        print $subhead . "\n\n";
-      } else {
-	      print "<head type=\"sub\">$subhead</head>\n\n";
-	    }
-	  }
+     print "<head type=\"sub\">$subhead</head>\n\n";
+   }
   }
   print ("\n");
   return '';
 }
 
-sub process_stage_1 {
-    my $c = shift;
-
-    $c =~ s|^\s*$stage1|<stage>$1</stage>\n\n|gm;
-
-    $c =~ s|$stage1|<stage>$1</stage>|g;
-
-    return $c;
-}
 
 # quotes involve pretty much guesswork and probably 
 # we will get some quotes wrong
@@ -553,29 +453,27 @@ sub process_quotes_1 {
 }
 
 sub fix_unbalanced_quotes_line {
-    # tries to fix unbalanced quotes in verse lines
-    my $line = shift;
-    my $balance = 0;
+  # tries to fix unbalanced quotes in verse lines
+  my $line = shift;
+  my $balance = 0;
 
-    my $tmp = $line;
-    $balance += ($tmp =~ s|<q>||g);
-    $balance -= ($tmp =~ s|</q>||g);
+  my $tmp = $line;
+  $balance += ($tmp =~ s|<q>||g);
+  $balance -= ($tmp =~ s|</q>||g);
 
-    if ($balance != 0) {
-	while (($line =~ s|<q>([^<]*)</q>|§q§$1§/q§|g) > 0) {};
+  if ($balance != 0) {
+    while (($line =~ s|<q>([^<]*)</q>|§q§$1§/q§|g) > 0) {};
 
-	while ($balance > 0) {
+    while ($balance > 0) {
 	    $line =~ s|<q>(.*)|<qpre>$1</q>|;
 	    $balance--;
-	}
-	while ($balance < 0) {
+    }
+    while ($balance < 0) {
 	    $line = "<qpost>" . $line;
 	    $balance++;
-	}
-
-	$line =~ s|§(/?q)§|<$1>|g;
-
     }
+    $line =~ s|§(/?q)§|<$1>|g;
+  }
 
   $line = do_fixes ($line);
 
@@ -598,32 +496,31 @@ sub do_fixes {
    $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
 
   return $fix;
-
 }
 
 sub output_epigraph {
-    my $epigraph = shift;
-    my $citation = shift;
+  my $epigraph = shift;
+  my $citation = shift;
     
-    print "<epigraph>\n\n";
+  print "<epigraph>\n\n";
 
-    $epigraph = process_quotes_1 ($epigraph);
-    $citation = process_quotes_1 ($citation);
-    $epigraph = post_process ($epigraph);
-    $citation = post_process ($citation);
+  $epigraph = process_quotes_1 ($epigraph);
+  $citation = process_quotes_1 ($citation);
+  $epigraph = post_process ($epigraph);
+  $citation = post_process ($citation);
 
-    $epigraph =~ s/\s+/ /g;
-    $epigraph = "<p>$epigraph</p>";
+  $epigraph =~ s/\s+/ /g;
+  $epigraph = "<p>$epigraph</p>";
 
-    print wrap ("", "", $epigraph);  
-    print "\n\n";
+  print wrap ("", "", $epigraph);  
+  print "\n\n";
     
-    $citation =~ s/&nbsp;&mdash;/&qdash;/g;
+  $citation =~ s/&nbsp;&mdash;/&qdash;/g;
     
-    print "<p rend=\"text-align(right)\">$citation</p>\n\n";
+  print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
-    print "</epigraph>\n\n\n";
-    return '';
+  print "</epigraph>\n\n\n";
+  return '';
 }
 
 sub output_chapter {
@@ -664,35 +561,32 @@ sub output_chapter {
     while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
 
 #    $chapter .= "\n\n"; # Too much spacing from Marcello
-    if ($is_drama) {
-	while ($chapter =~ s|$paragraph1|output_speech ($1)|es) {};
-    } else {
-	while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
-    }
+    while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
 
-    return '';
+  return '';
 }
 
 sub output_body {
-    my $body = shift;
-    $body =~ s/^\s*//;
+  my $body = shift;
+  $body =~ s/^\s*//;
 
-    guess_quoting_convention (\$body); # save mem, pass a ref
-    ($avg_line_length, $max_line_length) = compute_line_length (\$body);
+  guess_quoting_convention (\$body); # save mem, pass a ref
+  ($avg_line_length, $max_line_length) = compute_line_length (\$body);
 
-    # print ("AVG: $avg_line_length, $max_line_length\n");
+  # print ("AVG: $avg_line_length, $max_line_length\n");
 
-    $body .= "\n{$cnt_chapter_sep}\n";
+  $body .= "\n{$cnt_chapter_sep}\n";
   
-    while ($body =~ s|$chapter1|output_chapter ($1)|es) {}; # egs doesn't work in 5.6.1  
-    return '';
+  while ($body =~ s|$chapter1|output_chapter ($1)|es) {}; # egs doesn't work in 5.6.1  
+
+  return '';
 }
 
 sub output_header () {
-    # scan the gutenberg header for useful info
-    # the problem here is that there are a gazillion different
-    # <soCalled>standard headers</soCalled>
-    my $h = shift;
+  # scan the gutenberg header for useful info
+  # the problem here is that there are a gazillion different
+  # <soCalled>standard headers</soCalled>
+  my $h = shift;
 
 
   # Grab the front matter from this header for printing.
@@ -704,108 +598,106 @@ sub output_header () {
 
   for ($h) {
 
-  # Try to grab the sub title too!
-  if (/Title: *(.*?)\n       (.*?)\n/) { $title = $1; $sub_title = $2;
-  } elsif (/Title: *(.*?)\n/) { $title = $1; $sub_title = ""; }
-
-  if (/Author: *(.*?)\n/)            { $author = $1; }
-  if (/Editor: *(.*?)\n/)            { $editor = $1; }
-  if (/Illustrator: *(.*?)\n/)       { $illustrated_by = change_case($1); }
-  if (/Edition: *(.*?)\n/)           { $edition = $1; }
-
-  if (/Language: *(.*?)\n/) {
-    if ($1 ne "English" && $language ne "British") {
-      $language = $1;
+    # Try to grab the sub title too!
+    if (/Title: *(.*?)\n       (.*?)\n/) {
+      $title = $1; $sub_title = $2;
+    } elsif (/Title: *(.*?)\n/) {
+      $title = $1; $sub_title = "";
     }
-  }
-  if ($language eq "***")            { $language = "English"; }
 
-  $language_code = encode_lang ($language);
+    if (/Author: *(.*?)\n/)            { $author = $1; }
+    if (/Editor: *(.*?)\n/)            { $editor = $1; }
+    if (/Illustrator: *(.*?)\n/)       { $illustrated_by = change_case($1); }
+    if (/Edition: *(.*?)\n/)           { $edition = $1; }
+
+    if (/Language: *(.*?)\n/) {
+      if ($1 ne "English" && $language ne "British") {
+        $language = $1;
+      }
+    }
+    if ($language eq "***")            { $language = "English"; }
+
+    $language_code = encode_lang ($language);
 
 
-
-# Figure out the posting dates
-  # Try the easy route first
-  if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-    $reldate = $1; $etext = $3; $etext_enc = $4;
-  }
-  if (/Posting Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-    $updateposted = $1; $etext = $3; $etext_enc = $4;
-  }
-  # Still no Origianl Release Date? Try this;
-  if (/Original Release Date: +(.*?)\n/i) {
+    # Figure out the posting dates
+    # Try the easy route first
+    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
+      $reldate = $1; $etext = $3; $etext_enc = $4;
+    }
+    if (/Posting Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
+      $updateposted = $1; $etext = $3; $etext_enc = $4;
+    }
+    # Still no Origianl Release Date? Try this;
+    if (/Original Release Date: +(.*?)\n/i) {
       $firstposted = $1;
-  }
-
-  # The date it was first posted
-  if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
-    if ($firstposted eq '***') {
-      $firstposted = $4;
     }
-  }
 
-  # The Release Date
-  if (/(Official )?Release Date: +(.*?) +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\]/i)  { 
-    if ($reldate eq '***') { $reldate = $2; }
-    if ($etext eq '') { $etext = $3; }
-    if ($etext_enc eq '') { $etext_enc = $3; }
-  } elsif (/\n+(.*?)\s+\[E(?:(?:Book)|(?:Text))\s+\#(\d+)\]/i) {
-    if ($reldate eq '***') { $reldate = $1; }
-    if ($etext eq '') { $etext = $2; }
-    if ($etext_enc eq '') { $etext_enc = $2; }
-  }
-  if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) { 
-    $updateposted = $4;
-  }
+    # The date it was first posted
+    if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
+      if ($firstposted eq '***') {
+        $firstposted = $4;
+      }
+    }
 
-  if (/Character set encoding: *(.*?)\n/) { $charset = $1; }
+    # The Release Date
+    if (/(Official )?Release Date: +(.*?) +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\]/i)  { 
+      if ($reldate eq '***') { $reldate = $2; }
+      if ($etext eq '') { $etext = $3; }
+      if ($etext_enc eq '') { $etext_enc = $3; }
+    } elsif (/\n+(.*?)\s+\[E(?:(?:Book)|(?:Text))\s+\#(\d+)\]/i) {
+      if ($reldate eq '***') { $reldate = $1; }
+      if ($etext eq '') { $etext = $2; }
+      if ($etext_enc eq '') { $etext_enc = $2; }
+    }
+    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) { 
+      $updateposted = $4;
+    }
 
-  # If not set try to grab title, author, etc. 
-  # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
-  if (/\**The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
+    if (/Character set encoding: *(.*?)\n/) { $charset = $1; }
+
+    # If not set try to grab title, author, etc. 
+    # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
+    if (/\**The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
       if ($title eq '')  { $title = $1;  }
       if ($author eq '') { $author = change_case($2); }
-  } elsif (/\**The Project Gutenberg Etext of (.*?)\**\n/) {
+    } elsif (/\**The Project Gutenberg Etext of (.*?)\**\n/) {
       if ($title eq '')  { $title = $1;  }
-  }
+    }
 
-  # Author still not aquired...this is a bit random but can often work
-  if ($author eq '' && $title ne '') {
+    # Author still not aquired...this is a bit random but can often work
+    if ($author eq '' && $title ne '') {
       if (/\n$title\n+by (.*?)\n/i) { $author = change_case($1); }
-  } elsif ($author eq '') {
-    if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author = change_case($1); }
-  }
-  # Sometimes Author get assigned wierd info...fix it
-  if ($author =~ m/Project Gutenberg/i) { $author = "Anon."; }
+    } elsif ($author eq '') {
+      if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author = change_case($1); }
+    }
+    # Sometimes Author get assigned wierd info...fix it
+    if ($author =~ m/Project Gutenberg/i) { $author = "Anon."; }
         
+    if (/\#([0-9]+) in our series by/) { 
+      $series_no = $1;
+      $series = "#$series_no in our series by $author";
+    } elsif (/\#([0-9]+) in our (.*?) series/) { 
+      $series_no = $1;
+      $series = "#$series_no in our series by $author";
+    }
+    if ($series_no eq '***') { $series_no = ""; $series = "No PG series"; }
 
-  if (/\#([0-9]+) in our series by/) { 
-    $series_no = $1;
-    $series = "#$series_no in our series by $author";
-  } elsif (/\#([0-9]+) in our (.*?) series/) { 
-    $series_no = $1;
-    $series = "#$series_no in our series by $author";
-  }
-  if ($series_no eq '***') { $series_no = ""; $series = "No PG series"; }
-
-
-  if (/This etext was produced by (.*?)\.?\n/) {
+    if (/This etext was produced by (.*?)\.?\n/) {
       $produced_by = $1;
-  }
+    }
 
-  # Translated from ...
-  if (/[\n ]*(Translated (from.*)?by) (.+)/i) {
-    $translated = $1;
-    $translated_by = $3;
-  } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
-    $translated = $1;
-    $translated_by = $3;
-  }
-
+    # Translated from ...
+    if (/[\n ]*(Translated (from.*)?by) (.+)/i) {
+      $translated = $1;
+      $translated_by = $3;
+    } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
+      $translated = $1;
+      $translated_by = $3;
+    }
   }
 
   my $languages = list_languages ($language_code);
-
 
   # Change any / to -
   if ($firstposted =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
@@ -829,8 +721,8 @@ sub output_header () {
   if ($filename eq '') {
     $filename = "$ARGV";
     if ($filename =~ s/(\w{4,5})((10|11)\w?)(\..*)$//) {
-       $filename = $1;
-       if ($edition  eq '') {$edition  = $2; }
+      $filename = $1;
+      if ($edition  eq '') {$edition  = $2; }
     }
 #    $filename =~ s|\..*$||;
 #    $filename =~ s|$edition$||;
@@ -850,113 +742,114 @@ sub output_header () {
   }
 ### If $edition equals PG 10 or 11 change to 1 and 2 respectively.
   my $pg_edition = $edition; # Keep the original PG edition number if it exists.
-  if ( $edition = 10 ) { $edition = '1'; }
-  if ( $edition = 11 ) { $edition = '2'; }
+  if ( $edition == 10 ) { $edition = '1'; }
+  if ( $edition == 11 ) { $edition = '2'; }
 
 
+################################
+### Now process FRONT MATTER ###
+################################
 
-### Now process FRONT MATTER
   for ($front_matter_block) {
-  # Grab 'Produced/Prepared by' then remove
-  if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.+)\n//i) {
-    $prod_first_by = $3;
-    if (s/((and )?(the )?(Project Gutenberg )?(Online )?(Distributed )?Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
-      $prod_first_by .= " $1"; }
-  } elsif (s/((.*?)(Project Gutenberg )?(Online )?Distributed Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
-    $prod_first_by = $1;
-  } elsif ($h =~ m/This [e-]*Text (was )?(first )?(Produced|Prepared|Created) by +(.+)\n/i) {
+    # Grab 'Produced/Prepared by' then remove
+    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.+)\n//i) {
+      $prod_first_by = $3;
+      if (s/((and )?(the )?(Project Gutenberg )?(Online )?(Distributed )?Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
+        $prod_first_by .= " $1"; }
+    } elsif (s/((.*?)(Project Gutenberg )?(Online )?Distributed Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
+      $prod_first_by = $1;
+    } elsif ($h =~ m/This [e-]*Text (was )?(first )?(Produced|Prepared|Created) by +(.+)\n/i) {
       $prod_first_by = $4;
-  }
+    }
 
 ### IS this redundant code? CHECK before DELETING
 #   elsif (s/[\n ]*((This )?[e-]*Text ((was )?first )?)?(Produced|Prepared|Created) by +(.*?)\n//i) {
 #      $prod_first_by = $6;
 #  }
 
-  if (s/[\n ]*(This )?updated ([e-]*Text|edition) ?(was )?(Produced|Prepared) by +(.+)\n//i) {
-    $produced_update_by = $5;
-  }
-  
-  # This DOESN'T go anywhere!!! Shall I do something with it?
-  if ($produced_by eq 'unknown') { 
-    if (m/proof(ed|read) by:?\s+(.+)\n/i) { $produced_by = $2; }
-  }
-
-  if (s/[\n ]*([e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
-    $produced_by = $3;
-#  } elsif ($front_matter_block =~ s/[\n ]*(|[e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
-#    $produced_by = $3;
-  }
-
-  if ($produced_by eq "unknown") {
-    $produced_by = $prod_first_by;
-  } elsif ($prod_first_by eq "unknown") {
-    $prod_first_by = $produced_by;
-  }
-
-  if ($prod_first_by eq "unknown") {
-    $prod_first_by = "Project Gutenberg";
-  }  
-  $prod_first_by =~ s/\.$//;
-
-  # Get the published date
-  if (m/\n *([0-9]{4})\n/i) {
-    $publishdate = $1;
-  } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
-    $publishdate = $1;
-  } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*([0-9]{4})/i) {
-    $publishdate = $2;
-  }
-  # Get the published place
-  if (m/[\n_ ]*((New York|London|Cambridge|Boston).*?)_?\n/i) {
-    $publishedplace = change_case($1);
-  }
-  # Get the publisher
-  if (m/[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
-    $publisher = change_case($1 . $2 . $3);
-    $publisher =~ s|&|&amp;|; # Convert ampersand
-  }
-
-  # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
-  if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
-    $transciber_notes = $1;
-  } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
-    $transciber_notes = $1;
-  }
-
-  # REDACTOR'S NOTES
-  if (s/ *\[Redactor\'?s? Note[s:\n ]*(.*?)\]//is) {
-    $redactors_notes = $1;
-  } elsif (s/Redactor\'s Note[s:\n ]*(.*?)\n\n\n//is) {
-    $redactors_notes = $1;
-  }
-
-  # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
-  if (s/ *\[Notes?: (.*?)\]//is) {
-    $transciber_notes .= $1;
-  } elsif (s/Notes?: (.*?)\n\n\n//is) {
-    $transciber_notes = $1;
-  }
-
-
-  # ILLUSTRATED BY ...
-  if ($illustrated_by eq '') {
-    if (/\n_?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
-      $illustrated = change_case($1);
-      $illustrated_by = change_case($5);
-      $illustrated_by =~ s/_$//;
+    if (s/[\n ]*(This )?updated ([e-]*Text|edition) ?(was )?(Produced|Prepared) by +(.+)\n//i) {
+      $produced_update_by = $5;
     }
-  }
-  if ($illustrated_by eq '') { $illustrated = ""; }
+  
+    # This DOESN'T go anywhere!!! Shall I do something with it?
+    if ($produced_by eq 'unknown') { 
+      if (m/proof(ed|read) by:?\s+(.+)\n/i) { $produced_by = $2; }
+    }
 
-} # END OF $front_matter_block() PROCESSING
+    if (s/[\n ]*([e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
+      $produced_by = $3;
+#    } elsif ($front_matter_block =~ s/[\n ]*(|[e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
+#      $produced_by = $3;
+    }
+
+    if ($produced_by eq "unknown") {
+      $produced_by = $prod_first_by;
+    } elsif ($prod_first_by eq "unknown") {
+      $prod_first_by = $produced_by;
+    }
+
+    if ($prod_first_by eq "unknown") {
+      $prod_first_by = "Project Gutenberg";
+    }  
+    $prod_first_by =~ s/\.$//;
+
+    # Get the published date
+    if (m/\n *([0-9]{4})\n/i) {
+      $publishdate = $1;
+    } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
+      $publishdate = $1;
+    } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*([0-9]{4})/i) {
+      $publishdate = $2;
+    }
+    # Get the published place
+    if (m/[\n_ ]*((New York|London|Cambridge|Boston).*?)_?\n/i) {
+      $publishedplace = change_case($1);
+    }
+    # Get the publisher
+    if (m/[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
+      $publisher = change_case($1 . $2 . $3);
+      $publisher =~ s|&|&amp;|; # Convert ampersand
+    }
+
+    # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
+    if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
+      $transciber_notes = $1;
+    } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
+      $transciber_notes = $1;
+    }
+
+    # REDACTOR'S NOTES
+    if (s/ *\[Redactor\'?s? Note[s:\n ]*(.*?)\]//is) {
+      $redactors_notes = $1;
+    } elsif (s/Redactor\'s Note[s:\n ]*(.*?)\n\n\n//is) {
+      $redactors_notes = $1;
+    }
+
+    # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
+    if (s/ *\[Notes?: (.*?)\]//is) {
+      $transciber_notes .= $1;
+    } elsif (s/Notes?: (.*?)\n\n\n//is) {
+      $transciber_notes = $1;
+    }
+
+    # ILLUSTRATED BY ...
+    if ($illustrated_by eq '') {
+      if (/\n_?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
+        $illustrated = change_case($1);
+        $illustrated_by = change_case($5);
+        $illustrated_by =~ s/_$//;
+      }
+    }
+    if ($illustrated_by eq '') { $illustrated = ""; }
+
+  } # END OF $front_matter_block() PROCESSING
 
   $front_matter_block .= "\n\n"; # Some padding 
 
   # Create a UUID
   my $uuid =  uuid_gen();
 
-    print <<HERE;
+  print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
 <TEI>
@@ -1202,38 +1095,37 @@ print <<HERE;
 
 HERE
 
-    return '';
-
+  return '';
 }
 
 sub output_footer {
-print <<HERE;
+  print <<HERE;
 </div>
 
 HERE
 
-if ($is_book == 1) {
-print <<HERE;
+  if ($is_book == 1) {
+    print <<HERE;
 </div>
 
 HERE
-}
-print <<HERE;
+  }
+  print <<HERE;
 </body>
 
 <back>
 
 HERE
- if ($footnote_exists == 1) {
-print <<HERE;
+  if ($footnote_exists == 1) {
+    print <<HERE;
   <div type="footnotes">
     <head>Footnotes</head>
     <divGen type="footnotes"/>
   </div>
 
 HERE
- }
-print <<HERE;
+  }
+  print <<HERE;
 </back>
 
 </text>
@@ -1242,8 +1134,9 @@ print <<HERE;
 
 HERE
 
-    return '';
+  return '';
 }
+
 
 ############################################
 # This here single-quote just makes UEStudio display the code better -> '
@@ -1253,10 +1146,10 @@ HERE
 #
 
 sub post_process {
-    my $c = shift;
+  my $c = shift;
 
 # substitute &
-    $c =~ s|&|&amp;|g;
+  $c =~ s|&|&amp;|g;
 
 #  $c =~ s|<|&lt;|g;
 #  $c =~ s|>|&gt;|g;
@@ -1276,12 +1169,12 @@ sub post_process {
   $c =~ s|--|&mdash;|g;
 
 #substitute hellip for ...
-    $c =~ s| *\.{3,}|&hellip;|g;
-    $c =~ s| *(\. ){3,}|&hellip;|g;
+  $c =~ s| *\.{3,}|&hellip;|g;
+  $c =~ s| *(\. ){3,}|&hellip;|g;
 
 #substitute °, @ OR #o (lowercase O) for &deg;
-    $c =~ s|(°\|@)|&deg;|g;
-    $c =~ s|(\d{1,3})o|$1&deg;|g;
+  $c =~ s|(°\|@)|&deg;|g;
+  $c =~ s|(\d{1,3})o|$1&deg;|g;
     
 
 ############################################
@@ -1289,20 +1182,20 @@ sub post_process {
 #
 
 # change _ to <emph>
-    $c =~ s|Illustration: _|Illustration: <emph>|g; # fix Illustrations
-    $c =~ s/_([\"\'\w]|<[fp])/<emph>$1/g;
-    $c =~ s|^_|<emph>|g;
-    $c =~ s|_|</emph>|g;
-    $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
+  $c =~ s|Illustration: _|Illustration: <emph>|g; # fix Illustrations
+  $c =~ s/_([\"\'\w]|<[fp])/<emph>$1/g;
+  $c =~ s|^_|<emph>|g;
+  $c =~ s|_|</emph>|g;
+  $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
 
 ############################################
 # reserved characters
 #
 # these characters will give TeX trouble if left in
 
-    $c =~ s|\\|&#92;|g;
-    $c =~ s|\{|&#123;|g;
-    $c =~ s|\}|&#125;|g;
+  $c =~ s|\\|&#92;|g;
+  $c =~ s|\{|&#123;|g;
+  $c =~ s|\}|&#125;|g;
 
 
 ############################################
@@ -1310,7 +1203,7 @@ sub post_process {
 #
 
 # substitute endash 
-#    $c =~ s|([0-9])-([0-9])|$1&ndash;$2|g;
+#  $c =~ s|([0-9])-([0-9])|$1&ndash;$2|g;
 
   # HIPHENATED WORDS
   $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
@@ -1319,11 +1212,11 @@ sub post_process {
   $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
 
 # move dashes 
-    $c =~ s|&mdash; </q>([^ ])|&mdash;</q> $1|g;
-    $c =~ s|&mdash; </q>|&mdash;</q>|g;
-    $c =~ s|([^ ])<q> &mdash;|$1 <q>&mdash;|g;
-    $c =~ s| &mdash;|&mdash;|g;
-    $c =~ s| &qdash;|&qdash;|g;
+  $c =~ s|&mdash; </q>([^ ])|&mdash;</q> $1|g;
+  $c =~ s|&mdash; </q>|&mdash;</q>|g;
+  $c =~ s|([^ ])<q> &mdash;|$1 <q>&mdash;|g;
+  $c =~ s| &mdash;|&mdash;|g;
+  $c =~ s| &qdash;|&qdash;|g;
 
   # SUPERSCRIPT
   $c =~ s|(\^)([^ ]+)|<sup>$2</sup>|g;
@@ -1333,76 +1226,76 @@ sub post_process {
 
 
 # insert a non-breaking space after Mr. Ms. Mrs.
-    $c =~ s|(Mr?s?\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Mr?s?\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after Mme.
-    $c =~ s|(Mme\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Mme\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after Dr.
-    $c =~ s|(Dr\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Dr\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after St.
-    $c =~ s|(St\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(St\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after No.
-    $c =~ s|(No\.?)[ \n]+([[:digit:]])|$1&nbsp;$2|g;
+  $c =~ s|(No\.?)[ \n]+([[:digit:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after Rev.
-    $c =~ s|(Rev\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Rev\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after Capt.
-    $c =~ s|(Capt\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Capt\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 # insert a non-breaking space after Gen.
-    $c =~ s|(Gen\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Gen\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 
-    $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 
 ############################################
 # various cosmetics
 #
 # strip multiple spaces
-    $c =~ s|[ \t]+| |g;
+  $c =~ s|[ \t]+| |g;
 
 # strip spaces before new line
-    $c =~ s| \n|\n|g;
+  $c =~ s| \n|\n|g;
 
 
 ### Don't worry about Marcellos stuff here
 #    $c =~ s|<qpre>|<q rend=\"post: none\">|g;
 #    $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
-    $c =~ s|<qpre>|<q>|g;
-    $c =~ s|<qpost>|<q>|g;
+  $c =~ s|<qpre>|<q>|g;
+  $c =~ s|<qpost>|<q>|g;
 
 
     # Some files have <i> for Italics. Change to <emph>
-    $c =~ s|<i>|<emph>|g;
-    $c =~ s|</i>|</emph>|g;
+  $c =~ s|<i>|<emph>|g;
+  $c =~ s|</i>|</emph>|g;
 
     # [BLANK PAGE]
-    $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
+  $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
   
     # substitute * * * * * for <milestone>
-    $c =~ s|^( *\*){5,}|<milestone unit="tb" \/>|g;
+  $c =~ s|^( *\*){5,}|<milestone unit="tb" \/>|g;
   
     # ILLUSTRATIONS ...
-    if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
-      my $tmp = change_case($1);
-      $c =~ s|<head>(.*?)</head>|<head>$tmp</head>|;
-    }
+  if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
+    my $tmp = change_case($1);
+    $c =~ s|<head>(.*?)</head>|<head>$tmp</head>|;
+  }
 # Original formula....keep!
 #    $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
     
-    $c =~ s| <head></head>\n||g; # Remove empty <head>'s
-    $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
+  $c =~ s| <head></head>\n||g; # Remove empty <head>'s
+  $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
 
-    $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
-    $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
+  $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
+  $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
 
-    # Change 'Named Entity' characters to 'Numbered Entity' codes. 
-    # For use with TEI DTD and XSLT.
-    $c =~ s|&nbsp;|&#160;|g;
-    $c =~ s|&ndash;|&#8211;|g;
-    $c =~ s|&mdash;|&#8212;|g;
-    $c =~ s|&qdash;|&#8213;|g;
-    $c =~ s|&hellip;|&#8230;|g;
-    $c =~ s|&deg;|&#176;|g;
+  # Change 'Named Entity' characters to 'Numbered Entity' codes. 
+  # For use with TEI DTD and XSLT.
+  $c =~ s|&nbsp;|&#160;|g;
+  $c =~ s|&ndash;|&#8211;|g;
+  $c =~ s|&mdash;|&#8212;|g;
+  $c =~ s|&qdash;|&#8213;|g;
+  $c =~ s|&hellip;|&#8230;|g;
+  $c =~ s|&deg;|&#176;|g;
 
-    return $c;
+  return $c;
 }
 
 sub encode_lang {
@@ -1612,7 +1505,7 @@ sub guess_quoting_convention {
 	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 opening double quote
 	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
 #	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
-	my $count_27 = '';
+	my $count_27 = 0; # We don't want to check for single quiote so set this count to 0
 	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
 	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
 	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
@@ -1654,148 +1547,147 @@ sub guess_quoting_convention {
 }
 
 sub study_paragraph {
-    # learn interesting stuff about this paragraph
+  # learn interesting stuff about this paragraph
 
-    my @lines = split (/\n/, shift);
-    my $o = { };
+  my @lines = split (/\n/, shift);
+  my $o = { };
 
-    my $cnt_lines  = scalar (@lines);
-    my $min_len    = 1000;
-    my $max_len    = 0;
-    my $sum_len    = 0;
-    my $min_indent = 1000;
-    my $max_indent = 0;
-    my $cnt_indent = 0;
-    my $sum_indent = 0;
-    my $cnt_caps   = 0;
-    my $cnt_short  = 0;
-    my $cnt_center = 0;
+  my $cnt_lines  = scalar (@lines);
+  my $min_len    = 1000;
+  my $max_len    = 0;
+  my $sum_len    = 0;
+  my $min_indent = 1000;
+  my $max_indent = 0;
+  my $cnt_indent = 0;
+  my $sum_indent = 0;
+  my $cnt_caps   = 0;
+  my $cnt_short  = 0;
+  my $cnt_center = 0;
 
-    my $thres = int ($max_line_length * 80 / 100);
-    for (@lines) {
-	# min, max, avg line length
-	my $len = length ($_);
-	$min_len = $len if ($len < $min_len);
-	$max_len = $len if ($len > $min_len);
-	$sum_len += $len;
+  my $thres = int ($max_line_length * 80 / 100);
+  for (@lines) {
+    # min, max, avg line length
+    my $len = length ($_);
+    $min_len = $len if ($len < $min_len);
+    $max_len = $len if ($len > $min_len);
+    $sum_len += $len;
 
-	# count indented lines
-	# min and max indentation
-	m/^(\s*)/; 
-	my $indent = length ($1);  
-	$max_indent = $indent if ($indent > $max_indent);
-	$min_indent = $indent if ($indent < $min_indent);
-	$cnt_indent++ if ($indent);
-	$sum_indent += $len;
+    # count indented lines
+    # min and max indentation
+    m/^(\s*)/; 
+    my $indent = length ($1);  
+    $max_indent = $indent if ($indent > $max_indent);
+    $min_indent = $indent if ($indent < $min_indent);
+    $cnt_indent++ if ($indent);
+    $sum_indent += $len;
 	
-	# count lines beginning with capital
-	$cnt_caps++ if (m/^\s*[[:upper:]]/);
+    # count lines beginning with capital
+    $cnt_caps++ if (m/^\s*[[:upper:]]/);
 
-	# count lines shorter than 80% max text line length
-	$cnt_short++ if ($len < $thres);
+    # count lines shorter than 80% max text line length
+    $cnt_short++ if ($len < $thres);
 
-	my $rindent = $max_line_length - $len;
+    my $rindent = $max_line_length - $len;
 
-	# count centered lines
-	if ($indent > 0) {
+    # count centered lines
+    if ($indent > 0) {
 	    if (($rindent / $indent) < 2) {
-		$cnt_center++;
+        $cnt_center++;
 	    }
-	}
     }
+  }
 
-    $cnt_lines = 1 if ($cnt_lines == 0);
+  $cnt_lines = 1 if ($cnt_lines == 0);
 
-    my $o = {
-	'cnt_lines'  => $cnt_lines,
-	'min_len'    => $min_len,
-	'max_len'    => $max_len,
-	'sum_len'    => $sum_len,
-	'avg_len'    => $sum_len / $cnt_lines,
+  $o = {
+    'cnt_lines'  => $cnt_lines,
+    'min_len'    => $min_len,
+    'max_len'    => $max_len,
+    'sum_len'    => $sum_len,
+    'avg_len'    => $sum_len / $cnt_lines,
 
-	'cnt_indent' => $cnt_indent,
-	'min_indent' => $min_indent,
-	'max_indent' => $max_indent,
-	'sum_indent' => $sum_indent,
-	'avg_indent' => $sum_indent / $cnt_lines,
+    'cnt_indent' => $cnt_indent,
+    'min_indent' => $min_indent,
+    'max_indent' => $max_indent,
+    'sum_indent' => $sum_indent,
+    'avg_indent' => $sum_indent / $cnt_lines,
 
-	'cnt_short'  => $cnt_short,
-	'cnt_long'   => $cnt_lines - $cnt_short,
-	'cnt_caps'   => $cnt_caps,
-	'cnt_left'   => $cnt_lines - $cnt_indent,
-	'cnt_center' => $cnt_center,
-    };
+    'cnt_short'  => $cnt_short,
+    'cnt_long'   => $cnt_lines - $cnt_short,
+    'cnt_caps'   => $cnt_caps,
+    'cnt_left'   => $cnt_lines - $cnt_indent,
+    'cnt_center' => $cnt_center,
+  };
 
-    return $o;
+  return $o;
 }
 
 sub is_para_verse {
-    # decide if paragraph is verse
-    # param is result from study_paragraph
-    my $o = shift;
+  # decide if paragraph is verse
+  # param is result from study_paragraph
+  my $o = shift;
 
-    # one-liner, cannot tell
-    return 0 if $o->{'cnt_lines'}  < 2;
+  # one-liner, cannot tell
+  return 0 if $o->{'cnt_lines'}  < 2;
 
-    # are all lines indented ?
-    return 0 if $o->{'min_indent'} == 0;
+  # are all lines indented ?
+  return 0 if $o->{'min_indent'} == 0;
 
-    # do all lines begin with capital letters ?
-    return 0 if $o->{'cnt_caps'}   < $o->{'cnt_lines'};
+  # do all lines begin with capital letters ?
+  return 0 if $o->{'cnt_caps'}   < $o->{'cnt_lines'};
 
-    # are all lines shorter than average ?
-    return 0 if $o->{'cnt_long'}   > 0;
+  # are all lines shorter than average ?
+  return 0 if $o->{'cnt_long'}   > 0;
 
-    # all tests passed, this is verse
-    return 1;
+  # all tests passed, this is verse
+  return 1;
 }
 
 sub is_para_centered {
-    my $o = shift;
-
-    return $o->{'cnt_center'} == $o->{'cnt_lines'};
+  my $o = shift;
+  return $o->{'cnt_center'} == $o->{'cnt_lines'};
 }
 
 sub is_para_right {
-    my $o = shift;
+  my $o = shift;
 
-    # one-liner, cannot tell
-    return 0 if $o->{'cnt_lines'}  < 2;
+  # one-liner, cannot tell
+  return 0 if $o->{'cnt_lines'}  < 2;
 
-    return 0 if $o->{'min_indent'} == $o->{'max_indent'};
-    return 0 if $o->{'min_len'}    != $o->{'max_len'};
-    return 1;
+  return 0 if $o->{'min_indent'} == $o->{'max_indent'};
+  return 0 if $o->{'min_len'}    != $o->{'max_len'};
+  return 1;
 }
 
 sub is_para_justified {
-    my $o = shift;
+  my $o = shift;
 
-    # one-liner, cannot tell
-    return 0 if $o->{'cnt_lines'}  < 2;
+  # one-liner, cannot tell
+  return 0 if $o->{'cnt_lines'}  < 2;
 
-    return 0 if $o->{'min_indent'} != $o->{'max_indent'};
-    return 0 if $o->{'min_len'}    != $o->{'max_len'};
-    return 1;
+  return 0 if $o->{'min_indent'} != $o->{'max_indent'};
+  return 0 if $o->{'min_len'}    != $o->{'max_len'};
+  return 1;
 }
 
 sub compute_line_length {
-    # computes average and max line length of this text
-    my $body = shift;
+  # computes average and max line length of this text
+  my $body = shift;
     
-    my @lines = split (/\n/, $$body);
-    my $lines   = 0; 
-    my $sum_len = 0;
-    my $max_len = 0;
-    for (@lines) {
-	my $len = length ($_);
-	if (!/^$/) {
-	    $lines++;
-	    $sum_len += $len;
-	}
-	$max_len = $len if ($len > $max_len);
+  my @lines = split (/\n/, $$body);
+  my $lines   = 0; 
+  my $sum_len = 0;
+  my $max_len = 0;
+  for (@lines) {
+    my $len = length ($_);
+    if (!/^$/) {
+      $lines++;
+      $sum_len += $len;
     }
+    $max_len = $len if ($len > $max_len);
+  }
 
-    return ($sum_len / $lines, $max_len);
+  return ($sum_len / $lines, $max_len);
 }
 
 sub change_case {
@@ -1806,7 +1698,7 @@ sub change_case {
   $case =~ s/and/and/gi; # Replace 'And' with 'and'
   $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g; 
   $case =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
-  $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's                           '
+  $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's
 
   return $case;
 }
@@ -1820,7 +1712,6 @@ sub lower_case {
 }
 
 sub uuid_gen {
-
   my $ug = new Data::UUID;
   my $uuid = $ug->create_str();
 
@@ -1834,7 +1725,7 @@ sub uuid_gen {
 }
 
 sub usage {
-    print <<HERE;
+  print <<HERE;
 
 PGText to TEI converter
 

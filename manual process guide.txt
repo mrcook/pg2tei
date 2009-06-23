@@ -41,10 +41,10 @@ Footnotes
 --
 
 <quote>
-<lg>
- <l></l>
- <l></l>
-</lg>
+ <lg>
+  <l></l>
+  <l></l>
+ </lg>
 </quote>
 
 <lg rend="text-align(center)">
