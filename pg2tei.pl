@@ -331,52 +331,52 @@ sub output_para {
     $p =~ s|</quote>\r\n\r\n<quote>|\r\n\r\n|g;
 
     #This one goes before the quote fixes below
-    $p =~ s|dash;</q>|dash;<q>|g;  # Sometimes this wil be good, sometimes not -- decide which happens more
-    $p =~ s|dash;<q></q></p>|dash;</q></q></p>|g; # More double </q> tag errors
+#    $p =~ s|dash;</q>|dash;<q>|g;  # Sometimes this wil be good, sometimes not -- decide which happens more
+#    $p =~ s|dash;<q></q></p>|dash;</q></q></p>|g; # More double </q> tag errors
 
     # There's still a few botches....so fix them.
     $p =~ s|<p></p>||g; # Tidy up empty <p></p> tags.
-    $p =~ s|<q></p>|</q></p>|g; # Tidy up </q> tags
-    $p =~ s|</q>\.</q>|\.</q>|g;
-    $p =~ s|<p>\'|<p><q>|g;
+#    $p =~ s|<q></p>|</q></p>|g; # Tidy up </q> tags
+#    $p =~ s|</q>\.</q>|\.</q>|g;
+#    $p =~ s|<p>\'|<p><q>|g;
 
 
 #### Check that these hellip with period (&hellip;.) have been  properly fixed
 #    $p =~ s|&hellip; ?\.|&hellip;|g; # Fix '&hellip; .'
     $p =~ s|&hellip; ?([\!\?])|&hellip;$1|g; # Fix '&hellip; ! or ?'
-    $p =~ s|&hellip; ?<q>|&hellip;</q>|g; # check for wrong <q> at end
+#    $p =~ s|&hellip; ?<q>|&hellip;</q>|g; # check for wrong <q> at end
 
-    $p =~ s|\(</q>|(<q>|g; # some <quote> errors
-    $p =~ s|<q>\(<q>|<q>(</q>|g; # some <quote> errors
-    $p =~ s|([.,])<q>|$1<q>|g;  # fix some more quotes
+#    $p =~ s|\(</q>|(<q>|g; # some <quote> errors
+#    $p =~ s|<q>\(<q>|<q>(</q>|g; # some <quote> errors
+#    $p =~ s|([.,])<q>|$1<q>|g;  # fix some more quotes
 
     # These all happen in <figure></figure> sections.
     $p =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
-    $p =~ s|<q></emph>|</q></emph>|g; # incorrect closing quotes
+#    $p =~ s|<q></emph>|</q></emph>|g; # incorrect closing quotes
 
     $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
-    $p =~ s|<emph></q>|</emph></q>|g; # silly closing tags
-    $p =~ s|<emph></p>|</emph></p>|g; # silly closing tags
+#    $p =~ s|<emph></q>|</emph></q>|g; # silly closing tags
+#    $p =~ s|<emph></p>|</emph></p>|g; # silly closing tags
 
 
 #### Maybe need to create a funtion() for these word lists
 #### Even perhaps applying them as negatives when marking up <q> tags in original function.
-    $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
-    $p =~ s|<q>er|\'er|g;
-    $p =~ s|<q>bout |\'bout |g;
-    $p =~ s| goin<q>| goin\'|g;
-    $p =~ s| <q>cause| \'cause|g;
-    $p =~ s| <q>ticed| \'ticed|g;
-    $p =~ s| <q>mediately| \'mediately|g;
-    $p =~ s| <q>spectable| \'spectable|g;
-    $p =~ s|<q>(un[\.,;:!]) |\'$1 |g;
-    $p =~ s|<q>a</q>|\'a\'|g;
+#    $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
+#    $p =~ s|<q>er|\'er|g;
+#    $p =~ s|<q>bout |\'bout |g;
+#    $p =~ s| goin<q>| goin\'|g;
+#    $p =~ s| <q>cause| \'cause|g;
+#    $p =~ s| <q>ticed| \'ticed|g;
+#    $p =~ s| <q>mediately| \'mediately|g;
+#    $p =~ s| <q>spectable| \'spectable|g;
+#    $p =~ s|<q>(un[\.,;:!]) |\'$1 |g;
+#    $p =~ s|<q>a</q>|\'a\'|g;
     
-    $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
-    $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
-    $p =~ s|<emph>([\.,;:])\'|</emph>$1</q>|g; # Some missed single quotes?
-    $p =~ s|([\.,;:!])\' |$1</q> |g; # end of sentence missed quotes
-    $p =~ s|\'([\.,;:!]) |</q>$1 |g; # end of sentence missed quotes
+#    $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
+#    $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
+#    $p =~ s|<emph>([\.,;:])\'|</emph>$1</q>|g; # Some missed single quotes?
+#    $p =~ s|([\.,;:!])\' |$1</q> |g; # end of sentence missed quotes
+#    $p =~ s|\'([\.,;:!]) |</q>$1 |g; # end of sentence missed quotes
     
     ### Can we do these within the quote detection routines?
 
@@ -589,15 +589,13 @@ sub do_fixes {
 
   # do some simple FIXME replacements. If it comes directly after a <p> tag 
   # then we should be okay auto replacing. Same with </p> tags.
-  $fix =~ s|^(_?)<fixme>[\"\']</fixme>|$1<q>|g;
-  $fix =~ s|<fixme>[\"\']</fixme>(&[mnq]dash;)|<q>$1|g; # When followed by &mdash;, etc
-  $fix =~ s| _<fixme>[\"\']</fixme>| _<q>|g; # When preceeded by _
-  $fix =~ s|\n<fixme>[\"\']</fixme>|\n<q>|g;
-  $fix =~ s|<fixme>[\"\']</fixme>|</q>|g;
+#  $fix =~ s|^(_?)<fixme>[\"\']</fixme>|$1<q>|g;
+#  $fix =~ s|<fixme>[\"\']</fixme>(&[mnq]dash;)|<q>$1|g; # When followed by &mdash;, etc
+#  $fix =~ s| _<fixme>[\"\']</fixme>| _<q>|g; # When preceeded by _
+#  $fix =~ s|\n<fixme>[\"\']</fixme>|\n<q>|g;
+#  $fix =~ s|<fixme>[\"\']</fixme>|</q>|g;
 
-  $fix =~ s|<fixme>\"</fixme>|PIGGGYYYY|g;
-
-  $fix =~ s| </q>|<q>|g; # Tidy up </q> tags with space before.
+   $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
 
   return $fix;
 
@@ -1613,7 +1611,8 @@ sub guess_quoting_convention {
 	
 	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 opening double quote
 	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
-	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
+#	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
+	my $count_27 = '';
 	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
 	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
 	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
