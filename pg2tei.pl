@@ -306,56 +306,13 @@ sub output_para {
     #Opening and closing quotes?
     $p =~ s|</quote>\r\n\r\n<quote>|\r\n\r\n|g;
 
-    #This one goes before the quote fixes below
-#    $p =~ s|dash;</q>|dash;<q>|g;  # Sometimes this wil be good, sometimes not -- decide which happens more
-#    $p =~ s|dash;<q></q></p>|dash;</q></q></p>|g; # More double </q> tag errors
-
-    # There's still a few botches....so fix them.
-    $p =~ s|<p></p>||g; # Tidy up empty <p></p> tags.
-#    $p =~ s|<q></p>|</q></p>|g; # Tidy up </q> tags
-#    $p =~ s|</q>\.</q>|\.</q>|g;
-#    $p =~ s|<p>\'|<p><q>|g;
-
-
-#### Check that these hellip with period (&hellip;.) have been  properly fixed
-#    $p =~ s|&hellip; ?\.|&hellip;|g; # Fix '&hellip; .'
+    $p =~ s|&hellip; ?\.|&hellip;|g; # Fix '&hellip; .'
     $p =~ s|&hellip; ?([\!\?])|&hellip;$1|g; # Fix '&hellip; ! or ?'
-#    $p =~ s|&hellip; ?<q>|&hellip;</q>|g; # check for wrong <q> at end
 
-#    $p =~ s|\(</q>|(<q>|g; # some <quote> errors
-#    $p =~ s|<q>\(<q>|<q>(</q>|g; # some <quote> errors
-#    $p =~ s|([.,])<q>|$1<q>|g;  # fix some more quotes
-
-    # These all happen in <figure></figure> sections.
     $p =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
 #    $p =~ s|<q></emph>|</q></emph>|g; # incorrect closing quotes
 
     $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
-#    $p =~ s|<emph></q>|</emph></q>|g; # silly closing tags
-#    $p =~ s|<emph></p>|</emph></p>|g; # silly closing tags
-
-
-#### Maybe need to create a funtion() for these word lists
-#### Even perhaps applying them as negatives when marking up <q> tags in original function.
-#    $p =~ s|<q>em|\'em|g; # quote mistakes on old style london talking; <q>em should be 'em
-#    $p =~ s|<q>er|\'er|g;
-#    $p =~ s|<q>bout |\'bout |g;
-#    $p =~ s| goin<q>| goin\'|g;
-#    $p =~ s| <q>cause| \'cause|g;
-#    $p =~ s| <q>ticed| \'ticed|g;
-#    $p =~ s| <q>mediately| \'mediately|g;
-#    $p =~ s| <q>spectable| \'spectable|g;
-#    $p =~ s|<q>(un[\.,;:!]) |\'$1 |g;
-#    $p =~ s|<q>a</q>|\'a\'|g;
-    
-#    $p =~ s|\'<emph>|<q><emph>|g; # Some missed single quotes?
-#    $p =~ s|<emph>\'|</emph></q>|g; # Some missed single quotes?
-#    $p =~ s|<emph>([\.,;:])\'|</emph>$1</q>|g; # Some missed single quotes?
-#    $p =~ s|([\.,;:!])\' |$1</q> |g; # end of sentence missed quotes
-#    $p =~ s|\'([\.,;:!]) |</q>$1 |g; # end of sentence missed quotes
-    
-    ### Can we do these within the quote detection routines?
-
 
     $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
   
@@ -425,13 +382,13 @@ sub output_head {
 # we will get some quotes wrong
 
 sub process_quotes_2 {
-    my $c = shift;
+  my $c = shift;
 
-    if ($c =~ m/$quotes2/) {
-	while ($c =~ s|$quotes2|"<q>" . process_quotes_1 ($1) . "</q>"|es) {};
-    }
+  if ($c =~ m/$quotes2/) {
+    while ($c =~ s|$quotes2|"<q>" . process_quotes_1 ($1) . "</q>"|es) {};
+  }
 
-    return $c;
+  return $c;
 }
 
 sub process_quotes_1 {
@@ -485,15 +442,7 @@ sub do_fixes {
   # tries to fix various quotes
   my $fix = shift;
 
-  # do some simple FIXME replacements. If it comes directly after a <p> tag 
-  # then we should be okay auto replacing. Same with </p> tags.
-#  $fix =~ s|^(_?)<fixme>[\"\']</fixme>|$1<q>|g;
-#  $fix =~ s|<fixme>[\"\']</fixme>(&[mnq]dash;)|<q>$1|g; # When followed by &mdash;, etc
-#  $fix =~ s| _<fixme>[\"\']</fixme>| _<q>|g; # When preceeded by _
-#  $fix =~ s|\n<fixme>[\"\']</fixme>|\n<q>|g;
-#  $fix =~ s|<fixme>[\"\']</fixme>|</q>|g;
-
-   $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
+  $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
 
   return $fix;
 }
@@ -1502,48 +1451,56 @@ sub guess_quoting_convention {
   	my $body = shift;
   	$body = $$body;
 	
-	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 opening double quote
+#	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
 	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
 #	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
-	my $count_27 = 0; # We don't want to check for single quiote so set this count to 0
 	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
 	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
 	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
 	my $count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
 
-	my $single_quotes = $count_27 + $count_60 + $count_b4;
-	my $double_quotes = $count_22 + $count_84;
+#	my $single_quotes = $count_27 + $count_60 + $count_b4;
+	my $single_quotes = $count_60 + $count_b4;
+#	my $double_quotes = $count_22 + $count_84;
+	my $double_quotes = $count_22;
 	my $guillemets    = $count_ab + $count_bb;
 
 	my $french_quotes   = ($guillemets > $single_quotes + $double_quotes);
 	my $american_quotes = ($double_quotes > $single_quotes);
 
 	if ($french_quotes) {
-	    $openquote1 = "\xab";
+	    $openquote1  = "\xab";
 	    $closequote1 = "\xbb";
-	    $openquote2 = "<";
+	    $openquote2  = "<";
 	    $closequote2 = ">";
 	} elsif ($american_quotes) {
-	    $openquote1 = $count_84 ? "\x84" : "\x22";
+#	    $openquote1 = $count_84 ? "\x84" : "\x22";
+	    $openquote1  = "\x22";
 	    $closequote1 = "\x22";
-	    $openquote2 = $count_60 ? "\x60" : "\x27";
-	    $closequote2 = "\x27";
-	} else { # british quotes
-	    $openquote1 = $count_60 ? "\x60" : "\x27";
-	    $closequote1 = "\x27";
-	    $openquote2 = $count_84 ? "\x84" : "\x22";
-	    $closequote2 = "\x22";
+#	    $openquote2  = $count_60 ? "\x60" : "\x27";
+	    $openquote2  = "\x60";
+#	    $closequote2 = "\x27";
+	    $closequote2 = "\xb4";
+#	} else { # british quotes
+#	    $openquote1  = $count_60 ? "\x60" : "\x27";
+#	    $closequote1 = "\x27";
+#	    $openquote2  = $count_84 ? "\x84" : "\x22";
+#	    $closequote2 = "\x22";
 	}
-	# print ("guessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
+	print ("guessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
     }
     # how to catch quoted material
     # on nesting level1 and level2
     # pre is for paragraphs without closing quote
     # \B matches non-(word boundary), ^ and $ are considered non-words
 
-    $quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
-    $quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
-    $quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
+# Marcello only checked quote when followed by limited characters :alpha: _ $ etc.
+#    $quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
+#    $quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
+#    $quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
+    $quotes1    = qr/\B$openquote1(.*?)$closequote1\B/s;
+    $quotes1pre = qr/\B$openquote1(.*?)$/s;
+    $quotes2    = qr/\B$openquote2(.*?)$closequote2\B/s;
 }
 
 sub study_paragraph {
