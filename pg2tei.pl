@@ -227,8 +227,13 @@ sub output_line {
     $line = process_quotes_1 ($line);
     $line = fix_unbalanced_quotes_line ($line);
     $line = post_process ($line);
+    
+    if ( $line =~ m/\[(\d+|\*)\]/ ) { # Check for footnotes
+      print "<p>$line</p>\n";
+    } else {
+      print "  <l$line_indent>$line</l>\n";
+    }
 
-    print "  <l$line_indent>$line</l>\n";
   }
   return '';
 }
@@ -242,6 +247,7 @@ sub output_para {
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
   $p =~ s|<(\d+)>|[$1]|g; # Change <1> footnotes to [1]
   $p =~ s|{(\d+)}|[$1]|g; # Change {1} footnotes to [1]
+  $p =~ s|\*|[\*]|g; # Change * footnotes to [*]
 
 
   if ($is_verse || is_para_verse($o)) {
