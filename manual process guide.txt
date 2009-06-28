@@ -65,6 +65,11 @@ Footnotes
     <divGen type="fig"/>
   </div>
 
+  <figure url="images/">
+    <head></head>
+    <figDesc>Illustration</figDesc>
+  </figure>
+
 <milestone unit="tb" />
 
 <table>
@@ -77,7 +82,12 @@ Footnotes
 
 ## 'text-align' on a TABLE is applied in XSL to the surrounding <div>
 
+<list type="ordered">
+  <head></head>
 
+  <label></label>
+  <item></item>
+</list>
 
 --
 

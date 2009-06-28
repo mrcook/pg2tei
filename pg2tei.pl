@@ -355,8 +355,9 @@ sub output_head {
 
   $head =~ s/$paragraph1//;
 
-#    my $head_tmp = "";
-  my $head_tmp = post_process ($1);
+  my $head_tmp = '';
+  $head_tmp = process_quotes_1 ($1);
+  $head_tmp = post_process ($head_tmp);
 
   $head_tmp =~ s/^\s//gm; # Strip out leading whitespace
   
@@ -930,9 +931,7 @@ print <<HERE;
         <p></p>
       </normalization>
       <quotation marks="all" form="std">
-        <p>All double quotation marks rendered with q tags, most single quotation 
-           marks rendered with q tag, although some may have been left as ' [apostrophe].
-        </p>
+        <p>All double quotation marks rendered with q tags.</p>
       </quotation>
       <hyphenation eol="none">
         <p>Hyphenated words that appear at the end of the line have been reformed.</p>
@@ -1493,7 +1492,7 @@ sub guess_quoting_convention {
 #	    $openquote2  = $count_84 ? "\x84" : "\x22";
 #	    $closequote2 = "\x22";
 	}
-	print ("guessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
+	print ("\nguessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
     }
     # how to catch quoted material
     # on nesting level1 and level2
