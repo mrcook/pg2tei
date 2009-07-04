@@ -8,7 +8,7 @@
 # @created    May 2007
 # @version    $Id$
 #
-# Based on The Gnutenberg Press - PGText to TEI converter by 
+# Based on The Gnutenberg Press - PGText to TEI converter by
 # Marcello Perathoner (Copyright 2003).
 #
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
@@ -57,7 +57,7 @@ my $dcurdate      = strftime ("%Y-%m-%d", localtime ());
 my $current_date  = strftime ("%d %B %Y", localtime ());
 
 
-my  $producer = "*** unknown"; 
+my  $producer = "*** unknown";
 my  $pemail   = "email: ***";
 
 my  $title          = "";
@@ -90,8 +90,8 @@ my  $series_no    = "***";
 my  $prod_first_by      = "unknown";
 my  $produced_by        = "unknown";
 my  $produced_update_by = "unknown";
-my  $prod_by_stmt       = "First e-text version prepared by"; 
-my  $prod_update_stmt   = "This e-text edition prepared by"; 
+my  $prod_by_stmt       = "First e-text version prepared by";
+my  $prod_update_stmt   = "This e-text edition prepared by";
 
 my  $transciber_notes  = "";
 my  $transciber_errors = "";
@@ -103,18 +103,18 @@ my  $is_book     = 0;
 my  $is_book_div = 0;
 
 my %languages = (
-  "de"	   => "German",     
-  "el"	   => "Greek",      
-  "en-gb"  => "British",    
-  "en-us"  => "American",   
-  "en"	   => "English",    
-  "es"	   => "Spanish",    
-  "fr"	   => "French",     
-  "it"	   => "Italian",    
-  "la"	   => "Latin",      
-  "nl"	   => "Dutch",      
-  "pl"	   => "Polish",     
-  "pt"     => "Portuguese", 
+  "de"	   => "German",
+  "el"	   => "Greek",
+  "en-gb"  => "British",
+  "en-us"  => "American",
+  "en"	   => "English",
+  "es"	   => "Spanish",
+  "fr"	   => "French",
+  "it"	   => "Italian",
+  "la"	   => "Latin",
+  "nl"	   => "Dutch",
+  "pl"	   => "Polish",
+  "pt"     => "Portuguese",
 );
 
 my $override_quotes = '';
@@ -144,7 +144,7 @@ $locale = setlocale (LC_CTYPE);
 #    epigraph1       <epigraph>
 #    paragraph1      <p>
 # chapter1 gets applied on body. The result of the match(es)
-# gets fed first into head1 and then into epigraph1 and paragraph1, 
+# gets fed first into head1 and then into epigraph1 and paragraph1,
 # the result of head1 gets fed into paragraph1
 
 my $tmp;
@@ -165,7 +165,7 @@ undef $/;  # slurp it all, mem is cheap
 while (<>) {
     s|\r||g;         # cure M$-DOS files
     s|\t| |g;        # replace tabs
-    s|[ \t]+\n|\n|g; # remove spaces at end of line 
+    s|[ \t]+\n|\n|g; # remove spaces at end of line
 
     # Do a quick check on the language to see if it is British English
     if (m/(colour|flavour|favour|savour|honour|defence|ageing|jewellery)/i) {
@@ -196,8 +196,8 @@ while (<>) {
   }
 
 
-# process body    
-  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) { 
+# process body
+  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) {
     output_body ($front_matter_block .= $_);
   }
 
@@ -227,7 +227,7 @@ sub output_line {
     $line = process_quotes_1 ($line);
     $line = fix_unbalanced_quotes_line ($line);
     $line = post_process ($line);
-    
+
     if ( $line =~ m/\[(\d+|\*)\]/ ) { # Check for footnotes
       print "<p>$line</p>\n";
     } else {
@@ -259,7 +259,7 @@ sub output_para {
         output_line ($1, $o->{'min_indent'});
 	    }
     }
-    print " </lg>\n</quote>\n\n";   
+    print " </lg>\n</quote>\n\n";
   } elsif ($p =~ m|^ {3,}(.*?)|g) { # Not all <l> were captured...hack it!!
     #$p = process_stage_1 ($p);
     if ($p =~ m|^( *\*){5,}|g) {        # stop these getting captured)
@@ -271,7 +271,7 @@ sub output_para {
           output_line ($1, $o->{'min_indent'});
   	    }
     	}
-      print " </lg>\n</quote>\n\n";   
+      print " </lg>\n</quote>\n\n";
     }
   } else {
     # paragraph is prose
@@ -301,7 +301,7 @@ sub output_para {
     # Fixed stupid [l] mistake at begining of this sub().
 
     if ($p =~ s/(?=\s?)(\[(\d+|\*|\w)\])(?=\s?)/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
-      $footnote_exists = 1;  
+      $footnote_exists = 1;
     }
 
 #### ------------ ---------------------- ------------ ####
@@ -321,8 +321,8 @@ sub output_para {
     $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
 
     $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
-  
-    # Change 'Named Entity' characters to 'Numbered Entity' codes. 
+
+    # Change 'Named Entity' characters to 'Numbered Entity' codes.
     # For use with TEI DTD and XSLT.
     $p =~ s|&nbsp;|&#160;|g;
     $p =~ s|&ndash;|&#8211;|g;
@@ -360,7 +360,7 @@ sub output_head {
   $head_tmp = post_process ($head_tmp);
 
   $head_tmp =~ s/^\s//gm; # Strip out leading whitespace
-  
+
   if ($head_tmp =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
   } else {
@@ -369,9 +369,9 @@ sub output_head {
 
   while ($head =~ s/$paragraph1//) {
     my $subhead = post_process ($1);
-  
+
     $subhead =~ s|^\"(.*?)\"$|<q>$1</q>|; # Rough fix of Quotes
-    
+
     $subhead =~ s/^\s//gm; # Strip out leading whitespace
 
     if ($subhead =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
@@ -385,7 +385,7 @@ sub output_head {
 }
 
 
-# quotes involve pretty much guesswork and probably 
+# quotes involve pretty much guesswork and probably
 # we will get some quotes wrong
 
 sub process_quotes_2 {
@@ -457,7 +457,7 @@ sub do_fixes {
 sub output_epigraph {
   my $epigraph = shift;
   my $citation = shift;
-    
+
   print "<epigraph>\n\n";
 
   $epigraph = process_quotes_1 ($epigraph);
@@ -468,11 +468,11 @@ sub output_epigraph {
   $epigraph =~ s/\s+/ /g;
   $epigraph = "<p>$epigraph</p>";
 
-  print wrap ("", "", $epigraph);  
+  print wrap ("", "", $epigraph);
   print "\n\n";
-    
+
   $citation =~ s/&nbsp;&mdash;/&qdash;/g;
-    
+
   print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
   print "</epigraph>\n\n\n";
@@ -483,7 +483,7 @@ sub output_chapter {
     my $chapter = shift;
 
     my $part_number = "";
-    $chapter .= "\n" x 10; 
+    $chapter .= "\n" x 10;
 
 #   Grab the Part/Book number
     if ($chapter =~ m|^(BOOK\|PART\|VOLUME) +(.+)\.? *(.*?)\n|i) {
@@ -532,8 +532,8 @@ sub output_body {
   # print ("AVG: $avg_line_length, $max_line_length\n");
 
   $body .= "\n{$cnt_chapter_sep}\n";
-  
-  while ($body =~ s|$chapter1|output_chapter ($1)|es) {}; # egs doesn't work in 5.6.1  
+
+  while ($body =~ s|$chapter1|output_chapter ($1)|es) {}; # egs doesn't work in 5.6.1
 
   return '';
 }
@@ -549,7 +549,7 @@ sub output_header () {
   if ($h =~ m/^(.*?)\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/gis) {
     $front_matter_block = $3;
   } elsif ($h =~ m/^(.*?)\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/gis) {
-    $front_matter_block = $2;   
+    $front_matter_block = $2;
   }
 
   for ($h) {
@@ -597,7 +597,7 @@ sub output_header () {
     }
 
     # The Release Date
-    if (/(Official )?Release Date: +(.*?) +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\]/i)  { 
+    if (/(Official )?Release Date: +(.*?) +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\]/i)  {
       if ($reldate eq '***') { $reldate = $2; }
       if ($etext eq '') { $etext = $3; }
       if ($etext_enc eq '') { $etext_enc = $3; }
@@ -606,13 +606,13 @@ sub output_header () {
       if ($etext eq '') { $etext = $2; }
       if ($etext_enc eq '') { $etext_enc = $2; }
     }
-    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) { 
+    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
       $updateposted = $4;
     }
 
     if (/Character set encoding: *(.*?)\n/) { $charset = $1; }
 
-    # If not set try to grab title, author, etc. 
+    # If not set try to grab title, author, etc.
     # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
     if (/\**The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
       if ($title eq '')  { $title = $1;  }
@@ -629,15 +629,23 @@ sub output_header () {
     }
     # Sometimes Author get assigned wierd info...fix it
     if ($author =~ m/Project Gutenberg/i) { $author = "Anon."; }
-        
-    if (/\#([0-9]+) in our series by/) { 
+
+    if (/\#([0-9]+) in our series by/) {
       $series_no = $1;
       $series = "#$series_no in our series by $author";
-    } elsif (/\#([0-9]+) in our (.*?) series/) { 
+    } elsif (/\#(\d+) in our (.*?) series/) {
       $series_no = $1;
-      $series = "#$series_no in our series by $author";
+      $series = $2;
     }
-    if ($series_no eq '***') { $series_no = ""; $series = "No PG series"; }
+    # If an actual "series" entry is given, often manually added on pg or custom txt files
+    if ($series_no eq '***') {
+      if (/Series: ?(.*)/) {
+        $series = $1;
+      }
+      if (/Series #: ?(\d+)/) {
+        $series_no = $1;
+      }
+    }
 
     if (/This etext was produced by (.*?)\.?\n/) {
       $produced_by = $1;
@@ -686,7 +694,7 @@ sub output_header () {
   }
 
 #  if (/This file should be named (\w{4,5})(\d+\w?)\.txt/) {
-#      $filename = $1; 
+#      $filename = $1;
 #      if ($edition eq '') { $edition = $2; }
 #  }
 
@@ -726,9 +734,9 @@ sub output_header () {
     if (s/[\n ]*(This )?updated ([e-]*Text|edition) ?(was )?(Produced|Prepared) by +(.+)\n//i) {
       $produced_update_by = $5;
     }
-  
+
     # This DOESN'T go anywhere!!! Shall I do something with it?
-    if ($produced_by eq 'unknown') { 
+    if ($produced_by eq 'unknown') {
       if (m/proof(ed|read) by:?\s+(.+)\n/i) { $produced_by = $2; }
     }
 
@@ -746,7 +754,7 @@ sub output_header () {
 
     if ($prod_first_by eq "unknown") {
       $prod_first_by = "Project Gutenberg";
-    }  
+    }
     $prod_first_by =~ s/\.$//;
 
     # Get the published date
@@ -758,7 +766,7 @@ sub output_header () {
       $publishdate = $2;
     }
     # Get the published place
-    if (m/[\n_ ]*((New York|London|Cambridge|Boston).*?)_?\n/i) {
+    if (m/^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
       $publishedplace = change_case($1);
     }
     # Get the publisher
@@ -800,7 +808,7 @@ sub output_header () {
 
   } # END OF $front_matter_block() PROCESSING
 
-  $front_matter_block .= "\n\n"; # Some padding 
+  $front_matter_block .= "\n\n"; # Some padding
 
   # Create a UUID
   my $uuid =  uuid_gen();
@@ -1129,7 +1137,7 @@ sub post_process {
 #substitute °, @ OR #o (lowercase O) for &deg;
   $c =~ s|(°\|@)|&deg;|g;
   $c =~ s|(\d{1,3})o|$1&deg;|g;
-    
+
 
 ############################################
 # text highlighting
@@ -1156,16 +1164,16 @@ sub post_process {
 # typografical entities
 #
 
-# substitute endash 
+# substitute endash
 #  $c =~ s|([0-9])-([0-9])|$1&ndash;$2|g;
 
   # HIPHENATED WORDS
   $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
-  # ...for some reason, on single characters d-d-d the second - doesn't 
+  # ...for some reason, on single characters d-d-d the second - doesn't
   # get caught so need to run this again...HOW TO FIX???
   $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
 
-# move dashes 
+# move dashes
   $c =~ s|&mdash; </q>([^ ])|&mdash;</q> $1|g;
   $c =~ s|&mdash; </q>|&mdash;</q>|g;
   $c =~ s|([^ ])<q> &mdash;|$1 <q>&mdash;|g;
@@ -1221,10 +1229,10 @@ sub post_process {
 
     # [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
-  
+
     # substitute * * * * * for <milestone>
   $c =~ s|^( *\*){5,}|<milestone unit="tb" \/>|g;
-  
+
     # ILLUSTRATIONS ...
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
     my $tmp = change_case($1);
@@ -1232,7 +1240,7 @@ sub post_process {
   }
 # Original formula....keep!
 #    $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
-    
+
   $c =~ s| <head></head>\n||g; # Remove empty <head>'s
   $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
 
@@ -1240,7 +1248,7 @@ sub post_process {
   $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
 
-  # Change 'Named Entity' characters to 'Numbered Entity' codes. 
+  # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
   $c =~ s|&nbsp;|&#160;|g;
   $c =~ s|&ndash;|&#8211;|g;
@@ -1358,7 +1366,7 @@ sub encode_month {
     if ($value eq $wmonth) {
     return $key;
     }
-  } 
+  }
   return 0;
 }
 
@@ -1455,7 +1463,7 @@ sub guess_quoting_convention {
   } else {
   	my $body = shift;
   	$body = $$body;
-	
+
 #	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
 	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
 #	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
@@ -1536,13 +1544,13 @@ sub study_paragraph {
 
     # count indented lines
     # min and max indentation
-    m/^(\s*)/; 
-    my $indent = length ($1);  
+    m/^(\s*)/;
+    my $indent = length ($1);
     $max_indent = $indent if ($indent > $max_indent);
     $min_indent = $indent if ($indent < $min_indent);
     $cnt_indent++ if ($indent);
     $sum_indent += $len;
-	
+
     # count lines beginning with capital
     $cnt_caps++ if (m/^\s*[[:upper:]]/);
 
@@ -1635,9 +1643,9 @@ sub is_para_justified {
 sub compute_line_length {
   # computes average and max line length of this text
   my $body = shift;
-    
+
   my @lines = split (/\n/, $$body);
-  my $lines   = 0; 
+  my $lines   = 0;
   my $sum_len = 0;
   my $max_len = 0;
   for (@lines) {
@@ -1658,7 +1666,7 @@ sub change_case {
   $case =~ s/(.*?)/\l$1/g;
   $case =~ s/(\b)([a-z])/$1\u$2/g;
   $case =~ s/and/and/gi; # Replace 'And' with 'and'
-  $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g; 
+  $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g;
   $case =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
   $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's
 
@@ -1694,8 +1702,8 @@ PGText to TEI converter
 usage: gut2tei.pl [options] pgtextfile > teifile
 
 --quotes="[()]"    quoting convention used (default: automatic detection)
-                   [] = outer quotes, () = inner quotes 
-		   eg. --quotes="\\\"''\\\"" 
+                   [] = outer quotes, () = inner quotes
+		   eg. --quotes="\\\"''\\\""
 --chapter=n        empty lines before chapter        (default: $cnt_chapter_sep)
 --head=n           empty lines after chapter heading (default: $cnt_head_sep)
 --paragraph=n      empty lines before paragraph      (default: $cnt_paragraph_sep)
