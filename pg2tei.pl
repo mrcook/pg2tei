@@ -22,9 +22,11 @@ use POSIX qw(locale_h);
 use Text::Wrap;
 use Data::UUID;
 
-use vars '$front_matter_block';
+use utf8;
+#use open IN => ":encoding(utf8)", OUT => ":utf8";
+use open qw/:std :encoding(utf8)/;
 
-#use utf8;
+use vars '$front_matter_block';
 
 use locale;
 my $locale = "en";
@@ -84,8 +86,8 @@ my  $filename     = "";
 my  $etext        = "";
 my  $etext_enc    = "";
 my  $edition      = "";
-my  $series       = "";
-my  $series_no    = "***";
+my  $series       = "****";
+my  $series_no    = "**";
 
 my  $prod_first_by      = "unknown";
 my  $produced_by        = "unknown";
@@ -93,8 +95,8 @@ my  $produced_update_by = "unknown";
 my  $prod_by_stmt       = "First e-text version prepared by";
 my  $prod_update_stmt   = "This e-text edition prepared by";
 
-my  $transciber_notes  = "";
-my  $transciber_errors = "";
+my  $transcriber_notes  = "";
+my  $transcriber_errors = "";
 my  $redactors_notes   = "";
 
 my  $footnote_exists   = 0;
@@ -158,7 +160,7 @@ my $head1      = qr/$tmp/s;
 $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
-my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
+#my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -198,7 +200,7 @@ while (<>) {
 
 # process body
   if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) {
-    output_body ($front_matter_block .= $_);
+#    output_body ($front_matter_block .= $_);
   }
 
 # output tei footer
@@ -220,7 +222,7 @@ sub output_line {
     my $line_indent = '';
     if ($indent > 6) {
       $line_indent = ' rend="margin-left(6)"';
-    } elsif ($indent > 0) {
+    } elsif ($indent > 1) {
       $line_indent = ' rend="margin-left(' . $indent . ')"';
     }
 
@@ -298,7 +300,7 @@ sub output_para {
     }
 
     # FOOTNOTES: Semi-auto process on footnotes.
-    # Fixed stupid [l] mistake at begining of this sub().
+    # (I have fixed stupid [l] mistake at begining of this sub().)
 
     if ($p =~ s/(?=\s?)(\[(\d+|\*|\w)\])(?=\s?)/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
       $footnote_exists = 1;
@@ -485,20 +487,18 @@ sub output_chapter {
     my $part_number = "";
     $chapter .= "\n" x 10;
 
-#   Grab the Part/Book number
-    if ($chapter =~ m|^(BOOK\|PART\|VOLUME) +(.+)\.? *(.*?)\n|i) {
-      $part_number = encode_numbers($2);
-    }
-    if ($part_number eq "") { $part_number = "xx"; }
-
-    if ($chapter =~ m|^(BOOK\|PART\|VOLUME) (ONE\|1[^\d]\|I[^IV]\|.*?first).*?|i) {
+    if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
       print "<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
       $is_book = 1;
       $is_book_div = 1;
 #     print "BOOK-PLOOP-OPENING-DIV";
-    } elsif ($chapter =~ m|^(BOOK\|PART\|VOLUME).+\n|i) {
+    } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(.*?)([\. -]+(.*?)\n|\n)/i) {
       print "</div>\n\n";
       print "</div>\n\n\n";
+      #   Grab the Part/Book number
+      $part_number = encode_numbers($2);
+      if ($part_number eq "") { $part_number = "xx"; }
+      
       print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
       $is_book = 1;
       $is_book_div = 1;
@@ -514,7 +514,7 @@ sub output_chapter {
 
     $chapter =~ s|$head1|output_head ($1)|es;
 
-    while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
+#    while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
 
 #    $chapter .= "\n\n"; # Too much spacing from Marcello
     while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
@@ -638,7 +638,7 @@ sub output_header () {
       $series = $2;
     }
     # If an actual "series" entry is given, often manually added on pg or custom txt files
-    if ($series_no eq '***') {
+    if ($series_no eq '**') {
       if (/Series: ?(.*)/) {
         $series = $1;
       }
@@ -777,9 +777,9 @@ sub output_header () {
 
     # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
     if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
-      $transciber_notes = $1;
+      $transcriber_notes = $1;
     } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
-      $transciber_notes = $1;
+      $transcriber_notes = $1;
     }
 
     # REDACTOR'S NOTES
@@ -790,10 +790,10 @@ sub output_header () {
     }
 
     # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
-    if (s/ *\[Notes?: (.*?)\]//is) {
-      $transciber_notes .= $1;
-    } elsif (s/Notes?: (.*?)\n\n\n//is) {
-      $transciber_notes = $1;
+    if (s/^ *\[Notes?: (.*?)\]//is) {
+      $transcriber_notes .= $1;
+    } elsif (s/^Notes?: (.*?)\n\n\n//is) {
+      $transcriber_notes = $1;
     }
 
     # ILLUSTRATED BY ...
@@ -880,7 +880,7 @@ print <<HERE;
     </seriesStmt>
     <notesStmt>
       <note resp="redactor">$redactors_notes</note>
-      <note type="transcriber">$transciber_notes</note>
+      <note type="transcriber">$transcriber_notes</note>
     </notesStmt>
     <sourceDesc>
       <biblStruct>
@@ -927,10 +927,10 @@ print <<HERE;
     </samplingDecl>
     <editorialDecl>
 HERE
-if ($transciber_errors ne '') {
+if ($transcriber_errors ne '') {
 print <<HERE;
       <correction status="high" method="silent">
-        <p>$transciber_errors</p>
+        <p>$transcriber_errors</p>
       </correction>
 HERE
 }
@@ -1110,6 +1110,10 @@ HERE
 sub post_process {
   my $c = shift;
 
+# Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
+  $c =~ s|“|<q>|g;
+  $c =~ s|”|</q>|g;
+
 # substitute &
   $c =~ s|&|&amp;|g;
 
@@ -1121,14 +1125,15 @@ sub post_process {
   $c =~ s|\+-+\+|\n|g;
   $c =~ s/ *\|(.+)\| *\n/$1\n/g;
 
-  # substitute ___ 10+ to <pb>
-  $c =~ s|_{10,}|<pb>|g;
+  # substitute ___ 10+ to <pb/>
+  $c =~ s|_{10,}|<pb/>|g;
   # substitute ------ 15+ for <pb>
-  $c =~ s|-{15,}|<pb>|g;
+  $c =~ s|-{15,}|<pb/>|g;
 
   # substitute ----, --, -
   $c =~ s|----|&qdash;|g;
   $c =~ s|--|&mdash;|g;
+  $c =~ s|—|&mdash;|g;
 
 #substitute hellip for ...
   $c =~ s| *\.{3,}|&hellip;|g;
@@ -1386,7 +1391,10 @@ sub encode_numbers {
      9     => "NINE",
     10     => "TEN",
     11     => "ELEVEN",
-    12     => "TWELVE"
+    12     => "TWELVE",
+    13     => "THIRTEEN",
+    14     => "FOURTEEN",
+    15     => "FIFTHTEEN",
   );
   my %roman_numbers = (
      1     => "I",
@@ -1400,7 +1408,10 @@ sub encode_numbers {
      9     => "IX",
     10     => "X",
     11     => "XI",
-    12     => "XII"
+    12     => "XII",
+    13     => "XIII",
+    14     => "XIV",
+    15     => "XV",
   );
 
   while (my ($key, $value) = each(%numbers)) {
