@@ -24,7 +24,7 @@ use Data::UUID;
 
 use utf8;
 #use open IN => ":encoding(utf8)", OUT => ":utf8";
-use open qw/:std :encoding(utf8)/;
+#use open qw/:std :encoding(utf8)/;
 
 use vars '$front_matter_block';
 
@@ -84,7 +84,6 @@ my  $updateposted = "***";
 
 my  $filename     = "";
 my  $etext        = "";
-my  $etext_enc    = "";
 my  $edition      = "";
 my  $series       = "****";
 my  $series_no    = "**";
@@ -578,11 +577,16 @@ sub output_header () {
 
     # Figure out the posting dates
     # Try the easy route first
-    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-      $reldate = $1; $etext = $3; $etext_enc = $4;
+#    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
+    if (/(Official )?Release Date: +(.*?)( +\[[Ee](Book|Text) +\#(\d+)\])?\n/) {
+      $reldate = $2; $etext = $5;
+    } elsif (/\n+(.*?)\s+\[[Ee](Book|Text)\s+\#(\d+)\]/i) {
+      if ($reldate eq '***') { $reldate = $1; }
+      if ($etext eq '') { $etext = $2; }
     }
     if (/Posting Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-      $updateposted = $1; $etext = $3; $etext_enc = $4;
+      $updateposted = $1;
+      if ($etext eq '') { $etext = $3; }
     }
     # Still no Origianl Release Date? Try this;
     if (/Original Release Date: +(.*?)\n/i) {
@@ -596,16 +600,7 @@ sub output_header () {
       }
     }
 
-    # The Release Date
-    if (/(Official )?Release Date: +(.*?) +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\]/i)  {
-      if ($reldate eq '***') { $reldate = $2; }
-      if ($etext eq '') { $etext = $3; }
-      if ($etext_enc eq '') { $etext_enc = $3; }
-    } elsif (/\n+(.*?)\s+\[E(?:(?:Book)|(?:Text))\s+\#(\d+)\]/i) {
-      if ($reldate eq '***') { $reldate = $1; }
-      if ($etext eq '') { $etext = $2; }
-      if ($etext_enc eq '') { $etext_enc = $2; }
-    }
+    # Capture 'updated' dates
     if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
       $updateposted = $4;
     }
