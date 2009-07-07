@@ -177,11 +177,11 @@ while (<>) {
 # A simpler rule for certain books
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
 
- # This one Checks for a PREFACE and then checks for Chapters, etc. including "The First" type stuff
-  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I\n))(.*?)\n)/output_header($1)/egis) {
+ # This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
+  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I))(.*?)\n)/output_header($1)/egis) {
 
 # this one works - for the most part!!
-#  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I\n)(.*?)\n)/output_header ($1)/egis) {
+#  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I)(.*?)\n)/output_header ($1)/egis) {
 
   } else {
     print "**************************************\n";
@@ -248,7 +248,15 @@ sub output_para {
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
   $p =~ s|<(\d+)>|[$1]|g; # Change <1> footnotes to [1]
   $p =~ s|{(\d+)}|[$1]|g; # Change {1} footnotes to [1]
-  $p =~ s|\*|[\*]|g; # Change * footnotes to [*]
+
+  # substitute * * * * * for <milestone> BEFORE footnotes
+  # Replace <milestone> later, on line: ~1250
+  $p =~ s|^( *\*){5,}|<milestone>|g;
+  
+  ## Check for * footnotes and fix up
+  $p =~ s|\[\* |[Footnote: |g;          # If a footnote uses [* ...] then replace this
+  $p =~ s|\*|[*]|g;                     # Change * footnotes to [*]
+  $p =~ s|\[\[\*\]\]|[*]|g;             # Fix some double brackets [[*]]
 
 
   if ($is_verse || is_para_verse($o)) {
@@ -263,17 +271,13 @@ sub output_para {
     print " </lg>\n</quote>\n\n";
   } elsif ($p =~ m|^ {3,}(.*?)|g) { # Not all <l> were captured...hack it!!
     #$p = process_stage_1 ($p);
-    if ($p =~ m|^( *\*){5,}|g) {        # stop these getting captured)
-      print "<milestone unit=\"tb\" />\n\n";
-    } else {
-      print "<quote>\n <lg>\n";
-      while (length ($p)) {
-    	  if ($p =~ s/^(.*?)\s*\n//o) {
-          output_line ($1, $o->{'min_indent'});
-  	    }
-    	}
-      print " </lg>\n</quote>\n\n";
-    }
+    print "<quote>\n <lg>\n";
+    while (length ($p)) {
+  	  if ($p =~ s/^(.*?)\s*\n//o) {
+        output_line ($1, $o->{'min_indent'});
+	    }
+  	}
+    print " </lg>\n</quote>\n\n";
   } else {
     # paragraph is prose
     # join hyphenated words
@@ -301,7 +305,7 @@ sub output_para {
     # FOOTNOTES: Semi-auto process on footnotes.
     # (I have fixed stupid [l] mistake at begining of this sub().)
 
-    if ($p =~ s/(?=\s?)(\[(\d+|\*|\w)\])(?=\s?)/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
+    if ($p =~ s/\[(\d+|\*|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
       $footnote_exists = 1;
     }
 
@@ -1230,9 +1234,6 @@ sub post_process {
     # [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
 
-    # substitute * * * * * for <milestone>
-  $c =~ s|^( *\*){5,}|<milestone unit="tb" \/>|g;
-
     # ILLUSTRATIONS ...
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
     my $tmp = change_case($1);
@@ -1247,6 +1248,8 @@ sub post_process {
   $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
   $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
+  # substitute <milestone> to include the unit="tb" attribute.
+  $c =~ s|<milestone>|<milestone unit="tb" \/>|g;
 
   # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
@@ -1409,12 +1412,35 @@ sub encode_numbers {
     15     => "XV",
   );
 
+  my %ordinal_numbers = (
+     1     => "FIRST",
+     2     => "SECOND",
+     3     => "THIRD",
+     4     => "FOURTH",
+     5     => "FIFTH",
+     6     => "SIXTH",
+     7     => "SEVENTH",
+     8     => "EIGHTH",
+     9     => "NINTH",
+    10     => "TENTH",
+    11     => "ELEVENTH",
+    12     => "TWELFTH",
+    13     => "THIRTEENTH",
+    14     => "FOURTEENTH",
+    15     => "FIFTEENTH",
+  );
+
   while (my ($key, $value) = each(%numbers)) {
     if ($value eq $tmp_num) {
     return $key;
     }
   }
   while (my ($key, $value) = each(%roman_numbers)) {
+    if ($value eq $tmp_num) {
+    return $key;
+    }
+  }
+  while (my ($key, $value) = each(%ordinal_numbers)) {
     if ($value eq $tmp_num) {
     return $key;
     }
