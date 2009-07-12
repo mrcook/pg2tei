@@ -177,7 +177,7 @@ while (<>) {
 # A simpler rule for certain books
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
 
- # This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
+# This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
   if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I))(.*?)\n)/output_header($1)/egis) {
 
 # this one works - for the most part!!
@@ -331,7 +331,7 @@ sub output_para {
     # For use with TEI DTD and XSLT.
     $p =~ s|&nbsp;|&#160;|g;
     $p =~ s|&ndash;|&#8211;|g;
-    $p =~ s|&mdash;|&#8212;|g;
+    $p =~ s|&#8212;|&#8212;|g;
     $p =~ s|&qdash;|&#8213;|g;
     $p =~ s|&hellip;|&#8230;|g;
     $p =~ s|&deg;|&#176;|g;
@@ -476,7 +476,7 @@ sub output_epigraph {
   print wrap ("", "", $epigraph);
   print "\n\n";
 
-  $citation =~ s/&nbsp;&mdash;/&qdash;/g;
+  $citation =~ s/&nbsp;&#8212;/&qdash;/g;
 
   print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
@@ -547,7 +547,6 @@ sub output_header () {
   # <soCalled>standard headers</soCalled>
   my $h = shift;
 
-
   # Grab the front matter from this header for printing.
   if ($h =~ m/^(.*?)\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/gis) {
     $front_matter_block = $3;
@@ -578,16 +577,16 @@ sub output_header () {
 
     $language_code = encode_lang ($language);
 
-
     # Figure out the posting dates
     # Try the easy route first
 #    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
     if (/(Official )?Release Date: +(.*?)( +\[[Ee](Book|Text) +\#(\d+)\])?\n/) {
-      $reldate = $2; $etext = $5;
+      $reldate = $1; $etext = $5;
     } elsif (/\n+(.*?)\s+\[[Ee](Book|Text)\s+\#(\d+)\]/i) {
       if ($reldate eq '***') { $reldate = $1; }
       if ($etext eq '') { $etext = $2; }
     }
+
     if (/Posting Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
       $updateposted = $1;
       if ($etext eq '') { $etext = $3; }
@@ -714,6 +713,7 @@ sub output_header () {
 ################################
 
   for ($front_matter_block) {
+
     # Grab 'Produced/Prepared by' then remove
     if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.+)\n//i) {
       $prod_first_by = $3;
@@ -1131,8 +1131,8 @@ sub post_process {
 
   # substitute ----, --, -
   $c =~ s|----|&qdash;|g;
-  $c =~ s|--|&mdash;|g;
-  $c =~ s|—|&mdash;|g;
+  $c =~ s|--|&#8212;|g;
+  $c =~ s|—|&#8212;|g;
 
 #substitute hellip for ...
   $c =~ s| *\.{3,}|&hellip;|g;
@@ -1178,10 +1178,10 @@ sub post_process {
   $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
 
 # move dashes
-  $c =~ s|&mdash; </q>([^ ])|&mdash;</q> $1|g;
-  $c =~ s|&mdash; </q>|&mdash;</q>|g;
-  $c =~ s|([^ ])<q> &mdash;|$1 <q>&mdash;|g;
-  $c =~ s| &mdash;|&mdash;|g;
+  $c =~ s|&#8212; </q>([^ ])|&#8212;</q> $1|g;
+  $c =~ s|&#8212; </q>|&#8212;</q>|g;
+  $c =~ s|([^ ])<q> &#8212;|$1 <q>&#8212;|g;
+  $c =~ s| &#8212;|&#8212;|g;
   $c =~ s| &qdash;|&qdash;|g;
 
   # SUPERSCRIPT
@@ -1255,7 +1255,7 @@ sub post_process {
   # For use with TEI DTD and XSLT.
   $c =~ s|&nbsp;|&#160;|g;
   $c =~ s|&ndash;|&#8211;|g;
-  $c =~ s|&mdash;|&#8212;|g;
+  $c =~ s|&#8212;|&#8212;|g;
   $c =~ s|&qdash;|&#8213;|g;
   $c =~ s|&hellip;|&#8230;|g;
   $c =~ s|&deg;|&#176;|g;
