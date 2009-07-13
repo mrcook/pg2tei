@@ -321,12 +321,8 @@ sub output_para {
     $p =~ s|&hellip; ?([\!\?])|&hellip;$1|g; # Fix '&hellip; ! or ?'
 
     $p =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
-#    $p =~ s|<q></emph>|</q></emph>|g; # incorrect closing quotes
 
     $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
-
-    # Fix some incorrect <emph> tags
-    $p =~ s|\'<emph>(.*?)<emph>\'|'<emph>$1</emph>'|g;
 
     $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
 
@@ -1151,12 +1147,22 @@ sub post_process {
 # text highlighting
 #
 
-# change _ to <emph>
-  $c =~ s|Illustration: _|Illustration: <emph>|g; # fix Illustrations
-  $c =~ s/_([\"\'\w]|<[fp])/<emph>$1/g;
-  $c =~ s|^_|<emph>|g;
-  $c =~ s|_|</emph>|g;
-  $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
+# Add <emph> tags; changing _ and <i> to <emph>
+
+  $c =~ s|<i>|<emph>|g;
+  $c =~ s|</i>|</emph>|g;
+
+    $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
+
+  # The old way, maybe some of these are still needed?
+#  $c =~ s|Illustration: _|Illustration: <emph>|g; # fix Illustrations
+#  $c =~ s/_([\"\'\w]|<[fp])/<emph>$1/g;
+#  $c =~ s|^_|<emph>|g;
+#  $c =~ s|_|</emph>|g;
+#  $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
+
+
+
 
 ############################################
 # reserved characters
@@ -1229,12 +1235,6 @@ sub post_process {
 #    $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
   $c =~ s|<qpre>|<q>|g;
   $c =~ s|<qpost>|<q>|g;
-
-
-    # Some files have <i> for Italics. Change to <emph>
-  $c =~ s|<i>|<emph>|g;
-  $c =~ s|</i>|</emph>|g;
-
 
     # [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
