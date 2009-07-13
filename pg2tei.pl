@@ -83,7 +83,7 @@ my  $firstposted  = "***";
 my  $updateposted = "***";
 
 my  $filename     = "";
-my  $etext        = "";
+my  $etext        = '';
 my  $edition      = "";
 my  $series       = "****";
 my  $series_no    = "**";
@@ -325,6 +325,9 @@ sub output_para {
 
     $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
 
+    # Fix some incorrect <emph> tags
+    $p =~ s|\'<emph>(.*?)<emph>\'|'<emph>$1</emph>'|g;
+
     $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
 
     # Change 'Named Entity' characters to 'Numbered Entity' codes.
@@ -500,7 +503,7 @@ sub output_chapter {
       print "</div>\n\n\n";
       #   Grab the Part/Book number
       $part_number = encode_numbers($2);
-      if ($part_number eq "") { $part_number = "xx"; }
+      if (!$part_number) { $part_number = "xx"; }
       
       print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
       $is_book = 1;
@@ -580,17 +583,18 @@ sub output_header () {
     # Figure out the posting dates
     # Try the easy route first
 #    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-    if (/(Official )?Release Date: +(.*?)( +\[[Ee](Book|Text) +\#(\d+)\])?\n/) {
-      $reldate = $1; $etext = $5;
-    } elsif (/\n+(.*?)\s+\[[Ee](Book|Text)\s+\#(\d+)\]/i) {
+    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/) {
+      $reldate = $2; $etext = $6;
+    } elsif (/\n+(.*?) +\[(E|e)(Book|Text) +\#(\d+)\]/i) {
       if ($reldate eq '***') { $reldate = $1; }
-      if ($etext eq '') { $etext = $2; }
+      if (!$etext) { $etext = $4; }
     }
 
-    if (/Posting Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
+    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/) {
       $updateposted = $1;
-      if ($etext eq '') { $etext = $3; }
+      if (!$etext) { $etext = $5; }
     }
+
     # Still no Origianl Release Date? Try this;
     if (/Original Release Date: +(.*?)\n/i) {
       $firstposted = $1;
@@ -613,10 +617,10 @@ sub output_header () {
     # If not set try to grab title, author, etc.
     # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
     if (/\**The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
-      if ($title eq '')  { $title = $1;  }
-      if ($author eq '') { $author = change_case($2); }
+      if (!$title)  { $title = $1;  }
+      if (!$author) { $author = change_case($2); }
     } elsif (/\**The Project Gutenberg Etext of (.*?)\**\n/) {
-      if ($title eq '')  { $title = $1;  }
+      if (!$title)  { $title = $1;  }
     }
 
     # Author still not aquired...this is a bit random but can often work
@@ -680,11 +684,11 @@ sub output_header () {
   # If Author = Unknown then change to "Anonymous". This should be better for the listings.
   if ($author eq 'Unknown') { $author = "Anonymous"; $auth_reversed = "Anonymous"; }
 
-  if ($filename eq '') {
+  if (!$filename) {
     $filename = "$ARGV";
     if ($filename =~ s/(\w{4,5})((10|11)\w?)(\..*)$//) {
       $filename = $1;
-      if ($edition  eq '') {$edition  = $2; }
+      if (!$edition) {$edition  = $2; }
     }
 #    $filename =~ s|\..*$||;
 #    $filename =~ s|$edition$||;
@@ -693,11 +697,11 @@ sub output_header () {
 
 #  if (/This file should be named (\w{4,5})(\d+\w?)\.txt/) {
 #      $filename = $1;
-#      if ($edition eq '') { $edition = $2; }
+#      if (!$edition) { $edition = $2; }
 #  }
 
 ### If $edition still equals nothing then assign default: 1
-  if ( $edition eq '' ) {
+  if (!$edition) {
     $edition = '1';
     if ($reldate ne $updateposted) { $edition = '2'; }
 #    print "\n\n--EDITION CHECK--\n\n\n";
@@ -796,14 +800,14 @@ sub output_header () {
     }
 
     # ILLUSTRATED BY ...
-    if ($illustrated_by eq '') {
+    if (!$illustrated_by) {
       if (/\n_?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
         $illustrated = change_case($1);
         $illustrated_by = change_case($5);
         $illustrated_by =~ s/_$//;
       }
     }
-    if ($illustrated_by eq '') { $illustrated = ""; }
+    if (!$illustrated_by) { $illustrated = ""; }
 
   } # END OF $front_matter_block() PROCESSING
 
@@ -821,7 +825,7 @@ sub output_header () {
     <titleStmt>
       <title>$title</title>
 HERE
-if ($sub_title ne '') {
+if ($sub_title) {
 print <<HERE;
       <title type="sub">$sub_title</title>
 HERE
@@ -829,17 +833,17 @@ HERE
 print <<HERE;
       <author><name reg="$auth_reversed">$author</name></author>
 HERE
-if ($illustrated_by ne '') {
+if ($illustrated_by) {
 print <<HERE;
       <editor role="illustrator">$illustrated_by</editor>
 HERE
 }
-if ($translated_by ne '') {
+if ($translated_by) {
 print <<HERE;
       <editor role="translator">$translated_by</editor>
 HERE
 }
-if ($editor ne '') {
+if ($editor) {
 print <<HERE;
       <editor role="editor">$editor</editor>
 HERE
@@ -885,17 +889,17 @@ print <<HERE;
       <biblStruct>
         <monogr>
 HERE
-if ($illustrated_by ne '') {
+if ($illustrated_by) {
 print <<HERE;
           <editor role="illustrator">$illustrated_by</editor>
 HERE
 }
-if ($translated_by ne '') {
+if ($translated_by) {
 print <<HERE;
           <editor role="translator">$translated_by</editor>
 HERE
 }
-if ($illustrated_by eq '' && $translated_by eq '') {
+if (!$illustrated_by && !$translated_by) {
 print <<HERE;
           <editor>$editor_reversed</editor>
 HERE
@@ -904,7 +908,7 @@ print <<HERE;
           <author>$auth_reversed</author>
           <title>$title</title>
 HERE
-if ($sub_title ne '') {
+if ($sub_title) {
 print <<HERE;
           <title type="sub">$sub_title</title>
 HERE
@@ -926,7 +930,7 @@ print <<HERE;
     </samplingDecl>
     <editorialDecl>
 HERE
-if ($transcriber_errors ne '') {
+if ($transcriber_errors) {
 print <<HERE;
       <correction status="high" method="silent">
         <p>$transcriber_errors</p>
@@ -1004,7 +1008,7 @@ print <<HERE;
     <docTitle>
       <titlePart type="main">$title</titlePart>
 HERE
-if ($sub_title ne '') {
+if ($sub_title) {
 print <<HERE;
       <titlePart type="sub">$sub_title</titlePart>
 HERE
@@ -1013,14 +1017,14 @@ print <<HERE;
     </docTitle>
     <docAuthor>$author</docAuthor>
 HERE
-if ($illustrated_by ne '') {
+if ($illustrated_by) {
 print <<HERE;
     <byline>
       $illustrated <name>$illustrated_by</name>
     </byline>
 HERE
 }
-if ($translated_by ne '') {
+if ($translated_by) {
 print <<HERE;
     <byline>
       $translated <name>$translated_by</name>
@@ -1231,6 +1235,7 @@ sub post_process {
   $c =~ s|<i>|<emph>|g;
   $c =~ s|</i>|</emph>|g;
 
+
     # [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
 
@@ -1311,7 +1316,7 @@ sub crack_date {
 
   $month = encode_month ($month);
 
-  if ($month eq 0) {
+  if ($month == 0) {
     if ($tmp_month eq 0) { $month = "***"; } else { $month = $tmp_month; }
   }
 
