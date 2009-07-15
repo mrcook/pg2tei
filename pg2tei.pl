@@ -178,7 +178,7 @@ while (<>) {
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
 
 # This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
-  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I))(.*?)\n)/output_header($1)/egis) {
+  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]))(.*?)\n)/output_header($1)/egis) {
 
 # this one works - for the most part!!
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I)(.*?)\n)/output_header ($1)/egis) {
@@ -413,7 +413,9 @@ sub process_quotes_1 {
   }
 
   # attract user's attention to these remaining quotes
-  $c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
+  #$c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
+  #### just convert to <q> and hope XSL catches it
+  $c =~ s|([\"«»\x84])|<q>|g;
 
   $c = do_fixes ($c);
 
@@ -1050,6 +1052,7 @@ print <<HERE;
     <p></p>
     <signed></signed>
   </div>
+
 </front>
 
 <body>
