@@ -89,6 +89,10 @@ Footnotes
   <item></item>
 </list>
 
+  <div type="footnotes">
+    <head>Footnotes</head>
+    <divGen type="footnotes"/>
+  </div>
 --
 
 Grab the LoC Class from the PG website.

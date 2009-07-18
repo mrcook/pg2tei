@@ -14,13 +14,12 @@
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
 #
 
-require 5.004;
-use strict;
 use Getopt::Long;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
 use Text::Wrap;
 use Data::UUID;
+use Data::Dumper;
 
 use utf8;
 #use open IN => ":encoding(utf8)", OUT => ":utf8";
@@ -29,81 +28,78 @@ use utf8;
 use vars '$front_matter_block';
 
 use locale;
-my $locale = "en";
+$locale = "en";
 
 $Text::Wrap::columns = 78;
-my $help   = 0;
+$help   = 0;
 
 # some parameters
 
-my $cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
-my $cnt_head_sep      = "2";
-my $cnt_paragraph_sep = "1";
+$cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
+$cnt_head_sep      = "2";
+$cnt_paragraph_sep = "1";
 
 # some hints as to what is being converted
-my $is_verse = 0;                  # work is a poem
+$is_verse = 0;                  # work is a poem
 
 # regexps how to catch quotes (filled in later)
-my ($quotes1, $quotes1pre, $quotes2);
+($quotes1, $quotes1pre, $quotes2) = '';
 
-my $avg_line_length = 0;
-my $max_line_length = 0;
+$avg_line_length = 0;
+$max_line_length = 0;
 
 
 ##############################################################
 
-my $date_string = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">" .
+$date_string = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">" .
     strftime ("%B %Y", localtime ()) . "</date>";
 
-my $dcurdate      = strftime ("%Y-%m-%d", localtime ());
-my $current_date  = strftime ("%d %B %Y", localtime ());
+$dcurdate      = strftime ("%Y-%m-%d", localtime ());
+$current_date  = strftime ("%d %B %Y", localtime ());
 
 
-my  $producer = "*** unknown";
-my  $pemail   = "email: ***";
+ $producer = "*** unknown";
 
-my  $title          = "";
-my  $sub_title      = "";
-my  $author         = "";
-my  $editor         = "";
-my  $illustrated    = "Illustrated by";
-my  $illustrated_by = "";
-my  $translated     = "";
-my  $translated_by  = "";
-my  $publishedplace = "";
-my  $publisher      = "";
-my  $publishdate    = "";
+ $title          = "";
+ $sub_title      = "";
+ $author_string  = "";
+ $editor         = "";
+ $illustrated    = "Illustrated by";
+ $illustrated_by = "";
+ $translated     = "";
+ $translated_by  = "";
+ $publishedplace = "";
+ $publisher      = "";
+ $publishdate    = "";
 
-my  $language       = "***";
-my  $language_code  = "";
-my  $charset        = "***";
+ $language       = "***";
+ $language_code  = "";
+ $charset        = "***";
 
-my  $reldate      = "***";
-my  $firstposted  = "***";
-my  $updateposted = "***";
+ $reldate      = "***";
+ $firstposted  = "***";
+ $updateposted = "***";
 
-my  $filename     = "";
-my  $etext        = '';
-my  $edition      = "";
-my  $series       = "****";
-my  $series_no    = "**";
+ $filename     = "";
+ $etext        = '';
+ $edition      = "";
+ $series       = "****";
+ $series_no    = "**";
 
-my  $prod_first_by      = "unknown";
-my  $produced_by        = "unknown";
-my  $produced_update_by = "unknown";
-my  $prod_by_stmt       = "First e-text version prepared by";
-my  $prod_update_stmt   = "This e-text edition prepared by";
+ $prod_first_by      = "unknown";
+ $produced_by        = "unknown";
+ $produced_update_by = "unknown";
 
-my  $transcriber_notes  = "";
-my  $transcriber_errors = "";
-my  $redactors_notes   = "";
+ $transcriber_notes  = "";
+ $transcriber_errors = "";
+ $redactors_notes   = "";
 
-my  $footnote_exists   = 0;
+ $footnote_exists   = 0;
 
-my  $is_book     = 0;
-my  $is_book_div = 0;
+ $is_book     = 0;
+ $is_book_div = 0;
 
-my %languages = (
+%languages = (
   "de"	   => "German",
   "el"	   => "Greek",
   "en-gb"  => "British",
@@ -118,7 +114,7 @@ my %languages = (
   "pt"     => "Portuguese",
 );
 
-my $override_quotes = '';
+$override_quotes = '';
 GetOptions (
   "quotes=s"    => \$override_quotes,
 	"chapter=i"   => \$cnt_chapter_sep,
@@ -148,18 +144,17 @@ $locale = setlocale (LC_CTYPE);
 # gets fed first into head1 and then into epigraph1 and paragraph1,
 # the result of head1 gets fed into paragraph1
 
-my $tmp;
 $tmp = "(.*?)\n{$cnt_chapter_sep}\n+";
 
-my $chapter1   = qr/$tmp/s;
+$chapter1   = qr/$tmp/s;
 
 $tmp = "(.*?)\n{$cnt_head_sep}\n+";
-my $head1      = qr/$tmp/s;
+$head1      = qr/$tmp/s;
 
 $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
-my $paragraph1 = qr/$tmp/s;
+$paragraph1 = qr/$tmp/s;
 
-#my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
+#$epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -209,16 +204,16 @@ while (<>) {
 ### end of main () ########################################################
 
 sub output_line {
-  my $line = shift;
-  my $min_indent = shift;
+  $line = shift;
+  $min_indent = shift;
   $line =~ m/\S/g;
-##  my $indent = "&nbsp;" x (pos ($line) - $min_indent - 1); ## OLD spacinging
-  my $indent = (pos ($line) - $min_indent - 1);
+##  $indent = "&nbsp;" x (pos ($line) - $min_indent - 1); ## OLD spacinging
+  $indent = (pos ($line) - $min_indent - 1);
   $line =~ s/^\s*//;
 
   if (length ($line)) {
 
-    my $line_indent = '';
+    $line_indent = '';
     if ($indent > 6) {
       $line_indent = ' rend="margin-left(6)"';
     } elsif ($indent > 1) {
@@ -240,9 +235,9 @@ sub output_line {
 }
 
 sub output_para {
-  my $p = shift;
+  $p = shift;
   $p .= "\n";
-  my $o = study_paragraph ($p);
+  $o = study_paragraph ($p);
 
   # Some pre-processing for the Footnotes.
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
@@ -291,7 +286,7 @@ sub output_para {
     $p =~ s/ +/ /g; # Change Marcello's to just strip out multiple spaces
     $p =~ s/\s*$//g;
 
-    my $rend = '';
+    $rend = '';
     $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
     $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
@@ -344,7 +339,7 @@ sub output_para {
 }
 
 sub output_stage {
-  my $stage = shift;
+  $stage = shift;
 
   $stage =~ s/[ \t\n]+/ /g;
 
@@ -354,12 +349,12 @@ sub output_stage {
 
 
 sub output_head {
-  my $head = shift;
+  $head = shift;
   $head .= "\n" x 10;
 
   $head =~ s/$paragraph1//;
 
-  my $head_tmp = '';
+  $head_tmp = '';
   $head_tmp = process_quotes_1 ($1);
   $head_tmp = post_process ($head_tmp);
 
@@ -372,7 +367,7 @@ sub output_head {
   }
 
   while ($head =~ s/$paragraph1//) {
-    my $subhead = post_process ($1);
+    $subhead = post_process ($1);
 
     $subhead =~ s|^\"(.*?)\"$|<q>$1</q>|; # Rough fix of Quotes
 
@@ -393,7 +388,7 @@ sub output_head {
 # we will get some quotes wrong
 
 sub process_quotes_2 {
-  my $c = shift;
+  $c = shift;
 
   if ($c =~ m/$quotes2/) {
     while ($c =~ s|$quotes2|"<q>" . process_quotes_1 ($1) . "</q>"|es) {};
@@ -403,7 +398,7 @@ sub process_quotes_2 {
 }
 
 sub process_quotes_1 {
-  my $c = shift;
+  $c = shift;
 
   if ($c =~ m/$quotes1/g) {
 	  while ($c =~ s|$quotes1|"<q>" . process_quotes_2 ($1) . "</q>"|es) {};
@@ -424,10 +419,10 @@ sub process_quotes_1 {
 
 sub fix_unbalanced_quotes_line {
   # tries to fix unbalanced quotes in verse lines
-  my $line = shift;
-  my $balance = 0;
+  $line = shift;
+  $balance = 0;
 
-  my $tmp = $line;
+  $tmp = $line;
   $balance += ($tmp =~ s|<q>||g);
   $balance -= ($tmp =~ s|</q>||g);
 
@@ -453,7 +448,7 @@ sub fix_unbalanced_quotes_line {
 sub do_fixes {
 
   # tries to fix various quotes
-  my $fix = shift;
+  $fix = shift;
 
   $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
 
@@ -461,8 +456,8 @@ sub do_fixes {
 }
 
 sub output_epigraph {
-  my $epigraph = shift;
-  my $citation = shift;
+  $epigraph = shift;
+  $citation = shift;
 
   print "<epigraph>\n\n";
 
@@ -486,9 +481,9 @@ sub output_epigraph {
 }
 
 sub output_chapter {
-    my $chapter = shift;
+    $chapter = shift;
 
-    my $part_number = "";
+    $part_number = "";
     $chapter .= "\n" x 10;
 
     if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
@@ -527,7 +522,7 @@ sub output_chapter {
 }
 
 sub output_body {
-  my $body = shift;
+  $body = shift;
   $body =~ s/^\s*//;
 
   guess_quoting_convention (\$body); # save mem, pass a ref
@@ -546,7 +541,7 @@ sub output_header () {
   # scan the gutenberg header for useful info
   # the problem here is that there are a gazillion different
   # <soCalled>standard headers</soCalled>
-  my $h = shift;
+  $h = shift;
 
   # Grab the front matter from this header for printing.
   if ($h =~ m/^(.*?)\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/gis) {
@@ -558,24 +553,22 @@ sub output_header () {
   for ($h) {
 
     # Try to grab the sub title too!
-    if (/Title: *(.*?)\n       (.*?)\n/) {
+    if (/Title: *(.*?)\n  +(.*?)\n/) {
       $title = $1; $sub_title = $2;
     } elsif (/Title: *(.*?)\n/) {
       $title = $1; $sub_title = "";
     }
 
-    if (/Author: *(.*?)\n/)            { $author = $1; }
-    if (/Editor: *(.*?)\n/)            { $editor = $1; }
-    if (/Illustrator: *(.*?)\n/)       { $illustrated_by = change_case($1); }
-    if (/Edition: *(.*?)\n/)           { $edition = $1; }
-
-    if (/Language: *(.*?)\n/) {
+    if (/Author: *(.*?)\n/)      { $author_string = $1; }
+    if (/Editor: *(.*?)\n/)      { $editor = $1; }
+    if (/Illustrator: *(.*?)\n/) { $illustrated_by = change_case($1); }
+    if (/Edition: *(.*?)\n/)     { $edition = $1; }
+    if (/Language: *(.*?)\n/)    {
       if ($1 ne "English" && $language ne "British") {
         $language = $1;
       }
     }
-    if ($language eq "***")            { $language = "English"; }
-
+    if ($language eq "***")      { $language = "English"; }
     $language_code = encode_lang ($language);
 
     # Figure out the posting dates
@@ -614,25 +607,25 @@ sub output_header () {
 
     # If not set try to grab title, author, etc.
     # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
-    if (/\**The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
+    if (/\** *The Project Gutenberg Etext of (.*?),? by (.*?)\**\n/) {
       if (!$title)  { $title = $1;  }
-      if (!$author) { $author = change_case($2); }
+      if (!$author_string) { $author_string = change_case($2); }
     } elsif (/\**The Project Gutenberg Etext of (.*?)\**\n/) {
       if (!$title)  { $title = $1;  }
     }
 
     # Author still not aquired...this is a bit random but can often work
-    if ($author eq '' && $title ne '') {
-      if (/\n$title\n+by (.*?)\n/i) { $author = change_case($1); }
-    } elsif ($author eq '') {
-      if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author = change_case($1); }
+    if (!$author_string && $title) {
+      if (/\n$title\n+by (.*?)\n/i) { $author_string = change_case($1); }
+    } elsif (!$author_string) {
+      if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author_string = change_case($1); }
     }
     # Sometimes Author get assigned wierd info...fix it
-    if ($author =~ m/Project Gutenberg/i) { $author = "Anon."; }
+    if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
 
     if (/\#([0-9]+) in our series by/) {
       $series_no = $1;
-      $series = "#$series_no in our series by $author";
+      $series = "$series_no";
     } elsif (/\#(\d+) in our (.*?) series/) {
       $series_no = $1;
       $series = $2;
@@ -661,11 +654,11 @@ sub output_header () {
     }
   }
 
-  my $languages = list_languages ($language_code);
+  $languages = list_languages ($language_code);
 
   # Change any / to -
   if ($firstposted =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
-    my $tmp = $3;
+    $tmp = $3;
     if ($tmp < 7) { $tmp += 2000; } elsif ($tmp < 70) { $tmp += 1900; }
     $firstposted = "$1-$2-$tmp";
   }
@@ -673,14 +666,14 @@ sub output_header () {
   if ($firstposted eq '***') { $firstposted = $reldate; }
   if ($updateposted eq '***' ) { $updateposted = $reldate; }
 
-  my $dfirstposted    = crack_date ($firstposted);
-  my $dreldate        = crack_date ($reldate);
-  my $dupdateposted   = crack_date ($updateposted);
-  my $editor_reversed = crack_author ($editor);
-  my $auth_reversed   = crack_author ($author);
-
-  # If Author = Unknown then change to "Anonymous". This should be better for the listings.
-  if ($author eq 'Unknown') { $author = "Anonymous"; $auth_reversed = "Anonymous"; }
+  $dfirstposted    = crack_date ($firstposted);
+  $dreldate        = crack_date ($reldate);
+  $dupdateposted   = crack_date ($updateposted);
+  $editor_reversed = '';
+  if ($editor) {
+    @editors       = crack_name ($editor);
+  }
+  @authors         = crack_name ($author_string);
 
   if (!$filename) {
     $filename = "$ARGV";
@@ -705,7 +698,7 @@ sub output_header () {
 #    print "\n\n--EDITION CHECK--\n\n\n";
   }
 ### If $edition equals PG 10 or 11 change to 1 and 2 respectively.
-  my $pg_edition = $edition; # Keep the original PG edition number if it exists.
+  $pg_edition = $edition; # Keep the original PG edition number if it exists.
   if ( $edition == 10 ) { $edition = '1'; }
   if ( $edition == 11 ) { $edition = '2'; }
 
@@ -812,7 +805,7 @@ sub output_header () {
   $front_matter_block .= "\n\n"; # Some padding
 
   # Create a UUID
-  my $uuid =  uuid_gen();
+  $uuid =  uuid_gen();
 
   print <<HERE;
 <?xml version="1.0" encoding="iso-8859-1" ?>
@@ -828,9 +821,17 @@ print <<HERE;
       <title type="sub">$sub_title</title>
 HERE
 }
-print <<HERE;
-      <author><name reg="$auth_reversed">$author</name></author>
+foreach $author_name (@authors) {
+  if ($author_name->[2]) {
+    print <<HERE;
+      <author><name reg="$author_name->[2], $author_name->[0]">$author_name->[1] $author_name->[2]</name></author>
 HERE
+  } else {
+    print <<HERE;
+      <author><name reg="$author_name->[0]">$author_name->[0]</name></author>
+HERE
+  }
+}
 if ($illustrated_by) {
 print <<HERE;
       <editor role="illustrator">$illustrated_by</editor>
@@ -841,10 +842,18 @@ print <<HERE;
       <editor role="translator">$translated_by</editor>
 HERE
 }
-if ($editor) {
-print <<HERE;
-      <editor role="editor">$editor</editor>
+if (@editors) {
+  foreach $editor_name (@editors) {
+    if ($editor_name->[2]) {
+      print <<HERE;
+      <editor role="editor"><name reg="$editor_name->[2], $editor_name->[0]">$editor_name->[1] $editor_name->[2]</name></editor>
 HERE
+    } else {
+      print <<HERE;
+      <editor role="editor"><name reg="$editor_name->[0]">$editor_name->[0]</name></editor>
+HERE
+    }
+  }
 }
 print <<HERE;
     </titleStmt>
@@ -903,7 +912,7 @@ print <<HERE;
 HERE
 }
 print <<HERE;
-          <author>$auth_reversed</author>
+          <author>$author_string</author>
           <title>$title</title>
 HERE
 if ($sub_title) {
@@ -953,7 +962,7 @@ print <<HERE;
       </interpretation>
     </editorialDecl>
     <classDecl>
-      <taxonomy id="lc">
+      <taxonoid="lc">
         <bibl>Library of Congress Classification</bibl>
       </taxonomy>
     </classDecl>
@@ -1013,7 +1022,7 @@ HERE
 }
 print <<HERE;
     </docTitle>
-    <docAuthor>$author</docAuthor>
+    <docAuthor>$author_string</docAuthor>
 HERE
 if ($illustrated_by) {
 print <<HERE;
@@ -1110,7 +1119,7 @@ HERE
 #
 
 sub post_process {
-  my $c = shift;
+  $c = shift;
 
 # Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
   $c =~ s|“|<q>|g;
@@ -1244,7 +1253,7 @@ sub post_process {
 
     # ILLUSTRATIONS ...
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
-    my $tmp = change_case($1);
+    $tmp = change_case($1);
     $c =~ s|<head>(.*?)</head>|<head>$tmp</head>|;
   }
 # Original formula....keep!
@@ -1272,13 +1281,13 @@ sub post_process {
 }
 
 sub encode_lang {
-  my $lang = shift;
+  $lang = shift;
 
   if ($lang eq "English") {
     $lang = "American";
   }
 
-  while (my ($key, $value) = each (%languages)) {
+  while (($key, $value) = each (%languages)) {
     if ($value eq $lang) {
       return $key;
     }
@@ -1287,9 +1296,9 @@ sub encode_lang {
 }
 
 sub crack_date {
-  my ($year, $month, $day) = (0, 0, 0);
-  my $tmp_month = 0;
-  my $wdate = shift;
+  ($year, $month, $day) = (0, 0, 0);
+  $tmp_month = 0;
+  $wdate = shift;
 
   # January 1, 2000
   if ($wdate =~ m/^(\w+)\s+(\d{1,2}),?\s+(\d{2,4})$/) {
@@ -1335,10 +1344,10 @@ sub crack_date {
 }
 
 sub encode_month {
-  my $wmonth = shift;
+  $wmonth = shift;
 
   # fix shorter months
-  my %short_months = (
+  %short_months = (
      1     => "Jan",
      2     => "Feb",
      3     => "Mar",
@@ -1353,7 +1362,7 @@ sub encode_month {
     12     => "Dec"
   );
 
-  my %months = (
+  %months = (
      1     => "January",
      2     => "February",
      3     => "March",
@@ -1368,12 +1377,12 @@ sub encode_month {
     12     => "December"
   );
 
-  while (my ($key, $value) = each(%months)) {
+  while (($key, $value) = each(%months)) {
     if ($value eq $wmonth) {
     return $key;
     }
   }
-  while (my ($key, $value) = each(%short_months)) {
+  while (($key, $value) = each(%short_months)) {
     if ($value eq $wmonth) {
     return $key;
     }
@@ -1382,10 +1391,10 @@ sub encode_month {
 }
 
 sub encode_numbers {
-  my $tmp_num = shift;
+  $tmp_num = shift;
 
   # fix numbers
-  my %numbers = (
+  %numbers = (
      1     => "ONE",
      2     => "TWO",
      3     => "THREE",
@@ -1402,7 +1411,7 @@ sub encode_numbers {
     14     => "FOURTEEN",
     15     => "FIFTHTEEN",
   );
-  my %roman_numbers = (
+  %roman_numbers = (
      1     => "I",
      2     => "II",
      3     => "III",
@@ -1420,7 +1429,7 @@ sub encode_numbers {
     15     => "XV",
   );
 
-  my %ordinal_numbers = (
+  %ordinal_numbers = (
      1     => "FIRST",
      2     => "SECOND",
      3     => "THIRD",
@@ -1438,17 +1447,17 @@ sub encode_numbers {
     15     => "FIFTEENTH",
   );
 
-  while (my ($key, $value) = each(%numbers)) {
+  while (($key, $value) = each(%numbers)) {
     if ($value eq $tmp_num) {
     return $key;
     }
   }
-  while (my ($key, $value) = each(%roman_numbers)) {
+  while (($key, $value) = each(%roman_numbers)) {
     if ($value eq $tmp_num) {
     return $key;
     }
   }
-  while (my ($key, $value) = each(%ordinal_numbers)) {
+  while (($key, $value) = each(%ordinal_numbers)) {
     if ($value eq $tmp_num) {
     return $key;
     }
@@ -1457,32 +1466,40 @@ sub encode_numbers {
   return $tmp_num;
 }
 
-sub crack_author {
-  my $auth = shift;
+sub crack_name {
+  $names_string = shift;
+  @names = ();
 
-  $auth =~ s/\(.*\)|\[.*\]//;
-  $auth =~ s/\ +$//; # Strip any end spaces
+  $names_string =~ s/\(.*\)|\[.*\]//;     # Change () brackets to [] brackets
+  $names_string =~ s/ & / and /;          # Replace '&' to 'and' for the split
+  $names_string =~ s/^ *(.*?) *$/$1/;     # Strip any end spaces
 
-  my $last_a = "";
-  my $first_a = "";
-  my $last_b = "";
-  my $first_b = "";
+  @names_list = split(/ and /, $names_string);
 
-  if ($auth =~ m/^(.*?) +([\w-]+) and (.*?) +([\w-]+)$/i) {
-    $first_a = $1; $last_a = $2;
-    $first_b = $3; $last_b = $4;
-    $auth = $last_a . ", " . $first_a . " and " . $last_b . ", " . $first_b;
-  } elsif ($auth =~ m/^(.*?) +([\w-]+)$/i) {
-    $first_a = $1; $last_a = $2;
-    $auth = $last_a . ", " . $first_a;
+  $count = 0;
+  foreach $name (@names_list) {
+    if ($name =~ m/^(.*?) +([\w-]+)$/i) {
+      $orig_firstname = $1; # Keep the original first name for <front> data
+      $firstname = $1;
+      $lastname = $2;
+      ## Some authors use initials, so assign proper name also
+      if ($lastname eq 'Smith'     and $firstname =~ /E. ?E./) { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Wodehouse' and $firstname =~ /P. ?G./) { $firstname = 'Pelham Grenville'; }
+      $names[$count] = ([$firstname, $orig_firstname, $lastname]);
+    } else {
+      $names[$count] = ([$name]);    
+    }
+    $count++;
   }
-
-  return $auth;
+  if (!@names) {
+    $names[0] = (['Anonymous']);
+  }
+  return @names;
 }
 
 sub list_languages {
-  my $langlist = "";
-  foreach my $key (sort (keys %languages)) {
+  $langlist = "";
+  foreach $key (sort (keys %languages)) {
 	  $langlist .= "      <language id=\"$key\">$languages{$key}</language>\n";
   }
   return $langlist;
@@ -1490,10 +1507,10 @@ sub list_languages {
 
 sub guess_quoting_convention {
   # study the text and decide which quoting convention is used
-  my $openquote1  = "";
-  my $closequote1 = "";
-  my $openquote2  = "";
-  my $closequote2 = "";
+  $openquote1  = "";
+  $closequote1 = "";
+  $openquote2  = "";
+  $closequote2 = "";
 
   if ( length($override_quotes) ) {
   	$openquote1  = substr ($override_quotes, 0, 1);
@@ -1501,25 +1518,25 @@ sub guess_quoting_convention {
   	$closequote2 = substr ($override_quotes, 2, 1);
   	$closequote1 = substr ($override_quotes, 3, 1);
   } else {
-  	my $body = shift;
+  	$body = shift;
   	$body = $$body;
 
-#	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
-	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
-#	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
-	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
-	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
-	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
-	my $count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
+#	$count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
+	$count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
+#	$count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
+	$count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
+	$count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
+	$count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
+	$count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
 
-#	my $single_quotes = $count_27 + $count_60 + $count_b4;
-	my $single_quotes = $count_60 + $count_b4;
-#	my $double_quotes = $count_22 + $count_84;
-	my $double_quotes = $count_22;
-	my $guillemets    = $count_ab + $count_bb;
+#	$single_quotes = $count_27 + $count_60 + $count_b4;
+	$single_quotes = $count_60 + $count_b4;
+#	$double_quotes = $count_22 + $count_84;
+	$double_quotes = $count_22;
+	$guillemets    = $count_ab + $count_bb;
 
-	my $french_quotes   = ($guillemets > $single_quotes + $double_quotes);
-	my $american_quotes = ($double_quotes > $single_quotes);
+	$french_quotes   = ($guillemets > $single_quotes + $double_quotes);
+	$american_quotes = ($double_quotes > $single_quotes);
 
 	if ($french_quotes) {
 	    $openquote1  = "\xab";
@@ -1559,25 +1576,25 @@ sub guess_quoting_convention {
 sub study_paragraph {
   # learn interesting stuff about this paragraph
 
-  my @lines = split (/\n/, shift);
-  my $o = { };
+  @lines = split (/\n/, shift);
+  $o = { };
 
-  my $cnt_lines  = scalar (@lines);
-  my $min_len    = 1000;
-  my $max_len    = 0;
-  my $sum_len    = 0;
-  my $min_indent = 1000;
-  my $max_indent = 0;
-  my $cnt_indent = 0;
-  my $sum_indent = 0;
-  my $cnt_caps   = 0;
-  my $cnt_short  = 0;
-  my $cnt_center = 0;
+  $cnt_lines  = scalar (@lines);
+  $min_len    = 1000;
+  $max_len    = 0;
+  $sum_len    = 0;
+  $min_indent = 1000;
+  $max_indent = 0;
+  $cnt_indent = 0;
+  $sum_indent = 0;
+  $cnt_caps   = 0;
+  $cnt_short  = 0;
+  $cnt_center = 0;
 
-  my $thres = int ($max_line_length * 80 / 100);
+  $thres = int ($max_line_length * 80 / 100);
   for (@lines) {
     # min, max, avg line length
-    my $len = length ($_);
+    $len = length ($_);
     $min_len = $len if ($len < $min_len);
     $max_len = $len if ($len > $min_len);
     $sum_len += $len;
@@ -1585,7 +1602,7 @@ sub study_paragraph {
     # count indented lines
     # min and max indentation
     m/^(\s*)/;
-    my $indent = length ($1);
+    $indent = length ($1);
     $max_indent = $indent if ($indent > $max_indent);
     $min_indent = $indent if ($indent < $min_indent);
     $cnt_indent++ if ($indent);
@@ -1597,7 +1614,7 @@ sub study_paragraph {
     # count lines shorter than 80% max text line length
     $cnt_short++ if ($len < $thres);
 
-    my $rindent = $max_line_length - $len;
+    $rindent = $max_line_length - $len;
 
     # count centered lines
     if ($indent > 0) {
@@ -1635,7 +1652,7 @@ sub study_paragraph {
 sub is_para_verse {
   # decide if paragraph is verse
   # param is result from study_paragraph
-  my $o = shift;
+  $o = shift;
 
   # one-liner, cannot tell
   return 0 if $o->{'cnt_lines'}  < 2;
@@ -1654,12 +1671,12 @@ sub is_para_verse {
 }
 
 sub is_para_centered {
-  my $o = shift;
+  $o = shift;
   return $o->{'cnt_center'} == $o->{'cnt_lines'};
 }
 
 sub is_para_right {
-  my $o = shift;
+  $o = shift;
 
   # one-liner, cannot tell
   return 0 if $o->{'cnt_lines'}  < 2;
@@ -1670,7 +1687,7 @@ sub is_para_right {
 }
 
 sub is_para_justified {
-  my $o = shift;
+  $o = shift;
 
   # one-liner, cannot tell
   return 0 if $o->{'cnt_lines'}  < 2;
@@ -1682,14 +1699,14 @@ sub is_para_justified {
 
 sub compute_line_length {
   # computes average and max line length of this text
-  my $body = shift;
+  $body = shift;
 
-  my @lines = split (/\n/, $$body);
-  my $lines   = 0;
-  my $sum_len = 0;
-  my $max_len = 0;
+  @lines = split (/\n/, $$body);
+  $lines   = 0;
+  $sum_len = 0;
+  $max_len = 0;
   for (@lines) {
-    my $len = length ($_);
+    $len = length ($_);
     if (!/^$/) {
       $lines++;
       $sum_len += $len;
@@ -1701,7 +1718,7 @@ sub compute_line_length {
 }
 
 sub change_case {
-  my $case = shift;
+  $case = shift;
 
   $case =~ s/(.*?)/\l$1/g;
   $case =~ s/(\b)([a-z])/$1\u$2/g;
@@ -1714,7 +1731,7 @@ sub change_case {
 }
 
 sub lower_case {
-  my $case = shift;
+  $case = shift;
 
   $case =~ s/(.*?)/\l$1/g;
 
@@ -1722,14 +1739,14 @@ sub lower_case {
 }
 
 sub uuid_gen {
-  my $ug = new Data::UUID;
-  my $uuid = $ug->create_str();
+  $ug = new Data::UUID;
+  $uuid = $ug->create_str();
 
   # this creates a new UUID in string form, based on the standard namespace
   # UUID NameSpace_URL and name "www.mycompany.com"
 
   ## NOTE: This does not create a random number each time...it is always the same
-#  my $uuid = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
+#  $uuid = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
 
   return $uuid;
 }
