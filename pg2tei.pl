@@ -83,8 +83,6 @@ $current_date  = strftime ("%d %B %Y", localtime ());
  $filename     = "";
  $etext        = '';
  $edition      = "";
- $series       = "****";
- $series_no    = "**";
 
  $prod_first_by      = "unknown";
  $produced_by        = "unknown";
@@ -623,23 +621,6 @@ sub output_header () {
     # Sometimes Author get assigned wierd info...fix it
     if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
 
-    if (/\#([0-9]+) in our series by/) {
-      $series_no = $1;
-      $series = "$series_no";
-    } elsif (/\#(\d+) in our (.*?) series/) {
-      $series_no = $1;
-      $series = $2;
-    }
-    # If an actual "series" entry is given, often manually added on pg or custom txt files
-    if ($series_no eq '**') {
-      if (/Series: ?(.*)/) {
-        $series = $1;
-      }
-      if (/Series #: ?(\d+)/) {
-        $series_no = $1;
-      }
-    }
-
     if (/This etext was produced by (.*?)\.?\n/) {
       $produced_by = $1;
     }
@@ -674,7 +655,8 @@ sub output_header () {
     @editors       = crack_name ($editor);
   }
   @authors         = crack_name ($author_string);
-
+  $author_string =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
+  
   if (!$filename) {
     $filename = "$ARGV";
     if ($filename =~ s/(\w{4,5})((10|11)\w?)(\..*)$//) {
@@ -885,8 +867,8 @@ print <<HERE;
       </availability>
     </publicationStmt>
     <seriesStmt>
-      <title level="s">$series</title>
-      <idno type="vol">$series_no</idno>
+      <title level="s">****</title>
+      <idno type="vol">**</idno>
     </seriesStmt>
     <notesStmt>
       <note resp="redactor">$redactors_notes</note>
@@ -906,13 +888,31 @@ print <<HERE;
           <editor role="translator">$translated_by</editor>
 HERE
 }
-if (!$illustrated_by && !$translated_by) {
-print <<HERE;
-          <editor>$editor_reversed</editor>
+if (@editors) {
+  foreach $editor_name (@editors) {
+    if ($editor_name->[2]) {
+      print <<HERE;
+          <editor role="editor">$editor_name->[2], $editor_name->[0]</editor>
 HERE
+    } else {
+      print <<HERE;
+          <editor role="editor">$editor_name->[2], $editor_name->[0]</editor>
+HERE
+    }
+  }
+}
+foreach $author_name (@authors) {
+  if ($author_name->[2]) {
+    print <<HERE;
+          <author>$author_name->[2], $author_name->[0]</author>
+HERE
+  } else {
+    print <<HERE;
+          <author>$author_name->[0]</author>
+HERE
+  }
 }
 print <<HERE;
-          <author>$author_string</author>
           <title>$title</title>
 HERE
 if ($sub_title) {
