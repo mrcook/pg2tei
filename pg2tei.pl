@@ -1467,8 +1467,9 @@ sub process_names {
       my $firstname = $1;
       my $lastname = $2;
       ## Some authors use initials, so assign proper name also
-      if ($lastname eq 'Smith'     and $firstname =~ /E. ?E./) { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Wodehouse' and $firstname =~ /P. ?G./) { $firstname = 'Pelham Grenville'; }
+      if ($lastname eq 'Montgomery' and $firstname =~ /L. ?M./) { $firstname = 'Lucy Maud'; }
+      if ($lastname eq 'Smith'      and $firstname =~ /E. ?E./) { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Wodehouse'  and $firstname =~ /P. ?G./) { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } else {
       $names[$count] = ([$name]);    
