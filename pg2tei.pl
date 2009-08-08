@@ -215,8 +215,10 @@ sub output_line {
       $line_indent = ' rend="margin-left(' . $indent . ')"';
     }
 
-    $line = process_quotes_1 ($line);
-    $line = fix_unbalanced_quotes_line ($line);
+#### Remove quotes for now as they create more havoc than good!!!!
+#    $line = process_quotes_1 ($line);
+#    $line = fix_unbalanced_quotes_line ($line);
+
     $line = post_process ($line);
 
     if ( $line =~ m/\[(\d+|\*)\]/ ) { # Check for footnotes
@@ -248,9 +250,13 @@ sub output_para {
   $p =~ s|^( *\*){5,}|<milestone>|g;
   
   ## Check for * footnotes and fix up
-  $p =~ s|\[\* |[Footnote: |g;          # If a footnote uses [* ...] then replace this
-  $p =~ s|\*|[*]|g;                     # Change * footnotes to [*]
-  $p =~ s|\[\[\*\]\]|[*]|g;             # Fix some double brackets [[*]]
+  $p =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
+  $p =~ s|^( *)\[?\*\* |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
+  $p =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
+
+  $p =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
+  $p =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
+
 
 
   if ($is_verse || is_para_verse($o)) {
@@ -263,7 +269,12 @@ sub output_para {
 	    }
     }
     print " </lg>\n</quote>\n\n";
-  } elsif ($p =~ m|^ {3,}(.*?)|g) { # Not all <l> were captured...hack it!!
+    
+=for comment
+  ## This WAS a hack but I think it may make things worse rather than better.
+  ## MORE testing is needed!
+  } elsif ($p =~ m|^ {2,}(.*?)|g) { # Not all <l> were captured...hack it!!
+  print "X-" . $p . "-X\n";
     #$p = process_stage_1 ($p);
     print "<quote>\n <lg>\n";
     while (length ($p)) {
@@ -272,6 +283,9 @@ sub output_para {
 	    }
   	}
     print " </lg>\n</quote>\n\n";
+=cut
+
+
   } else {
     # paragraph is prose
     # join hyphenated words
@@ -298,8 +312,8 @@ sub output_para {
 
     # FOOTNOTES: Semi-auto process on footnotes.
     # (I have fixed stupid [l] mistake at begining of this sub().)
-
-    if ($p =~ s/\[(\d+|\*|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
+    
+    if ($p =~ s/\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
       $footnote_exists = 1;
     }
 
