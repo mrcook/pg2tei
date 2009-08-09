@@ -239,8 +239,10 @@ sub output_para {
   my $p = shift;
   $p .= "\n";
   
+  # Create temporary variable for parapgraph and
+  # remove any punctuation for <lg> recognition
   my $no_punctuation = $p;
-  $no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;    # Remover any puinctuation at start for <lg> recognition
+  $no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;
   my $o = study_paragraph ($no_punctuation);
 
   # Some pre-processing for the Footnotes.
@@ -263,7 +265,8 @@ sub output_para {
 
 
   if ($is_verse || is_para_verse($o)) {
-    $p = process_quotes_1 ($p);
+    # $p = process_quotes_1 ($p);
+    $p = post_process ($p);
 
     print "<quote>\n <lg>\n";
     while (length ($p)) {
