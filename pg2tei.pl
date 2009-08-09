@@ -238,7 +238,10 @@ sub output_line {
 sub output_para {
   my $p = shift;
   $p .= "\n";
-  my $o = study_paragraph ($p);
+  
+  my $no_punctuation = $p;
+  $no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;    # Remover any puinctuation at start for <lg> recognition
+  my $o = study_paragraph ($no_punctuation);
 
   # Some pre-processing for the Footnotes.
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
@@ -247,7 +250,7 @@ sub output_para {
 
   # substitute * * * * * for <milestone> BEFORE footnotes
   # Replace <milestone> later, on line: ~1250
-  $p =~ s|^( *\*){5,}|<milestone>|g;
+  $p =~ s|^( *\*){3,}|<milestone>|g;
   
   ## Check for * footnotes and fix up
   $p =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
@@ -269,23 +272,6 @@ sub output_para {
 	    }
     }
     print " </lg>\n</quote>\n\n";
-    
-=for comment
-  ## This WAS a hack but I think it may make things worse rather than better.
-  ## MORE testing is needed!
-  } elsif ($p =~ m|^ {2,}(.*?)|g) { # Not all <l> were captured...hack it!!
-  print "X-" . $p . "-X\n";
-    #$p = process_stage_1 ($p);
-    print "<quote>\n <lg>\n";
-    while (length ($p)) {
-  	  if ($p =~ s/^(.*?)\s*\n//o) {
-        output_line ($1, $o->{'min_indent'});
-	    }
-  	}
-    print " </lg>\n</quote>\n\n";
-=cut
-
-
   } else {
     # paragraph is prose
     # join hyphenated words
@@ -1481,9 +1467,13 @@ sub process_names {
       my $firstname = $1;
       my $lastname = $2;
       ## Some authors use initials, so assign proper name also
-      if ($lastname eq 'Montgomery' and $firstname =~ /L. ?M./) { $firstname = 'Lucy Maud'; }
-      if ($lastname eq 'Smith'      and $firstname =~ /E. ?E./) { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Wodehouse'  and $firstname =~ /P. ?G./) { $firstname = 'Pelham Grenville'; }
+      if ($lastname eq 'Fitzgerald' and $firstname =~ /F. ?Scott/)   { $firstname = 'Francis Scott'; }
+      if ($lastname eq 'Montgomery' and $firstname =~ /L. ?M./)      { $firstname = 'Lucy Maud'; }
+      if ($lastname eq 'Nesbit'     and $firstname =~ /E./)          { $firstname = 'Edith'; }
+      if ($lastname eq 'Smith'      and $firstname =~ /E. ?E./)      { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Smith'      and $firstname =~ /["']Doc["']/) { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Wells'      and $firstname =~ /H. ?G./)      { $firstname = 'Herbert George'; }
+      if ($lastname eq 'Wodehouse'  and $firstname =~ /P. ?G./)      { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } else {
       $names[$count] = ([$name]);    
@@ -1654,16 +1644,18 @@ sub is_para_verse {
   my $o = shift;
 
   # one-liner, cannot tell
-  return 0 if $o->{'cnt_lines'}  < 2;
+  return 0 if $o->{'cnt_lines'} < 2 && $o->{'min_indent'} == 0;
 
   # are all lines indented ?
   return 0 if $o->{'min_indent'} == 0;
 
   # do all lines begin with capital letters ?
-  return 0 if $o->{'cnt_caps'}   < $o->{'cnt_lines'};
+  if ($o->{'cnt_lines'} > 1) {                # Only check if more than one line
+    return 0 if $o->{'cnt_caps'} < $o->{'cnt_lines'};
+  }
 
   # are all lines shorter than average ?
-  return 0 if $o->{'cnt_long'}   > 0;
+  return 0 if $o->{'cnt_long'} > 0;
 
   # all tests passed, this is verse
   return 1;
