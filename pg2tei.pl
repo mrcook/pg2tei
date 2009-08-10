@@ -559,7 +559,7 @@ sub output_header () {
     } elsif (/Title: *(.*?)\n/) {
       $title = $1; $sub_title = "";
     }
-
+    
     if (/Author: *(.*?)\n/)      { $author_string = $1; }
     if (/Editor: *(.*?)\n/)      { $editor = $1; }
     if (/Illustrator: *(.*?)\n/) { $illustrated_by = change_case($1); }
@@ -661,7 +661,7 @@ sub output_header () {
   }
 
 
-  my @authors         = process_names ($author_string);
+  my @authors = process_names ($author_string);
   $author_string =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
 
   if (!$filename) {
@@ -774,9 +774,9 @@ sub output_header () {
 
     # ILLUSTRATED BY ...
     if (!$illustrated_by) {
-      if (/\n_?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
-        $illustrated = change_case($1);
-        $illustrated_by = change_case($5);
+      if (/\n_?(With )?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
+        $illustrated = change_case($2);
+        $illustrated_by = change_case($6);
         $illustrated_by =~ s/_$//;
       }
     }
