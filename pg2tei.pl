@@ -208,12 +208,13 @@ sub output_line {
 
   if (length ($line)) {
 
+    $indent = 6 if $indent >= 7;
+    $indent = 4 if $indent == 5;
+    $indent = 2 if $indent == 3 or $indent == 1;
+    
     my $line_indent = '';
-    if ($indent > 6) {
-      $line_indent = ' rend="margin-left(6)"';
-    } elsif ($indent > 1) {
-      $line_indent = ' rend="margin-left(' . $indent . ')"';
-    }
+    $line_indent = ' rend="margin-left(' . $indent . ')"' if $indent > 0;
+
 
 #### Remove quotes for now as they create more havoc than good!!!!
 #    $line = process_quotes_1 ($line);
@@ -242,7 +243,8 @@ sub output_para {
   # Create temporary variable for parapgraph and
   # remove any punctuation for <lg> recognition
   my $no_punctuation = $p;
-  $no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;
+  #$no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;
+  $no_punctuation =~ s| {7,}|      |g;  # If there are more than 6 spaces remove any excess - helps <lg> detection
   my $o = study_paragraph ($no_punctuation);
 
   # Some pre-processing for the Footnotes.
@@ -266,7 +268,7 @@ sub output_para {
 
   if ($is_verse || is_para_verse($o)) {
     # $p = process_quotes_1 ($p);
-    $p = post_process ($p);
+    #$p = post_process ($p);
 
     print "<quote>\n <lg>\n";
     while (length ($p)) {
@@ -1583,7 +1585,7 @@ sub study_paragraph {
   my $cnt_short  = 0;
   my $cnt_center = 0;
 
-  my $thres = int ($max_line_length * 80 / 100);
+  my $thres = int ($max_line_length * 86 / 100);
   for (@lines) {
     # min, max, avg line length
     my $len = length ($_);
@@ -1601,7 +1603,8 @@ sub study_paragraph {
     $sum_indent += $len;
 
     # count lines beginning with capital
-    $cnt_caps++ if (m/^\s*[[:upper:]]/);
+    #$cnt_caps++ if (m/^\s*(-+)?[[:upper:]]/); 
+    $cnt_caps++ if (m/^\s*(-+)?[[:upper:]]/);
 
     # count lines shorter than 80% max text line length
     $cnt_short++ if ($len < $thres);
