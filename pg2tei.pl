@@ -240,12 +240,10 @@ sub output_para {
   my $p = shift;
   $p .= "\n";
   
-  # Create temporary variable for parapgraph and
-  # remove any punctuation for <lg> recognition
-  my $no_punctuation = $p;
-  #$no_punctuation =~ s|( +)[_"'£\-\$\(\[\{\#]|$1|g;
-  $no_punctuation =~ s| {7,}|      |g;  # If there are more than 6 spaces remove any excess - helps <lg> detection
-  my $o = study_paragraph ($no_punctuation);
+  # If there are more than 6 spaces remove any excess - helps <lg> detection
+  my $no_spaces = $p;
+  $no_spaces =~ s| {7,}|      |g;
+  my $o = study_paragraph ($no_spaces);
 
   # Some pre-processing for the Footnotes.
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
@@ -1604,7 +1602,7 @@ sub study_paragraph {
 
     # count lines beginning with capital
     #$cnt_caps++ if (m/^\s*(-+)?[[:upper:]]/); 
-    $cnt_caps++ if (m/^\s*(-+)?[[:upper:]]/);
+    $cnt_caps++ if (m/^\s*(-+|\(|\[|\*| |\.)*[[:upper:]]/);
 
     # count lines shorter than 80% max text line length
     $cnt_short++ if ($len < $thres);
