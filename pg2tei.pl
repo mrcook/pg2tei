@@ -210,7 +210,8 @@ sub output_line {
 
     $indent = 6 if $indent >= 7;
     $indent = 4 if $indent == 5;
-    $indent = 2 if $indent == 3 or $indent == 1;
+    $indent = 2 if $indent == 3;
+    $indent = 0 if $indent == 1;
     
     my $line_indent = '';
     $line_indent = ' rend="margin-left(' . $indent . ')"' if $indent > 0;
@@ -240,10 +241,7 @@ sub output_para {
   my $p = shift;
   $p .= "\n";
   
-  # If there are more than 6 spaces remove any excess - helps <lg> detection
-  my $no_spaces = $p;
-  $no_spaces =~ s| {7,}|      |g;
-  my $o = study_paragraph ($no_spaces);
+  my $o = study_paragraph ($p);
 
   # Some pre-processing for the Footnotes.
   $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
@@ -1601,8 +1599,8 @@ sub study_paragraph {
     $sum_indent += $len;
 
     # count lines beginning with capital
-    #$cnt_caps++ if (m/^\s*(-+)?[[:upper:]]/); 
-    $cnt_caps++ if (m/^\s*(-+|\(|\[|\*| |\.)*[[:upper:]]/);
+    #$cnt_caps++ if (m/^\s*[[:upper:]]/); 
+    $cnt_caps++ if (m/^\s*(-+|\(|\[|\*|\.|"|'| +)*[[:upper:]]/);
 
     # count lines shorter than 80% max text line length
     $cnt_short++ if ($len < $thres);
