@@ -574,15 +574,15 @@ sub output_header () {
 
     # Figure out the posting dates
     # Try the easy route first
-#    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/) {
-    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/) {
+#    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/i) {
+    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
       $reldate = $2; $etext = $6;
     } elsif (/\n+(.*?) +\[(E|e)(Book|Text) +\#(\d+)\]/i) {
       if ($reldate eq '***') { $reldate = $1; }
       if (!$etext) { $etext = $4; }
     }
 
-    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/) {
+    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
       $updateposted = $1;
       if (!$etext) { $etext = $5; }
     }
