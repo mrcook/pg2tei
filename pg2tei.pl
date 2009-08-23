@@ -629,7 +629,7 @@ sub output_header () {
     }
 
     # Translated from ...
-    if (/[\n ]*(Translated (from.*)?by) (.+)/i) {
+    if (/[\n ]*(Translated (from.*)?by)[\s\t\r\n]+(.+)/i) {
       $translated = $1;
       $translated_by = $3;
     } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
