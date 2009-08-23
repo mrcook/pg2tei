@@ -262,15 +262,15 @@ sub output_para {
 
 
 
-  if ($is_verse || is_para_verse($o)) {
-    # $p = process_quotes_1 ($p);
-    #$p = post_process ($p);
+  if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
+    # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
+    # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
 
     print "<quote>\n <lg>\n";
     while (length ($p)) {
-	    if ($p =~ s/^(.*?)\s*\n//o) {
+      if ($p =~ s/^(.*?)\s*\n//o) {
         output_line ($1, $o->{'min_indent'});
-	    }
+      }
     }
     print " </lg>\n</quote>\n\n";
   } else {
@@ -558,12 +558,12 @@ sub output_header () {
       $title = $1; $sub_title = "";
     }
     
-    if (/Author: *(.*?)\n/)      { $author_string = $1; }
-    if (/Editor: *(.*?)\n/)      { $editor = $1; }
-    if (/Illustrator: *(.*?)\n/) { $illustrated_by = change_case($1); }
-    if (/Edition: *(.*?)\n/)     { $edition = $1; }
+    if (/Authors?: *(.*?)\n/)           { $author_string = $1; }
+    if (/Editors?: *(.*?)\n/)           { $editor = $1; }
+    if (/Illustrat(or|ions): *(.*?)\n/) { $illustrated_by = change_case($2); }
+    if (/Edition: *(.*?)\n/)            { $edition = $1; }
 
-    if (/Language: *(.*?)\n/)    {
+    if (/Language: *(.*?)\n/)           {
       if ($1 ne "English" && $language ne "British") {
         $language = $1;
       }
@@ -909,7 +909,6 @@ HERE
 
     print <<HERE;
           <author>$author_name->[0]</author>
-
 HERE
   }
 }
@@ -1022,8 +1021,18 @@ HERE
 }
 print <<HERE;
     </docTitle>
-    <docAuthor>$author_string</docAuthor>
 HERE
+foreach my $author_name (@authors) {
+  if ($author_name->[2]) {
+    print <<HERE;
+    <docAuthor>$author_name->[1] $author_name->[2]</docAuthor>
+HERE
+  } else {
+    print <<HERE;
+    <docAuthor>$author_name->[0]</docAuthor>
+HERE
+  }
+}
 if ($illustrated_by) {
   print <<HERE;
     <byline>
@@ -1243,20 +1252,21 @@ sub post_process {
   $c =~ s|<qpre>|<q>|g;
   $c =~ s|<qpost>|<q>|g;
 
-    # [BLANK PAGE]
+# [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
 
-    # ILLUSTRATIONS ...
-  if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi) {
-    my $tmp = change_case($1);
-    $c =~ s|<head>(.*?)</head>|<head>$tmp</head>|;
+# ILLUSTRATIONS ...
+  # Original formula....keep!
+  # $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
+  if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
+    # my $tmp = change_case($1);
+    my $tmp = $1;
+    $tmp =~ s|[\r\n]+| |g;
+    $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
   }
-# Original formula....keep!
-#    $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
+  $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration<figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
 
-  $c =~ s| <head></head>\n||g; # Remove empty <head>'s
   $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
-
   $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
   $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
@@ -1476,6 +1486,8 @@ sub process_names {
       if ($lastname eq 'Wells'      and $firstname =~ /H. ?G./)      { $firstname = 'Herbert George'; }
       if ($lastname eq 'Wodehouse'  and $firstname =~ /P. ?G./)      { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
+    } elsif ($name =~ m/^Anon/i) {
+      $names[$count] = (['Anonymous']);    
     } else {
       $names[$count] = ([$name]);    
     }
@@ -1484,6 +1496,7 @@ sub process_names {
   if (!@names) {
     $names[0] = (['Anonymous']);
   }
+
   return @names;
 }
 
