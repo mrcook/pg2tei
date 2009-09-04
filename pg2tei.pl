@@ -244,10 +244,8 @@ sub output_para {
   my $o = study_paragraph ($p);
 
   # Some pre-processing for the Footnotes.
-  $p =~ s|[{<\[]l[}>\]]|[1]|g;      # fix stupid [l] mistake. Number 1 not letter l.
-  $p =~ s|<(\d+)>|[$1]|g; # Change <1> footnotes to [1]
-  $p =~ s|{(\d+)}|[$1]|g; # Change {1} footnotes to [1]
-
+  $p =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
+  
   # substitute * * * * * for <milestone> BEFORE footnotes
   # Replace <milestone> later, on line: ~1250
   $p =~ s|^( *\*){3,}|<milestone>|g;
@@ -260,6 +258,21 @@ sub output_para {
   $p =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
   $p =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
 
+  ## Some footnotes are marked up with <>, {} or () so change to []
+  my $footnotes_exist = 0;
+  if ( $p =~ m/\[(\d+|\*+|\w)\]/ ) { $footnotes_exist = 1; }
+  ## If footnotes are detected with the above, then we don't need to process these do we.
+  if ($footnotes_exist == 0) {
+    if ( $p =~ s|<(\d+)>|[$1]|g ) {
+      $footnotes_exist = 1;
+    } elsif ( $p =~ s|{(\d+)}|[$1]|g ) {
+      $footnotes_exist = 1;
+    }
+    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
+    if ($footnotes_exist == 0) {
+      $p =~ s|\((\d+)\)|[$1]|g;
+    }
+  }
 
 
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
@@ -275,9 +288,9 @@ sub output_para {
     print " </lg>\n</quote>\n\n";
   } else {
     # paragraph is prose
-    # join hyphenated words
-#    $p =~ s|[^-]-[ \t\n]+|-|g; # Marcello's Line
-    $p =~ s|([^-])-[ \t\n]+([^ ]+ )|$1-$2\n|g;
+    # join end-of-line hyphenated words
+#   $p =~ s|[^-]-[ \t\n]+|-|g; # Marcello's Line
+    $p =~ s|([^- ])- ?\n([^ ]+) |$1-$2\n|g;
 
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
@@ -310,7 +323,8 @@ sub output_para {
 #### ------------ ---------------------- ------------ ####
 
     #Opening and closing quotes?
-    $p =~ s|</quote>\r\n\r\n<quote>|\r\n\r\n|g;
+#    $p =~ s|</quote>\r\n\r\n<quote>|\r\n\r\n|g;
+    $p =~ s|</quote>\n\n<quote>|\n\n|g;
 
     $p =~ s|&hellip; ?\.|&hellip;|g; # Fix '&hellip; .'
     $p =~ s|&hellip; ?([\!\?])|&hellip;$1|g; # Fix '&hellip; ! or ?'
@@ -1198,10 +1212,13 @@ sub post_process {
 #  $c =~ s|([0-9])-([0-9])|$1&ndash;$2|g;
 
   # HIPHENATED WORDS
-  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
+#  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
   # ...for some reason, on single characters d-d-d the second - doesn't
   # get caught so need to run this again...HOW TO FIX???
-  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
+#  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
+
+#### Ignore hyphenated words and just replace all hyphens (-) ####
+  $c =~ s|-|&#8211;|g;
 
 # move dashes
   $c =~ s|&#8212; </q>([^ ])|&#8212;</q> $1|g;
@@ -1261,7 +1278,8 @@ sub post_process {
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
     # my $tmp = change_case($1);
     my $tmp = $1;
-    $tmp =~ s|[\r\n]+| |g;
+#    $tmp =~ s|[\r\n]+| |g;
+    $tmp =~ s|\n+| |g;
     $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
   }
   $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration<figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
