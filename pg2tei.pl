@@ -1629,9 +1629,9 @@ sub study_paragraph {
     $cnt_indent++ if ($indent);
     $sum_indent += $len;
 
-    # count lines beginning with capital
-    #$cnt_caps++ if (m/^\s*[[:upper:]]/); 
-    $cnt_caps++ if (m/^\s*(-+|\(|\[|\*|\.|"|'| +)*[[:upper:]]/);
+    # count lines beginning with capital; ignoring punctuations and spaces.
+    #$cnt_caps++ if (m/^\s*(-+|\(|\[|\*|\.|"|'|_| +)*[[:upper:]]/); # The below line should be better
+    $cnt_caps++ if (m/^([^a-zA-Z])*[[:upper:]]/);
 
     # count lines shorter than 80% max text line length
     $cnt_short++ if ($len < $thres);
