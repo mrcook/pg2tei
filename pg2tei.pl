@@ -503,18 +503,16 @@ sub output_chapter {
       print "<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
       $is_book = 1;
       $is_book_div = 1;
-#     print "BOOK-PLOOP-OPENING-DIV";
-    } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(.*?)([\. -]+(.*?)\n|\n)/i) {
+    } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
       print "</div>\n\n";
       print "</div>\n\n\n";
       #   Grab the Part/Book number
-      $part_number = encode_numbers($2);
+      $part_number = encode_numbers($3);
       if (!$part_number) { $part_number = "xx"; }
       
       print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
       $is_book = 1;
       $is_book_div = 1;
-#     print "BOOK-PLOOP-CLOSING-DOUBLE-DIV";
     } else {
     if ($is_book_div != 1) {
       print "</div>\n\n\n";
@@ -1282,7 +1280,7 @@ sub post_process {
     $tmp =~ s|\n+| |g;
     $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
   }
-  $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration<figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
+  $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration</figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
 
   $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
   $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
