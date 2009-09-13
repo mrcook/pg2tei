@@ -28,6 +28,7 @@ use utf8;
 #use open qw/:std :encoding(utf8)/;
 
 use vars '$front_matter_block';
+use vars '@illutrators';
 
 use locale;
 my $locale = "en";
@@ -62,7 +63,7 @@ my  $title          = "";
 my  $sub_title      = "";
 my  $author_string  = "";
 my  $editor         = "";
-my  $illustrated    = "Illustrated by";
+my  $illustrated_text = "Illustrated by";
 my  $illustrated_by = "";
 my  $translated     = "";
 my  $translated_by  = "";
@@ -783,14 +784,22 @@ sub output_header () {
     }
 
     # ILLUSTRATED BY ...
-    if (!$illustrated_by) {
-      if (/\n_?(With )?(Illustrat(ions?|ed|er|or)( in colou?r)?( by|:)?)[ \n]?(.+)[\._]*\n/i) {
-        $illustrated = change_case($2);
-        $illustrated_by = change_case($6);
+    if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[\._]*$/i) {
+      if ($1) {
+        $illustrated_text = change_case($1);
+      }
+      if (!$illustrated_by) {
+        $illustrated_by = change_case($9);
         $illustrated_by =~ s/_$//;
       }
     }
-    if (!$illustrated_by) { $illustrated = ""; }
+
+    if ($illustrated_by) { 
+      @illutrators = process_names ($illustrated_by);
+      $illustrated_by =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
+    } else {
+      $illustrated_text = "";
+    }
 
   } # END OF $front_matter_block() PROCESSING
 
@@ -824,10 +833,16 @@ HERE
 HERE
   }
 }
-if ($illustrated_by) {
-print <<HERE;
-      <editor role="illustrator">$illustrated_by</editor>
+foreach my $illustrator_name (@illutrators) {
+  if ($illustrator_name->[2]) {
+    print <<HERE;
+      <editor role="illustrator"><name reg="$illustrator_name->[2], $illustrator_name->[0]">$illustrator_name->[1] $illustrator_name->[2]</name></editor>
 HERE
+  } else {
+    print <<HERE;
+      <editor role="illustrator"><name reg="$illustrator_name->[0]">$illustrator_name->[0]</name></editor>
+HERE
+  }
 }
 if ($translated_by) {
 print <<HERE;
@@ -889,10 +904,16 @@ print <<HERE;
       <biblStruct>
         <monogr>
 HERE
-if ($illustrated_by) {
-  print <<HERE;
-          <editor role="illustrator">$illustrated_by</editor>
+foreach my $illustrator_name (@illutrators) {
+  if ($illustrator_name->[2]) {
+    print <<HERE;
+          <editor role="illustrator"><name reg="$illustrator_name->[2], $illustrator_name->[0]">$illustrator_name->[1] $illustrator_name->[2]</name></editor>
 HERE
+  } else {
+    print <<HERE;
+          <editor role="illustrator"><name reg="$illustrator_name->[0]">$illustrator_name->[0]</name></editor>
+HERE
+  }
 }
 if ($translated_by) {
   print <<HERE;
@@ -1048,7 +1069,7 @@ HERE
 if ($illustrated_by) {
   print <<HERE;
     <byline>
-      $illustrated <name>$illustrated_by</name>
+      $illustrated_text <name>$illustrated_by</name>
     </byline>
 HERE
 }
