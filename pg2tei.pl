@@ -43,7 +43,7 @@ my $cnt_head_sep      = "2";
 my $cnt_paragraph_sep = "1";
 
 # some hints as to what is being converted
-my $is_verse = 0;                  # work is a poem
+my $is_verse = 0;             # work is a poem
 
 # regexps how to catch quotes (filled in later)
 my ($quotes1, $quotes1pre, $quotes2);
@@ -346,7 +346,7 @@ sub output_para {
     $p =~ s|&deg;|&#176;|g;
 
     print $p;  # No WRAP
-#    print wrap ("", "", $p);  # WRAP - Marcello's Line
+#   print wrap ("", "", $p);  # WRAP - Marcello's Line
 
     print "\n\n";
   }
@@ -495,40 +495,38 @@ sub output_epigraph {
 }
 
 sub output_chapter {
-    my $chapter = shift;
+  my $chapter = shift;
 
-    my $part_number = "";
-    $chapter .= "\n" x 10;
+  my $part_number = "";
+  $chapter .= "\n" x 10;
 
-    if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
-      print "<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
-      $is_book = 1;
-      $is_book_div = 1;
-    } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
-      print "</div>\n\n";
-      print "</div>\n\n\n";
-      #   Grab the Part/Book number
-      $part_number = encode_numbers($3);
-      if (!$part_number) { $part_number = "xx"; }
+  if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
+    print "<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
+    $is_book = 1;
+    $is_book_div = 1;
+  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
+    print "</div>\n\n";
+    print "</div>\n\n\n";
+    #   Grab the Part/Book number
+    $part_number = encode_numbers($3);
+    if (!$part_number) { $part_number = "xx"; }
       
-      print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
-      $is_book = 1;
-      $is_book_div = 1;
-    } else {
+    print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
+    $is_book = 1;
+    $is_book_div = 1;
+  } else {
     if ($is_book_div != 1) {
       print "</div>\n\n\n";
     } else {
       $is_book_div = 0;
     }
-      print "<div type=\"chapter\">\n\n";
-    }
+    print "<div type=\"chapter\">\n\n";
+  }
 
-    $chapter =~ s|$head1|output_head ($1)|es;
+  $chapter =~ s|$head1|output_head ($1)|es;
 
-#    while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
-
-#    $chapter .= "\n\n"; # Too much spacing from Marcello
-    while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
+# while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
+  while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
 
   return '';
 }
@@ -540,7 +538,8 @@ sub output_body {
   guess_quoting_convention (\$body); # save mem, pass a ref
   ($avg_line_length, $max_line_length) = compute_line_length (\$body);
 
-  # print ("AVG: $avg_line_length, $max_line_length\n");
+  print ("AVG Line Length: $avg_line_length\n");
+  print ("MAX Line Length: $max_line_length\n");
 
   $body .= "\n{$cnt_chapter_sep}\n";
 
@@ -637,7 +636,7 @@ sub output_header () {
     # Sometimes Author get assigned wierd info...fix it
     if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
 
-    if (/This etext was produced by (.*?)\.?\n/) {
+    if (/This etext was produced by (.*?)[\.,]?\n/) {
       $produced_by = $1;
     }
 
@@ -1618,12 +1617,12 @@ sub study_paragraph {
 
   my @lines = split (/\n/, shift);
   my $o = { };
-
+  
   my $cnt_lines  = scalar (@lines);
-  my $min_len    = 1000;
+  my $min_len    = 10000;
   my $max_len    = 0;
   my $sum_len    = 0;
-  my $min_indent = 1000;
+  my $min_indent = 10000;
   my $max_indent = 0;
   my $cnt_indent = 0;
   my $sum_indent = 0;
@@ -1631,7 +1630,15 @@ sub study_paragraph {
   my $cnt_short  = 0;
   my $cnt_center = 0;
 
-  my $thres = int ($max_line_length * 86 / 100);
+
+  ########################################################
+  # An EXPERIMENT - fix max_line_length to 78 characters #
+  ########################################################
+  $max_line_length = 78;
+
+  # Compute % of max line length (currently: 85%)
+  my $threshhold = int ($max_line_length * 85 / 100);
+
   for (@lines) {
     # min, max, avg line length
     my $len = length ($_);
@@ -1649,17 +1656,16 @@ sub study_paragraph {
     $sum_indent += $len;
 
     # count lines beginning with capital; ignoring punctuations and spaces.
-    #$cnt_caps++ if (m/^\s*(-+|\(|\[|\*|\.|"|'|_| +)*[[:upper:]]/); # The below line should be better
     $cnt_caps++ if (m/^([^a-zA-Z])*[[:upper:]]/);
 
-    # count lines shorter than 80% max text line length
-    $cnt_short++ if ($len < $thres);
+    # count lines shorter than 85% max text line length
+    $cnt_short++ if ($len < $threshhold);
 
-    my $rindent = $max_line_length - $len;
+    my $right_indent = $max_line_length - $len;
 
     # count centered lines
     if ($indent > 0) {
-	    if (($rindent / $indent) < 2) {
+	    if (($right_indent / $indent) < 2) {
         $cnt_center++;
 	    }
     }
@@ -1691,15 +1697,25 @@ sub study_paragraph {
 }
 
 sub is_para_verse {
-  # decide if paragraph is verse
+  # decide if paragraph is a verse
   # param is result from study_paragraph
   my $o = shift;
-
-  # one-liner, cannot tell
+  
+  # If only one line and no indent then we don't know if it is a <l>
   return 0 if $o->{'cnt_lines'} < 2 && $o->{'min_indent'} == 0;
 
+  ######################################
+  ## Can we do something better here? ##
+  ######################################
   # are all lines indented ?
-  return 0 if $o->{'min_indent'} == 0;
+  # return 0 if $o->{'min_indent'} == 0; # Marcello's Original
+  ######################################
+  ## Here we check for number of indented lines instead of min_indent
+  if ($o->{'cnt_indent'} < 2 && $o->{'min_indent'} == 0) {
+    if ($o->{'cnt_long'} > 0) {
+      return 0;
+    }
+  }
 
   # do all lines begin with capital letters ?
   if ($o->{'cnt_lines'} > 1) {                # Only check if more than one line
