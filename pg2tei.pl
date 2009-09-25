@@ -701,14 +701,14 @@ sub output_header () {
   for ($front_matter_block) {
 
     # Grab 'Produced/Prepared by' then remove
-    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.+)\n//i) {
+    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.*?)\n//i) {
       $prod_first_by = $3;
       if (s/((and )?(the )?(Project Gutenberg )?(Online )?(Distributed )?Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
         $prod_first_by .= " $1";
       }
     } elsif (s/((.*?)(Project Gutenberg )?(Online )?Distributed Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
       $prod_first_by = $1;
-    } elsif ($h =~ m/This [e-]*Text (was )?(first )?(Produced|Prepared|Created) by +(.+)\n/i) {
+    } elsif ($h =~ m/This [e-]*Text (was )?(first )?(Produced|Prepared|Created) by +(.*?)\n/i) {
       $prod_first_by = $4;
     }
 
@@ -726,11 +726,11 @@ sub output_header () {
       if (m/proof(ed|read) by:?\s+(.+)\n/i) { $produced_by = $2; }
     }
 
-    if (s/[\n ]*([e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
+    if (s/[\n ]*([e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.*?)\n//i) {
       $produced_by = $3;
-#    } elsif ($front_matter_block =~ s/[\n ]*(|[e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.+)\n//i) {
-#      $produced_by = $3;
     }
+
+    $produced_by =~ s/^(.*?),$/$1/;  # Clean up any end spaces or commas
 
     if ($produced_by eq "unknown") {
       $produced_by = $prod_first_by;
@@ -761,18 +761,22 @@ sub output_header () {
       $publisher =~ s|&|&amp;|; # Convert ampersand
     }
 
-    # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
-    if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
-      $transcriber_notes = $1;
-    } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
-      $transcriber_notes = $1;
-    }
-
     # REDACTOR'S NOTES
     if (s/ *\[Redactor\'?s? Note[s:\n ]*(.*?)\]//is) {
       $redactors_notes = $1;
     } elsif (s/Redactor\'s Note[s:\n ]*(.*?)\n\n\n//is) {
       $redactors_notes = $1;
+    }
+
+    $redactors_notes = "\n" . $redactors_notes;
+    $redactors_notes =~ s/\n/\n        /gis;      # Indent the text
+    $redactors_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
+
+    # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
+    if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
+      $transcriber_notes = $1;
+    } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
+      $transcriber_notes = $1;
     }
 
     # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
@@ -781,6 +785,11 @@ sub output_header () {
     } elsif (s/^Notes?: (.*?)\n\n\n//is) {
       $transcriber_notes = $1;
     }
+
+    $transcriber_notes = "\n" . $transcriber_notes;
+    $transcriber_notes =~ s/\n/\n        /gis;      # Indent the text
+    $transcriber_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
+
 
     # ILLUSTRATED BY ...
     if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[\._]*$/i) {
