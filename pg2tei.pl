@@ -1647,8 +1647,8 @@ sub study_paragraph {
   ########################################################
   $max_line_length = 78;
 
-  # Compute % of max line length (currently: 85%)
-  my $threshhold = int ($max_line_length * 85 / 100);
+  # Compute % of max line length (currently: 84%)
+  my $threshhold = int ($max_line_length * 84 / 100);
 
   for (@lines) {
     # min, max, avg line length
@@ -1669,7 +1669,7 @@ sub study_paragraph {
     # count lines beginning with capital; ignoring punctuations and spaces.
     $cnt_caps++ if (m/^([^a-zA-Z])*[[:upper:]]/);
 
-    # count lines shorter than 85% max text line length
+    # count lines shorter than xx% (set above) max text line length
     $cnt_short++ if ($len < $threshhold);
 
     my $right_indent = $max_line_length - $len;
