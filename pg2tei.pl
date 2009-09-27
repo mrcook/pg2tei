@@ -768,7 +768,9 @@ sub output_header () {
       $redactors_notes = $1;
     }
 
-    $redactors_notes = "\n" . $redactors_notes;
+    if ($redactors_notes) {
+      $redactors_notes = "\n" . $redactors_notes;
+    }
     $redactors_notes =~ s/\n/\n        /gis;      # Indent the text
     $redactors_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
 
@@ -786,7 +788,9 @@ sub output_header () {
       $transcriber_notes = $1;
     }
 
-    $transcriber_notes = "\n" . $transcriber_notes;
+    if ($transcriber_notes) {
+      $transcriber_notes = "\n" . $transcriber_notes;
+    }
     $transcriber_notes =~ s/\n/\n        /gis;      # Indent the text
     $transcriber_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
 
@@ -986,9 +990,7 @@ if ($transcriber_errors) {
 HERE
 }
 print <<HERE;
-      <normalization>
-        <p></p>
-      </normalization>
+      <normalization></normalization>
       <quotation marks="all" form="std">
         <p>All double quotation marks rendered with q tags.</p>
       </quotation>
