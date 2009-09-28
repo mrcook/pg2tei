@@ -58,38 +58,46 @@ my $date_string     = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">
 my $dcurdate        = strftime ("%Y-%m-%d", localtime ());
 my $current_date    = strftime ("%d %B %Y", localtime ());
 
-my  $producer       = "*** unknown";
-my  $title          = "";
-my  $sub_title      = "";
-my  $author_string  = "";
-my  $editor         = "";
-my  $illustrated_text = "Illustrated by";
-my  $illustrated_by = "";
-my  $translated     = "";
-my  $translated_by  = "";
-my  $publishedplace = "";
-my  $publisher      = "";
-my  $publishdate    = "";
+my  $producer       = '*** unknown';
+my  $title          = '';
+my  $sub_title      = '';
+my  $author_string  = '';
+my  $editor         = '';
+my  $illustrated_text = 'Illustrated by';
+my  $illustrated_by = '';
+my  $translated     = '';
+my  $translated_by  = '';
+my  $publishedplace = '';
+my  $publisher      = '';
+my  $publishdate    = '';
 
-my  $language       = "***";
-my  $language_code  = "";
-my  $charset        = "***";
+my  $language       = '***';
+my  $language_code  = '';
+my  $charset        = '***';
 
-my  $reldate        = "***";
-my  $firstposted    = "***";
-my  $updateposted   = "***";
+my  $reldate        = '***';
+my  $firstposted    = '***';
+my  $updateposted   = '***';
 
-my  $filename       = "";
+my  $posteddate      = '';
+my  $releasedate     = '';
+my  $lastupdated     = '';
+my  $posteddate_iso  = '';
+my  $releasedate_iso = '';
+my  $lastupdated_iso = '';
+
+my  $filename       = '';
 my  $etext          = '';
-my  $edition        = "";
+my  $gutenberg_num  = '';
+my  $edition        = '';
 
-my  $prod_first_by      = "unknown";
-my  $produced_by        = "unknown";
-my  $produced_update_by = "unknown";
+my  $prod_first_by      = 'unknown';
+my  $produced_by        = 'unknown';
+my  $produced_update_by = 'unknown';
 
-my  $transcriber_notes  = "";
-my  $transcriber_errors = "";
-my  $redactors_notes    = "";
+my  $transcriber_notes  = '';
+my  $transcriber_errors = '';
+my  $redactors_notes    = '';
 
 my  $footnote_exists    = 0;
 
@@ -581,40 +589,95 @@ sub output_header () {
       }
     }
     if ($language eq "***")      { $language = "English"; }
-
     $language_code = encode_lang ($language);
 
-    # Figure out the posting dates
-    # Try the easy route first
-#    if (/Release Date: +(.*?)( +\[E(?:(?:Book)|(?:Text)) +\#(\d+)\])?\n/i) {
-    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
-      $reldate = $2; $etext = $6;
-    } elsif (/\n+(.*?) +\[(E|e)(Book|Text) +\#(\d+)\]/i) {
-      if ($reldate eq '***') { $reldate = $1; }
-      if (!$etext) { $etext = $4; }
-    }
 
-    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
-      $updateposted = $1;
-      if (!$etext) { $etext = $5; }
-    }
+    # Find the Posting/Release/Updated Dates
+    # Release Date is usually old than the Posting Date (But not always)
+    # Posting Date usually contains the EBook #
 
-    # Still no Origianl Release Date? Try this;
-    if (/Original Release Date: +(.*?)\n/i) {
-      $firstposted = $1;
-    }
+    # OFFICIAL RELEASE DATE - Usually NO EBook #.
+    if (/((Official|Original) )?Release Date: *(.*?)\n/) { $releasedate = $3; }
 
-    # The date it was first posted
-    if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
-      if ($firstposted eq '***') {
-        $firstposted = $4;
+      # If no Release Date try this.
+    if (!$releasedate) {
+      if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
+        $releasedate = $4;
       }
     }
 
-    # Capture 'updated' dates
-    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
-      $updateposted = $4;
+    # POSTING DATE - This usually includes the EBook #.
+    if (/Posting Date: *(.*?)\n/)       { $posteddate  = $1; }
+
+    # LAST UPDATED
+    if (/Last updated: *(.*?)\n/)       { $lastupdated = $1; }
+
+      # If no Last Update try this.
+    if (!$lastupdated) {
+      if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
+        $lastupdated = $4;
+      }
     }
+
+    # Get eBook Number from Posting/Release Date
+    if ($posteddate =~ /(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])/) {
+      $posteddate = $1;
+      $gutenberg_num = $5;
+    }
+      # Sometimes the eBook number is on Release Date
+    if (!$gutenberg_num) {
+      if ($releasedate =~ /(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])/) {
+        $releasedate = $1;
+        $gutenberg_num = $5;
+      } 
+    }
+
+    # Give some defaults in case of no findings
+    if (!$posteddate) { $posteddate = $releasedate; }
+    if (!$lastupdated) { $lastupdated = $releasedate; }
+
+    # Process and get the ISO dates
+    $releasedate_iso = process_dates ($releasedate);
+    $posteddate_iso  = process_dates ($posteddate);
+    $lastupdated_iso = process_dates ($lastupdated);
+
+    ## Further Date coding below.......
+
+#########################
+###   ORIGINAL CODE   ###
+#########################
+#    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
+#      $reldate = $2; $etext = $6;
+#    } elsif (/\n+(.*?) +\[(E|e)(Book|Text) +\#(\d+)\]/i) {
+#      if ($reldate eq '***') { $reldate = $1; }
+#      if (!$etext) { $etext = $4; }
+#    }
+
+    # Still no Origianl Release Date? Try this;
+#    if (/Original Release Date: +(.*?)\n/i) {
+#      $firstposted = $1;
+#    }
+
+    # The date it was first posted
+#    if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
+#      if ($firstposted eq '***') {
+#        $firstposted = $4;
+#      }
+#    }
+
+#    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
+#      $updateposted = $1;
+#      if (!$etext) { $etext = $5; }
+#    }
+
+    # Capture 'updated' dates
+#    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
+#      $updateposted = $4;
+#    }
+#########################
+###   -------------   ###
+#########################
+
 
     if (/Character set encoding: *(.*?)\n/) { $charset = $1; }
 
@@ -652,19 +715,28 @@ sub output_header () {
 
   my $languages = list_languages ($language_code);
 
+
+#########################
+###   ORIGINAL CODE   ###
+#########################
   # Change any / to -
-  if ($firstposted =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
-    my $tmp = $3;
-    if ($tmp < 7) { $tmp += 2000; } elsif ($tmp < 70) { $tmp += 1900; }
-    $firstposted = "$1-$2-$tmp";
-  }
+#  if ($firstposted =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
+#    my $tmp = $3;
+#    if ($tmp < 7) { $tmp += 2000; } elsif ($tmp < 70) { $tmp += 1900; }
+#    $firstposted = "$1-$2-$tmp";
+#  }
 
-  if ($firstposted eq '***') { $firstposted = $reldate; }
-  if ($updateposted eq '***' ) { $updateposted = $reldate; }
+#  if ($firstposted eq '***') { $firstposted = $reldate; }
+#  if ($updateposted eq '***' ) { $updateposted = $reldate; }
 
-  my $dfirstposted    = process_dates ($firstposted);
-  my $dreldate        = process_dates ($reldate);
-  my $dupdateposted   = process_dates ($updateposted);
+#  my $dfirstposted    = process_dates ($firstposted);
+#  my $dreldate        = process_dates ($reldate);
+#  my $dupdateposted   = process_dates ($updateposted);
+#########################
+###   -------------   ###
+#########################
+
+
   my @editors = ();
   if ($editor) {
     @editors = process_names ($editor);
@@ -685,13 +757,15 @@ sub output_header () {
 ### If $edition still equals nothing then assign default: 1
   if (!$edition) {
     $edition = '1';
-    if ($reldate ne $updateposted) { $edition = '2'; }
+    # Increase to next version if file has been updated
+    if ($releasedate_iso ne $lastupdated_iso) { $edition = '2'; }
   }
 
 ### If $edition equals PG 10 or 11 change to 1 and 2 respectively.
   my $pg_edition = $edition; # Keep the original PG edition number if it exists.
   if ( $edition == 10 ) { $edition = '1'; }
   if ( $edition == 11 ) { $edition = '2'; }
+  if ( $edition == 12 ) { $edition = '3'; }
 
 
 ################################
@@ -878,7 +952,7 @@ HERE
 print <<HERE;
     </titleStmt>
     <editionStmt>
-      <edition n="$edition">Edition $edition, <date value="$dupdateposted">$updateposted</date></edition>
+      <edition n="$edition">Edition $edition, <date value="$lastupdated_iso">$lastupdated</date></edition>
       <respStmt>
         <resp>Original e-Text edition prepared by</resp>
         <name>$prod_first_by</name>
@@ -893,7 +967,7 @@ print <<HERE;
         <addrLine>UT 84116</addrLine>
         <addrLine>United States</addrLine>
       </address>
-      <date value="$dfirstposted">$firstposted</date>
+      <date value="$releasedate_iso">$releasedate</date>
       <idno type="gutenberg-no">$etext</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
@@ -1031,16 +1105,16 @@ print <<HERE;
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
     </change>
 HERE
-  if ($updateposted ne $reldate) {
+  if ($lastupdated ne $releasedate) {
     print <<HERE;
-    <change when="$dupdateposted" who="$produced_update_by">
+    <change when="$lastupdated_iso" who="$produced_update_by">
       Project Gutenberg Edition $pg_edition.
     </change>
 HERE
   }
-  if ($dfirstposted ne $dreldate) {
+  if ($posteddate_iso ne $releasedate_iso) {
     print <<HERE;
-    <change when="$dreldate" who="$produced_by">
+    <change when="$posteddate_iso" who="$produced_by">
       Project Gutenberg Update Release.
     </change>
 HERE
