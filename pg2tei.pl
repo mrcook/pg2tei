@@ -2,7 +2,7 @@
 #
 # Any redistributions of files must retain the copyright notice below.
 #
-# @author     Michael Cook | ePub Books (http://www.epubbooks.com)
+# @author     Michael Cook | epubBooks (http://www.epubbooks.com)
 # @copyright  Copyright (c)2007-2009 Michael Cook
 # @package    pg2tei v0.20 - Project Gutenberg eText to TEI converter
 # @created    May 2007
@@ -75,19 +75,17 @@ my  $language       = '***';
 my  $language_code  = '';
 my  $charset        = '***';
 
-my  $reldate        = '***';
-my  $firstposted    = '***';
-my  $updateposted   = '***';
-
-my  $posteddate      = '';
-my  $releasedate     = '';
-my  $lastupdated     = '';
-my  $posteddate_iso  = '';
-my  $releasedate_iso = '';
-my  $lastupdated_iso = '';
+my  $posteddate       = '';
+my  $releasedate      = '';
+my  $lastupdated      = '';
+my  $posteddate_iso   = '';
+my  $releasedate_iso  = '';
+my  $lastupdated_iso  = '';
+my  $revision_lastupdated = ''; # Needed for <revisionDesc>
+my  $firstupdated     = '';
+my  $firstupdated_iso = '';
 
 my  $filename       = '';
-my  $etext          = '';
 my  $gutenberg_num  = '';
 my  $edition        = '';
 
@@ -578,12 +576,12 @@ sub output_header () {
       $title = $1; $sub_title = "";
     }
     
-    if (/Authors?: *(.*?)\n/)           { $author_string = $1; }
-    if (/Editors?: *(.*?)\n/)           { $editor = $1; }
-    if (/Illustrat(or|ions): *(.*?)\n/) { $illustrated_by = change_case($2); }
-    if (/Edition: *(.*?)\n/)            { $edition = $1; }
-
-    if (/Language: *(.*?)\n/)           {
+    if (/\nAuthors?: *(.*?)\n/)               { $author_string = $1; }
+    if (/\nEditors?: *(.*?)\n/)               { $editor = $1; }
+    if (/\nIllustrat(or|ions): *(.*?)\n/)     { $illustrated_by = change_case($2); }
+    if (/\nEdition: *(.*?)\n/)                { $edition = $1; }
+    if (/\nCharacter set encoding: *(.*?)\n/) { $charset = $1; }
+    if (/\nLanguage: *(.*?)\n/)               {
       if ($1 ne "English" && $language ne "British") {
         $language = $1;
       }
@@ -591,27 +589,23 @@ sub output_header () {
     if ($language eq "***")      { $language = "English"; }
     $language_code = encode_lang ($language);
 
-
+    ############################################################################
     # Find the Posting/Release/Updated Dates
     # Release Date is usually old than the Posting Date (But not always)
     # Posting Date usually contains the EBook #
 
     # OFFICIAL RELEASE DATE - Usually NO EBook #.
-    if (/((Official|Original) )?Release Date: *(.*?)\n/) { $releasedate = $3; }
-
-      # If no Release Date try this.
-    if (!$releasedate) {
+    if (/\n((Official|Original) )?Release Date: *(.*?)\n/i) { $releasedate = $3; }
+    # POSTING DATE - This usually includes the EBook #.
+    if (/\nPosting Date: *(.*?)\n/)       { $posteddate  = $1; }
+      # If no Posting Date try this.
+    if (!$posteddate ) {
       if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
-        $releasedate = $4;
+        $posteddate  = $4;
       }
     }
-
-    # POSTING DATE - This usually includes the EBook #.
-    if (/Posting Date: *(.*?)\n/)       { $posteddate  = $1; }
-
     # LAST UPDATED
-    if (/Last updated: *(.*?)\n/)       { $lastupdated = $1; }
-
+    if (/\nLast Updated?: *(.*?)\n/i)       { $lastupdated = $1; }
       # If no Last Update try this.
     if (!$lastupdated) {
       if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
@@ -619,67 +613,61 @@ sub output_header () {
       }
     }
 
-    # Get eBook Number from Posting/Release Date
-    if ($posteddate =~ /(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])/) {
+    # Grab the PG ETEXT NUMBER
+    my $etext_regex = "";
+      # Get eBook Number from Posting/Release Date
+    if ($posteddate =~ /^(.*?)( +\[e(book|text) +\#(\d+)\])$/i) {
       $posteddate = $1;
-      $gutenberg_num = $5;
+      $gutenberg_num = $4;
     }
       # Sometimes the eBook number is on Release Date
     if (!$gutenberg_num) {
-      if ($releasedate =~ /(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])/) {
+      if ($releasedate =~ /^(.*?)( +\[e(book|text) +\#(\d+)\])$/i) {
         $releasedate = $1;
-        $gutenberg_num = $5;
+        $gutenberg_num = $4;
       } 
     }
+    # PROCESS and get the ISO DATES
+    $releasedate_iso = process_dates ($releasedate) if ($releasedate);
+    $posteddate_iso  = process_dates ($posteddate)  if ($posteddate);
+    $lastupdated_iso = process_dates ($lastupdated) if ($lastupdated);
 
-    # Give some defaults in case of no findings
-    if (!$posteddate) { $posteddate = $releasedate; }
-    if (!$lastupdated) { $lastupdated = $releasedate; }
+    # SAFE Option for Dates is to create an array and sort them.
+    # This is because PG often mixes up Posted/Released dates, etc.
+    # This will then give the proper date sequence.
+    my @book_dates   = ();
+    my @dates_sorted = ();
+    if ($releasedate) { push(@book_dates, [$releasedate_iso, $releasedate]); }
+    if ($posteddate)  { push(@book_dates, [$posteddate_iso,  $posteddate]);  }
+    if ($lastupdated) { push(@book_dates, [$lastupdated_iso, $lastupdated]); }
+    # Sort into Date ASC order
+    @dates_sorted = sort {$a->[0] <=> $b->[0]} @book_dates;
+    # Set RELEASE DATE
+    $releasedate     = $dates_sorted[0]->[1];
+    $releasedate_iso = $dates_sorted[0]->[0];
+    # Set FIRST UPDATED
+    # If there is a 3rd date there is a FIRST RELEASED DATE
+    if ($dates_sorted[2]->[0]) {
+      $firstupdated     = $dates_sorted[1]->[1];
+      $firstupdated_iso = $dates_sorted[1]->[0];
+    } else {                                # Otherewise, there is not middle date.
+      $firstupdated     = '';
+      $firstupdated_iso = '';
+    }
+    # Set LAST UPDATED
+    if ($dates_sorted[2]->[0]) {            # Are there 3 dates?
+      $revision_lastupdated = 1;
+      $lastupdated     = $dates_sorted[2]->[1];
+      $lastupdated_iso = $dates_sorted[2]->[0];
+    } elsif ($dates_sorted[1]->[0]) {       # Not 3 dates? How about 2?
+      $revision_lastupdated = 1;
+      $lastupdated     = $dates_sorted[1]->[1];
+      $lastupdated_iso = $dates_sorted[1]->[0];
+    } else {                                # Set to SAME AS RELEASE DATE (Needed for <edition> date info.)
+      $lastupdated     = $dates_sorted[0]->[1];
+      $lastupdated_iso = $dates_sorted[0]->[0];
+    }
 
-    # Process and get the ISO dates
-    $releasedate_iso = process_dates ($releasedate);
-    $posteddate_iso  = process_dates ($posteddate);
-    $lastupdated_iso = process_dates ($lastupdated);
-
-    ## Further Date coding below.......
-
-#########################
-###   ORIGINAL CODE   ###
-#########################
-#    if (/(Official )?Release Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
-#      $reldate = $2; $etext = $6;
-#    } elsif (/\n+(.*?) +\[(E|e)(Book|Text) +\#(\d+)\]/i) {
-#      if ($reldate eq '***') { $reldate = $1; }
-#      if (!$etext) { $etext = $4; }
-#    }
-
-    # Still no Origianl Release Date? Try this;
-#    if (/Original Release Date: +(.*?)\n/i) {
-#      $firstposted = $1;
-#    }
-
-    # The date it was first posted
-#    if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
-#      if ($firstposted eq '***') {
-#        $firstposted = $4;
-#      }
-#    }
-
-#    if (/Posting Date: +(.*?)( +\[(E|e)(Book|Text) +\#(\d+)\])?\n/i) {
-#      $updateposted = $1;
-#      if (!$etext) { $etext = $5; }
-#    }
-
-    # Capture 'updated' dates
-#    if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
-#      $updateposted = $4;
-#    }
-#########################
-###   -------------   ###
-#########################
-
-
-    if (/Character set encoding: *(.*?)\n/) { $charset = $1; }
 
     # If not set try to grab title, author, etc.
     # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
@@ -715,28 +703,6 @@ sub output_header () {
 
   my $languages = list_languages ($language_code);
 
-
-#########################
-###   ORIGINAL CODE   ###
-#########################
-  # Change any / to -
-#  if ($firstposted =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
-#    my $tmp = $3;
-#    if ($tmp < 7) { $tmp += 2000; } elsif ($tmp < 70) { $tmp += 1900; }
-#    $firstposted = "$1-$2-$tmp";
-#  }
-
-#  if ($firstposted eq '***') { $firstposted = $reldate; }
-#  if ($updateposted eq '***' ) { $updateposted = $reldate; }
-
-#  my $dfirstposted    = process_dates ($firstposted);
-#  my $dreldate        = process_dates ($reldate);
-#  my $dupdateposted   = process_dates ($updateposted);
-#########################
-###   -------------   ###
-#########################
-
-
   my @editors = ();
   if ($editor) {
     @editors = process_names ($editor);
@@ -768,9 +734,9 @@ sub output_header () {
   if ( $edition == 12 ) { $edition = '3'; }
 
 
-################################
-### Now process FRONT MATTER ###
-################################
+################################################################################
+###                       Now process FRONT MATTER                           ###
+################################################################################
 
   for ($front_matter_block) {
 
@@ -968,7 +934,7 @@ print <<HERE;
         <addrLine>United States</addrLine>
       </address>
       <date value="$releasedate_iso">$releasedate</date>
-      <idno type="gutenberg-no">$etext</idno>
+      <idno type="gutenberg-no">$gutenberg_num</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
         <p>This eBook is for the use of anyone anywhere at no cost and with
@@ -1105,16 +1071,16 @@ print <<HERE;
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
     </change>
 HERE
-  if ($lastupdated ne $releasedate) {
+  if ($revision_lastupdated) {
     print <<HERE;
     <change when="$lastupdated_iso" who="$produced_update_by">
       Project Gutenberg Edition $pg_edition.
     </change>
 HERE
   }
-  if ($posteddate_iso ne $releasedate_iso) {
+  if ($firstupdated) {
     print <<HERE;
-    <change when="$posteddate_iso" who="$produced_by">
+    <change when="$firstupdated_iso" who="unknown">
       Project Gutenberg Update Release.
     </change>
 HERE
