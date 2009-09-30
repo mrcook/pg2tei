@@ -507,7 +507,7 @@ sub output_chapter {
   $chapter .= "\n" x 10;
 
   if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
-    print "<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
+    print "\n\n<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
@@ -741,7 +741,7 @@ sub output_header () {
   for ($front_matter_block) {
 
     # Grab 'Produced/Prepared by' then remove
-    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.*?)\n//i) {
+    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.*?)\n//) {
       $prod_first_by = $3;
       if (s/((and )?(the )?(Project Gutenberg )?(Online )?(Distributed )?Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
         $prod_first_by .= " $1";
@@ -1685,7 +1685,7 @@ sub study_paragraph {
   ########################################################
   # An EXPERIMENT - fix max_line_length to 78 characters #
   ########################################################
-  $max_line_length = 78;
+  #$max_line_length = 78;
 
   # Compute % of max line length (currently: 84%)
   my $threshhold = int ($max_line_length * 84 / 100);
