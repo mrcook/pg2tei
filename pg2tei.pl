@@ -17,6 +17,7 @@
 require 5.004;
 use strict;
 use Getopt::Long;
+use Getopt::Long;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
 use Text::Wrap;
@@ -52,7 +53,7 @@ my $avg_line_length = 0;
 my $max_line_length = 0;
 
 
-##############################################################
+################################################################################
 
 my $date_string     = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">" . strftime ("%B %Y", localtime ()) . "</date>";
 my $dcurdate        = strftime ("%Y-%m-%d", localtime ());
@@ -203,7 +204,7 @@ while (<>) {
     output_footer ();
 }
 
-### end of main () ########################################################
+### end of main () #############################################################
 
 sub output_line {
   my $line = shift;
@@ -740,37 +741,29 @@ sub output_header () {
 
   for ($front_matter_block) {
 
-    # Grab 'Produced/Prepared by' then remove
-    if (s/[\n ]*(.*?)(Produced|Prepared|Created) by +(.*?)\n//) {
-      $prod_first_by = $3;
-      if (s/((and )?(the )?(Project Gutenberg )?(Online )?(Distributed )?Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
-        $prod_first_by .= " $1";
+    # Who first produced this text for Project Gutenberg?
+    if (s/[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n//i) {
+      $prod_first_by = $5;
+      if ($6) {
+        $prod_first_by = $prod_first_by . " " . $6;
       }
-    } elsif (s/((.*?)(Project Gutenberg )?(Online )?Distributed Proofreading Team( at http:\/\/www\.pgdp\.net)?).*\n//i) {
-      $prod_first_by = $1;
-    } elsif ($h =~ m/This [e-]*Text (was )?(first )?(Produced|Prepared|Created) by +(.*?)\n/i) {
-      $prod_first_by = $4;
     }
 
-### IS this redundant code? CHECK before DELETING
-#   elsif (s/[\n ]*((This )?[e-]*Text ((was )?first )?)?(Produced|Prepared|Created) by +(.*?)\n//i) {
-#      $prod_first_by = $6;
-#  }
-
-    if (s/[\n ]*(This )?updated ([e-]*Text|edition) ?(was )?(Produced|Prepared) by +(.+)\n//i) {
+    # Who first produced the UPDATED version?
+    if (s/[\n ]+(This )?updated ([e-]*Text|edition) (was )?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n//i) {
       $produced_update_by = $5;
+      if ($6) {
+        $produced_update_by = $produced_update_by . " " . $6;
+      }
     }
 
-    # This DOESN'T go anywhere!!! Shall I do something with it?
-    if ($produced_by eq 'unknown') {
-      if (m/proof(ed|read) by:?\s+(.+)\n/i) { $produced_by = $2; }
-    }
-
-    if (s/[\n ]*([e-]*text Scanned|Scanned and proof(ed|read)|Transcribed from the.*?) by:?\s+(.*?)\n//i) {
+    # Who Scanned/Proofed the original text?
+    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
       $produced_by = $3;
+    } elsif (/proof(ed| ?read) by:? +(.*?)\n/i) {
+      $produced_by = $2;
     }
-
-    $produced_by =~ s/^(.*?),$/$1/;  # Clean up any end spaces or commas
+    $produced_by =~ s/^(.*?)[, ]$/$1/;  # Clean up any end spaces or commas
 
     if ($produced_by eq "unknown") {
       $produced_by = $prod_first_by;
@@ -782,6 +775,7 @@ sub output_header () {
       $prod_first_by = "Project Gutenberg";
     }
     $prod_first_by =~ s/\.$//;
+
 
     # Get the published date
     if (m/\n *([0-9]{4})\n/i) {
@@ -1203,9 +1197,9 @@ HERE
 }
 
 
-############################################
+################################################################################
 # various cosmetic tweaks before output
-#
+################################################################################
 
 sub post_process {
   my $c = shift;
@@ -1244,9 +1238,9 @@ sub post_process {
   $c =~ s|(\d{1,3})o|$1&deg;|g;
 
 
-############################################
+################################################################################
 # text highlighting
-#
+################################################################################
 
 # Add <emph> tags; changing _ and <i> to <emph>
 
@@ -1263,7 +1257,7 @@ sub post_process {
 #  $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
 
 
-############################################
+################################################################################
 # reserved characters
 #
 # these characters will give TeX trouble if left in
@@ -1273,7 +1267,7 @@ sub post_process {
   $c =~ s|\}|&#125;|g;
 
 
-############################################
+################################################################################
 # typografical entities
 #
 
@@ -1322,7 +1316,7 @@ sub post_process {
 
   $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
 
-############################################
+################################################################################
 # various cosmetics
 #
 # strip multiple spaces
@@ -1682,11 +1676,6 @@ sub study_paragraph {
   my $cnt_center = 0;
 
 
-  ########################################################
-  # An EXPERIMENT - fix max_line_length to 78 characters #
-  ########################################################
-  #$max_line_length = 78;
-
   # Compute % of max line length (currently: 84%)
   my $threshhold = int ($max_line_length * 84 / 100);
 
@@ -1755,12 +1744,11 @@ sub is_para_verse {
   # If only one line and no indent then we don't know if it is a <l>
   return 0 if $o->{'cnt_lines'} < 2 && $o->{'min_indent'} == 0;
 
-  ######################################
-  ## Can we do something better here? ##
+
   ######################################
   # are all lines indented ?
   # return 0 if $o->{'min_indent'} == 0; # Marcello's Original
-  ######################################
+
   ## Here we check for number of indented lines instead of min_indent
   if ($o->{'cnt_indent'} < 2 && $o->{'min_indent'} == 0) {
     if ($o->{'cnt_long'} > 0) {
