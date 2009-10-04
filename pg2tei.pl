@@ -209,6 +209,7 @@ while (<>) {
 sub output_line {
   my $line = shift;
   my $min_indent = shift;
+
   $line =~ m/\S/g;
 ##  my $indent = "&nbsp;" x (pos ($line) - $min_indent - 1); ## OLD spacinging
   my $indent = (pos ($line) - $min_indent - 1);
@@ -230,6 +231,7 @@ sub output_line {
 #    $line = fix_unbalanced_quotes_line ($line);
 
     $line = post_process ($line);
+    $line = process_footnotes ($line);
 
     if ( $line =~ m/\[(\d+|\*)\]/ ) { # Check for footnotes
       print "<p>$line</p>\n";
@@ -250,38 +252,10 @@ sub output_para {
   $p .= "\n";
   
   my $o = study_paragraph ($p);
-
-  # Some pre-processing for the Footnotes.
-  $p =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
   
   # substitute * * * * * for <milestone> BEFORE footnotes
   # Replace <milestone> later, on line: ~1250
   $p =~ s|^( *\*){3,}|<milestone>|g;
-  
-  ## Check for * footnotes and fix up
-  $p =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
-  $p =~ s|^( *)\[?\*\* |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
-  $p =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
-
-  $p =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
-  $p =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
-
-  ## Some footnotes are marked up with <>, {} or () so change to []
-  my $footnotes_exist = 0;
-  if ( $p =~ m/\[(\d+|\*+|\w)\]/ ) { $footnotes_exist = 1; }
-  ## If footnotes are detected with the above, then we don't need to process these do we.
-  if ($footnotes_exist == 0) {
-    if ( $p =~ s|<(\d+)>|[$1]|g ) {
-      $footnotes_exist = 1;
-    } elsif ( $p =~ s|{(\d+)}|[$1]|g ) {
-      $footnotes_exist = 1;
-    }
-    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
-    if ($footnotes_exist == 0) {
-      $p =~ s|\((\d+)\)|[$1]|g;
-    }
-  }
-
 
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
@@ -318,12 +292,7 @@ sub output_para {
       $p = "<p$rend>$p</p>";
     }
 
-    # FOOTNOTES: Semi-auto process on footnotes.
-    # (I have fixed stupid [l] mistake at begining of this sub().)
-    
-    if ($p =~ s/\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
-      $footnote_exists = 1;
-    }
+    $p = process_footnotes ($p);
 
 #### ------------ ---------------------- ------------ ####
 ####    DO SOME LAST MINUTE FIXING UP BEFORE OUTPUT   ####
@@ -379,8 +348,9 @@ sub output_head {
   my $head_tmp = '';
   $head_tmp = process_quotes_1 ($1);
   $head_tmp = post_process ($head_tmp);
+  $head_tmp = process_footnotes ($head_tmp);
 
-  $head_tmp =~ s/^\s//gm; # Strip out leading whitespace
+  $head_tmp =~ s/^\s//; # Strip out leading whitespace
 
   if ($head_tmp =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
@@ -1200,6 +1170,46 @@ HERE
 ################################################################################
 # various cosmetic tweaks before output
 ################################################################################
+
+sub process_footnotes {
+  my $c = shift;
+
+  # Some pre-processing for the Footnotes.
+  $c =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
+
+  ## Check for * footnotes and fix up
+  $c =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|^( *)\[?\*\* |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
+
+  
+  $c =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
+  $c =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
+
+  ## Some footnotes are marked up with <>, {} or () so change to []
+  my $note_exists = 0;
+  if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
+
+  ## If footnotes are detected with the above, then we don't need to process these do we.
+  if ($note_exists == 0) {
+    if ( $c =~ s|<(\d+)>|[$1]|g ) {
+      $note_exists = 1;
+    } elsif ( $c =~ s|{(\d+)}|[$1]|g ) {
+      $note_exists = 1;
+    }
+    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
+    if ($note_exists == 0) {
+      $c =~ s|\((\d+)\)|[$1]|g;
+    }
+  }
+
+  # FOOTNOTES: Semi-auto process on footnotes.    
+  if ($c =~ s/[^ \n\t]{2,}\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
+    $footnote_exists = 1;
+  }
+
+  return $c;
+}
 
 sub post_process {
   my $c = shift;
