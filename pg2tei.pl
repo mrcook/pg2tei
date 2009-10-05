@@ -1177,19 +1177,19 @@ sub process_footnotes {
   # Some pre-processing for the Footnotes.
   $c =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
 
-  ## Check for * footnotes and fix up
-  $c =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|^( *)\[?\*\* |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
-
-  
+  $c =~ s|(\((\*+)\))|$2|g;               # Change (*) footnotes to *
   $c =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
   $c =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
+
+  ## Check for * footnotes and fix up
+  $c =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|^( *)\[?(\*\*\|\+) |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
+  $c =~ s|^<p>\[?\*\]? |<p>[Footnote 1: |g;       # Catch footnotes that start with <p> tag.
 
   ## Some footnotes are marked up with <>, {} or () so change to []
   my $note_exists = 0;
   if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
-
   ## If footnotes are detected with the above, then we don't need to process these do we.
   if ($note_exists == 0) {
     if ( $c =~ s|<(\d+)>|[$1]|g ) {
@@ -1204,7 +1204,7 @@ sub process_footnotes {
   }
 
   # FOOTNOTES: Semi-auto process on footnotes.    
-  if ($c =~ s/[^ \n\t]{2,}\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
+  if ($c =~ s/\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
     $footnote_exists = 1;
   }
 
@@ -1297,8 +1297,10 @@ sub post_process {
   $c =~ s|&#8212; </q>([^ ])|&#8212;</q> $1|g;
   $c =~ s|&#8212; </q>|&#8212;</q>|g;
   $c =~ s|([^ ])<q> &#8212;|$1 <q>&#8212;|g;
-  $c =~ s| &#8212;|&#8212;|g;
-  $c =~ s| &qdash;|&qdash;|g;
+
+# Should we really remove these spaces??
+#  $c =~ s| &#8212;|&#8212;|g;
+#  $c =~ s| &qdash;|&qdash;|g;
 
   # SUPERSCRIPT
   $c =~ s|(\^)([^ ]+)|<sup>$2</sup>|g;
