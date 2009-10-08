@@ -256,11 +256,11 @@ sub output_para {
   # substitute * * * * * for <milestone> BEFORE footnotes
   # Replace <milestone> later, on line: ~1250
   $p =~ s|^( *\*){3,}|<milestone>|g;
-
+  
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
-
+    
     print "<quote>\n <lg>\n";
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
