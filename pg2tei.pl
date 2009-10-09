@@ -250,17 +250,17 @@ sub output_line {
 sub output_para {
   my $p = shift;
   $p .= "\n";
-  
+
   my $o = study_paragraph ($p);
-  
+
   # substitute * * * * * for <milestone> BEFORE footnotes
   # Replace <milestone> later, on line: ~1250
   $p =~ s|^( *\*){3,}|<milestone>|g;
-  
+
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
-    
+
     print "<quote>\n <lg>\n";
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
@@ -1177,9 +1177,12 @@ sub process_footnotes {
   # Some pre-processing for the Footnotes.
   $c =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
 
-  $c =~ s|(\((\*+)\))|$2|g;               # Change (*) footnotes to *
-  $c =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
-  $c =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
+  # Check for <milestone> events.
+  if (!$c =~ /( +\*){3,}/) {
+    $c =~ s|(\((\*+)\))|$2|g;               # Change (*) footnotes to *
+    $c =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
+    $c =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
+  }
 
   ## Check for * footnotes and fix up
   $c =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
