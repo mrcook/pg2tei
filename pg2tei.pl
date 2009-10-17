@@ -25,70 +25,79 @@ use Data::UUID;
 use Data::Dumper;
 
 use utf8;
-#use open IN => ":encoding(utf8)", OUT => ":utf8";
-#use open qw/:std :encoding(utf8)/;
-
-use vars '$front_matter_block';
-use vars '@illutrators';
-
 use locale;
-my $locale = "en";
 
-$Text::Wrap::columns = 78;
+my $locale = "en";
+setlocale (LC_CTYPE, $locale);
+$locale = setlocale (LC_CTYPE);
+#print "NEW locale: $locale\n";
+
 my $help   = 0;
 
-# some parameters
+my %languages = ();
+
+
+################################################################################
+# some pg2tei specific parameters
+
+$Text::Wrap::columns = 78;
 
 my $cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
 my $cnt_head_sep      = "2";
 my $cnt_paragraph_sep = "1";
 
+my $avg_line_length   = 0;
+my $max_line_length   = 0;
+
 # some hints as to what is being converted
-my $is_verse = 0;             # work is a poem
+my $is_verse = 1;             # work is a poem
 
 # regexps how to catch quotes (filled in later)
 my ($quotes1, $quotes1pre, $quotes2);
 
-my $avg_line_length = 0;
-my $max_line_length = 0;
-
-
-################################################################################
+my $override_quotes = '';
 
 my $date_string     = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">" . strftime ("%B %Y", localtime ()) . "</date>";
 my $dcurdate        = strftime ("%Y-%m-%d", localtime ());
 my $current_date    = strftime ("%d %B %Y", localtime ());
 
-my  $producer       = '*** unknown';
-my  $title          = '';
-my  $sub_title      = '';
-my  $author_string  = '';
-my  $editor         = '';
-my  $illustrated_text = 'Illustrated by';
-my  $illustrated_by = '';
-my  $translated     = '';
-my  $translated_by  = '';
-my  $publishedplace = '';
-my  $publisher      = '';
-my  $publishdate    = '';
 
-my  $language       = '***';
-my  $language_code  = '';
-my  $charset        = '***';
+################################################################################
+# setup all needed variables with some defaults
 
-my  $posteddate       = '';
-my  $releasedate      = '';
-my  $lastupdated      = '';
-my  $posteddate_iso   = '';
-my  $releasedate_iso  = '';
-my  $lastupdated_iso  = '';
+use vars '$language';
+use vars '$front_matter_block';
+use vars '@illutrators';
+
+my  $producer           = '*** unknown';
+my  $title              = '';
+my  $sub_title          = '';
+my  $author_string      = '';
+my  $editor             = '';
+my  $illustrated_text   = 'Illustrated by';
+my  $illustrated_by     = '';
+my  $translated         = '';
+my  $translated_by      = '';
+my  $publishedplace     = '';
+my  $publisher          = '';
+my  $publishdate        = '';
+
+my  $language_code      = '';
+my  $charset            = '***';
+
+my  $posteddate         = '';
+my  $releasedate        = '';
+my  $lastupdated        = '';
+my  $posteddate_iso     = '';
+my  $releasedate_iso    = '';
+my  $lastupdated_iso    = '';
 my  $revision_lastupdated = ''; # Needed for <revisionDesc>
-my  $firstupdated     = '';
-my  $firstupdated_iso = '';
+my  $firstupdated       = '';
+my  $firstupdated_iso   = '';
 
-my  $filename       = '';
-my  $gutenberg_num  = '';
-my  $edition        = '';
+my  $filename           = '';
+my  $gutenberg_num      = '';
+my  $edition            = '';
 
 my  $prod_first_by      = 'unknown';
 my  $produced_by        = 'unknown';
@@ -99,44 +108,11 @@ my  $transcriber_errors = '';
 my  $redactors_notes    = '';
 
 my  $footnote_exists    = 0;
-
 my  $is_book            = 0;
 my  $is_book_div        = 0;
 
-my %languages = (
-  "de"	   => "German",
-  "el"	   => "Greek",
-  "en-gb"  => "British",
-  "en-us"  => "American",
-  "en"	   => "English",
-  "es"	   => "Spanish",
-  "fr"	   => "French",
-  "it"	   => "Italian",
-  "la"	   => "Latin",
-  "nl"	   => "Dutch",
-  "pl"	   => "Polish",
-  "pt"     => "Portuguese",
-);
 
-my $override_quotes = '';
-GetOptions (
-  "quotes=s"    => \$override_quotes,
-	"chapter=i"   => \$cnt_chapter_sep,
-	"head=i"      => \$cnt_head_sep,
-	"paragraph=i" => \$cnt_paragraph_sep,
-	"verse!"      => \$is_verse,
-	"locale=s"    => \$locale,
-	"help|h|?!"   => \$help,
-);
-
-if ($help) {
-    usage (); exit;
-}
-
-setlocale (LC_CTYPE, $locale);
-$locale = setlocale (LC_CTYPE);
-#print "NEW locale: $locale\n";
-
+################################################################################
 # how to catch chapters and paragraphs etc.
 # regexes get applied in this order:
 # chapter1           <div>
@@ -157,21 +133,37 @@ my $head1      = qr/$tmp/s;
 $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
+# Removed for the moment -- not sure if I want to capture these
 #my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
 
 undef $/;  # slurp it all, mem is cheap
 
+
+################################################################################
+
+# Here is the core parsing
 while (<>) {
-    s|\r||g;         # cure M$-DOS files
-    s|\t| |g;        # replace tabs
-    s|[ \t]+\n|\n|g; # remove spaces at end of line
+  s|\r||g;         # cure M$-DOS files
+  s|\t| |g;        # replace tabs
+  s|[ \t]+\n|\n|g; # remove spaces at end of line
 
-    # Do a quick check on the language to see if it is British English
-    if (m/(colour|flavour|favour|savour|honour|defence|ageing|jewellery)/i) {
-      $language = "British";
+  # Do a quick check on the language to see if it is British English
+  my $uk_count = 0;
+  my $us_count = 0;
+  my $word = '';
+  foreach $word (split(/[^a-zA-Z]+/, $_)) {
+    if ($word =~ /(colour|flavour|favour|savour|honour|defence|ageing|jewellery)/i) {
+      $uk_count++;
     }
+    if ($word =~ /(color|flavor|favor|savor|honor|defense|aging|jewelry)/i) {
+      $us_count++;
+    }
+  }
+  if ($uk_count > $us_count) {
+    $language = "British";
+  }
 
-    # process gutenberg header and output tei header
+  # process gutenberg header and output tei header
 # A simpler rule for certain books
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
 
@@ -211,12 +203,10 @@ sub output_line {
   my $min_indent = shift;
 
   $line =~ m/\S/g;
-##  my $indent = "&nbsp;" x (pos ($line) - $min_indent - 1); ## OLD spacinging
   my $indent = (pos ($line) - $min_indent - 1);
   $line =~ s/^\s*//;
 
   if (length ($line)) {
-
     $indent = 6 if $indent >= 7;
     $indent = 4 if $indent == 5;
     $indent = 2 if $indent == 3;
@@ -225,25 +215,19 @@ sub output_line {
     my $line_indent = '';
     $line_indent = ' rend="margin-left(' . $indent . ')"' if $indent > 0;
 
-
-#### Remove quotes for now as they create more havoc than good!!!!
-#    $line = process_quotes_1 ($line);
-#    $line = fix_unbalanced_quotes_line ($line);
+    #### Remove quotes for now as they create more havoc than good!!!!
+    # $line = process_quotes_1 ($line);
+    # $line = fix_unbalanced_quotes_line ($line);
 
     $line = post_process ($line);
-    $line = process_footnotes ($line);
 
-    if ( $line =~ m/\[(\d+|\*)\]/ ) { # Check for footnotes
-      print "<p>$line</p>\n";
-    } else {
-      # Fix some double <q> tags
-      $line =~ s|</q></q>|</q>|g;
-      $line =~ s|<q></q>|</q>|g;
-      $line =~ s|<q><q>|<q>|g;
-      print "  <l$line_indent>$line</l>\n";
-    }
-
+    # Fix some double <q> tags
+    $line =~ s|</q></q>|</q>|g;
+    $line =~ s|<q></q>|</q>|g;
+    $line =~ s|<q><q>|<q>|g;
+    print "  <l$line_indent>$line</l>\n";
   }
+
   return '';
 }
 
@@ -252,15 +236,10 @@ sub output_para {
   $p .= "\n";
 
   my $o = study_paragraph ($p);
-
-  # substitute * * * * * for <milestone> BEFORE footnotes
-  # Replace <milestone> later, on line: ~1250
-  $p =~ s|^( *\*){3,}|<milestone>|g;
-
+  
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
-
     print "<quote>\n <lg>\n";
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
@@ -271,14 +250,12 @@ sub output_para {
   } else {
     # paragraph is prose
     # join end-of-line hyphenated words
-#   $p =~ s|[^-]-[ \t\n]+|-|g; # Marcello's Line
     $p =~ s|([^- ])- ?\n([^ ]+) |$1-$2\n|g;
 
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
 
-#    $p =~ s/\s+/ /g; # This strips out the original newlines - Marcello's Line
-    $p =~ s/ +/ /g; # Change Marcello's to just strip out multiple spaces
+    $p =~ s/ +/ /g;
     $p =~ s/\s*$//g;
 
     my $rend = '';
@@ -287,39 +264,10 @@ sub output_para {
 
     $p =~ s|^ (.*?)|$1|;  # remove any leading spaces
 
-    if ($p =~ m|^<(figure\|milestone\|div)|) {
+    if ($p =~ m/^(<(figure|milestone|div|pb))/) {
     } else {
       $p = "<p$rend>$p</p>";
     }
-
-    $p = process_footnotes ($p);
-
-#### ------------ ---------------------- ------------ ####
-####    DO SOME LAST MINUTE FIXING UP BEFORE OUTPUT   ####
-#### Not the best way but it works....so I'm happy :) ####
-#### ------------ ---------------------- ------------ ####
-
-    #Opening and closing quotes?
-#    $p =~ s|</quote>\r\n\r\n<quote>|\r\n\r\n|g;
-    $p =~ s|</quote>\n\n<quote>|\n\n|g;
-
-    $p =~ s|&hellip; ?\.|&hellip;|g; # Fix '&hellip; .'
-    $p =~ s|&hellip; ?([\!\?])|&hellip;$1|g; # Fix '&hellip; ! or ?'
-
-    $p =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
-
-    $p =~ s|<emph></emph>|__|g; # empty tags - perhaps these are meant to be underscores?
-
-    $p =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
-
-    # Change 'Named Entity' characters to 'Numbered Entity' codes.
-    # For use with TEI DTD and XSLT.
-    $p =~ s|&nbsp;|&#160;|g;
-    $p =~ s|&ndash;|&#8211;|g;
-    $p =~ s|&#8212;|&#8212;|g;
-    $p =~ s|&qdash;|&#8213;|g;
-    $p =~ s|&hellip;|&#8230;|g;
-    $p =~ s|&deg;|&#176;|g;
 
     print $p;  # No WRAP
 #   print wrap ("", "", $p);  # WRAP - Marcello's Line
@@ -348,7 +296,6 @@ sub output_head {
   my $head_tmp = '';
   $head_tmp = process_quotes_1 ($1);
   $head_tmp = post_process ($head_tmp);
-  $head_tmp = process_footnotes ($head_tmp);
 
   $head_tmp =~ s/^\s//; # Strip out leading whitespace
 
@@ -392,14 +339,14 @@ sub process_quotes_1 {
   my $c = shift;
 
   if ($c =~ m/$quotes1/g) {
-	  while ($c =~ s|$quotes1|"<q>" . process_quotes_2 ($1) . "</q>"|es) {};
+    while ($c =~ s|$quotes1|"<q>" . process_quotes_2 ($1) . "</q>"|es) {};
     }
   if ($c =~ m/$quotes1pre/g) {
     while ($c =~ s|$quotes1pre|"<qpre>" . process_quotes_2 ($1) . "</q>"|es) {};
   }
 
   # attract user's attention to these remaining quotes
-  #$c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
+  # $c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
   #### just convert to <q> and hope XSL catches it
   $c =~ s|([\"«»\x84])|<q>|g;
 
@@ -421,12 +368,12 @@ sub fix_unbalanced_quotes_line {
     while (($line =~ s|<q>([^<]*)</q>|§q§$1§/q§|g) > 0) {};
 
     while ($balance > 0) {
-	    $line =~ s|<q>(.*)|<qpre>$1</q>|;
-	    $balance--;
+      $line =~ s|<q>(.*)|<qpre>$1</q>|;
+      $balance--;
     }
     while ($balance < 0) {
-	    $line = "<qpost>" . $line;
-	    $balance++;
+      $line = "<qpost>" . $line;
+      $balance++;
     }
     $line =~ s|§(/?q)§|<$1>|g;
   }
@@ -437,7 +384,6 @@ sub fix_unbalanced_quotes_line {
 }
 
 sub do_fixes {
-
   # tries to fix various quotes
   my $fix = shift;
 
@@ -463,7 +409,7 @@ sub output_epigraph {
   print wrap ("", "", $epigraph);
   print "\n\n";
 
-  $citation =~ s/&nbsp;&#8212;/&qdash;/g;
+  $citation =~ s/&#160;&#8212;/&#8213;/g;
 
   print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
@@ -512,6 +458,9 @@ sub output_body {
   my $body = shift;
   $body =~ s/^\s*//;
 
+  # Let's clean up those <milestone> and footnote[*] tags
+  $body = pre_process($body);
+  
   guess_quoting_convention (\$body); # save mem, pass a ref
   ($avg_line_length, $max_line_length) = compute_line_length (\$body);
 
@@ -553,11 +502,11 @@ sub output_header () {
     if (/\nEdition: *(.*?)\n/)                { $edition = $1; }
     if (/\nCharacter set encoding: *(.*?)\n/) { $charset = $1; }
     if (/\nLanguage: *(.*?)\n/)               {
-      if ($1 ne "English" && $language ne "British") {
+      if ($1 ne 'English' && $language ne 'British') {
         $language = $1;
       }
     }
-    if ($language eq "***")      { $language = "English"; }
+    if (!$language)                           { $language = 'English'; }
     $language_code = encode_lang ($language);
 
     ############################################################################
@@ -678,7 +627,6 @@ sub output_header () {
   if ($editor) {
     @editors = process_names ($editor);
   }
-
 
   my @authors = process_names ($author_string);
   $author_string =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
@@ -1171,106 +1119,71 @@ HERE
 # various cosmetic tweaks before output
 ################################################################################
 
-sub process_footnotes {
+sub pre_process {
   my $c = shift;
 
-  # Some pre-processing for the Footnotes.
-  $c =~ s|[{<\[]l[}>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
+  #### maybe move to the end of the routine...?
+  $c =~ s|<|&lt;|g;
+  $c =~ s|>|&gt;|g;
 
-  # Check for <milestone> events.
-  if (!$c =~ /( +\*){3,}/) {
-    $c =~ s|(\((\*+)\))|$2|g;               # Change (*) footnotes to *
-    $c =~ s|(\*+)|[$1]|g;                   # Change * footnotes to [*]
-    $c =~ s|\[\[(\*+)\]\]|[$1]|g;           # Fix some double brackets [[*]]
-  }
+ 
+  ### <milestone> and <footnote> are replaced with full tags in the "post_process" sub
+  
+  #### Replace <milestone> events
+  # substitute * * * * * for <milestone> BEFORE footnotes
+  # <milestone> will be replaced later, on line: ~1250
+  $c =~ s|( +\*){3,}|<milestone>|g;
 
-  ## Check for * footnotes and fix up
-  $c =~ s|^( *)\[?\*\*\* |[Footnote 2: |g;       # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|^( *)\[?(\*\*\|\+) |[Footnote 2: |g;         # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|^( *)\[?\* |[Footnote 1: |g;           # If a footnote uses [* ...] then replace (footnote 1)
-  $c =~ s|^<p>\[?\*\]? |<p>[Footnote 1: |g;       # Catch footnotes that start with <p> tag.
+  #### Some pre-processing for the Footnotes.
+  $c =~ s|[\{\<\[]l[\}\>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
 
   ## Some footnotes are marked up with <>, {} or () so change to []
   my $note_exists = 0;
   if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
   ## If footnotes are detected with the above, then we don't need to process these do we.
   if ($note_exists == 0) {
-    if ( $c =~ s|<(\d+)>|[$1]|g ) {
+    if ( $c =~ s|\<([\d\*\+]+)\>|[$1]|g ) {
       $note_exists = 1;
-    } elsif ( $c =~ s|{(\d+)}|[$1]|g ) {
+    } elsif ( $c =~ s|\{([\d\*\+]+)\}|[$1]|g ) {
       $note_exists = 1;
     }
-    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
+   # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
     if ($note_exists == 0) {
-      $c =~ s|\((\d+)\)|[$1]|g;
+      $c =~ s|\(([\d\*\+]+)\)|[$1]|g;
     }
   }
 
+  $c =~ s|(\((\*+)\))|[$2]|g;             # Change (*) footnotes to *
+  $c =~ s|(?=[^\[])(\*+)(?=[^\]])|[$1]|g; # Change * footnotes to [*]
+
+  ## Check for * footnotes and fix up
+  $c =~ s|([\n\r ]+)\[\*\*\*\] |$1\[Footnote 3: |g;     # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|([\n\r ]+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g; # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|([\n\r ]+)\[\*\] |$1\[Footnote 1: |g;         # If a footnote uses [* ...] then replace (footnote 1)
+
   # FOOTNOTES: Semi-auto process on footnotes.    
-  if ($c =~ s/\[(\d+|\*+|\w)\]/<note place="foot">\n\n[PLACE FOOTNOTE HERE]\n\n<\/note>/g) {
+  if ($c =~ s/\[(\d+|\*+|\w)\]/<footnote=$1>/g) {
     $footnote_exists = 1;
   }
 
-  return $c;
-}
 
-sub post_process {
-  my $c = shift;
+################################################################################
+# Do some other basic pre-processing
 
-# Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
-  $c =~ s|“|<q>|g;
-  $c =~ s|”|</q>|g;
-
-# substitute &
+  # substitute &
   $c =~ s|&|&amp;|g;
 
-#  $c =~ s|<|&lt;|g;
-#  $c =~ s|>|&gt;|g;
+  #substitute hellip for ...
+  $c =~ s| *\.{3,}|&#8230;|g;
+  $c =~ s| *(\. ){3,}|&#8230;|g;
+  $c =~ s|&#8230; ?\.|&#8230;|g;          # Fix '&#8230; .'
+  $c =~ s|&#8230; ?([\!\?])|&#8230;$1|g;  # Fix '&#8230; ! or ?'
 
+  #substitute °, @ OR #o (lowercase O) for &#176;
+  $c =~ s|(°\|@)|&#176;|g;
+  $c =~ s|(\d{1,3})o|$1&#176;|g;
 
-  # Try to remove any silly BOX formating. +----+, | (...text...) |  stuff!
-  $c =~ s|\+-+\+|\n|g;
-  $c =~ s/ *\|(.+)\| *\n/$1\n/g;
-
-  # substitute ___ 10+ to <pb/>
-  $c =~ s|_{10,}|<pb/>|g;
-  # substitute ------ 15+ for <pb>
-  $c =~ s|-{15,}|<pb/>|g;
-
-  # substitute ----, --, -
-  $c =~ s|----|&qdash;|g;
-  $c =~ s|--|&#8212;|g;
-  $c =~ s|—|&#8212;|g;
-
-#substitute hellip for ...
-  $c =~ s| *\.{3,}|&hellip;|g;
-  $c =~ s| *(\. ){3,}|&hellip;|g;
-
-#substitute °, @ OR #o (lowercase O) for &deg;
-  $c =~ s|(°\|@)|&deg;|g;
-  $c =~ s|(\d{1,3})o|$1&deg;|g;
-
-
-################################################################################
-# text highlighting
-################################################################################
-
-# Add <emph> tags; changing _ and <i> to <emph>
-
-  $c =~ s|<i>|<emph>|g;
-  $c =~ s|</i>|</emph>|g;
-
-    $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
-
-  # The old way, maybe some of these are still needed?
-#  $c =~ s|Illustration: _|Illustration: <emph>|g; # fix Illustrations
-#  $c =~ s/_([\"\'\w]|<[fp])/<emph>$1/g;
-#  $c =~ s|^_|<emph>|g;
-#  $c =~ s|_|</emph>|g;
-#  $c =~ s|<emph>(\w+)<emph>\'s|<emph>$1</emph>\'s|g;
-
-
-################################################################################
+ ################################################################################
 # reserved characters
 #
 # these characters will give TeX trouble if left in
@@ -1279,31 +1192,52 @@ sub post_process {
   $c =~ s|\{|&#123;|g;
   $c =~ s|\}|&#125;|g;
 
+  # substitute ___ 10+ to <pb/>
+  $c =~ s|_{10,}|<pb/>|g;
+  # substitute ------ 15+ for <pb>
+  $c =~ s|-{15,}|<pb/>|g;
+
+  # substitute ----, --, -
+  $c =~ s|----|&#8213;|g;
+  $c =~ s|--|&#8212;|g;
+  $c =~ s|—|&#8212;|g;
+
+  return $c;
+}
+
+sub post_process {
+  my $c = shift;
+
+  # Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
+  $c =~ s|“|<q>|g;
+  $c =~ s|”|</q>|g;
+
+  # Try to remove any silly BOX formating. +----+, | (...text...) |  stuff!
+  $c =~ s|\+-+\+|\n|g;
+  $c =~ s/ *\|(.+)\| *\n/$1\n/g;
+
+################################################################################
+# text highlighting
+################################################################################
+
+  # Add <emph> tags; changing _ and <i> to <emph>
+  $c =~ s|<i>|<emph>|g;
+  $c =~ s|</i>|</emph>|g;
+  $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
+  $c =~ s|<emph></emph>|__|g;           # empty tags - perhaps these are meant to be underscores?
+
 
 ################################################################################
 # typografical entities
 #
 
-# substitute endash
-#  $c =~ s|([0-9])-([0-9])|$1&ndash;$2|g;
-
-  # HIPHENATED WORDS
-#  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
-  # ...for some reason, on single characters d-d-d the second - doesn't
-  # get caught so need to run this again...HOW TO FIX???
-#  $c =~ s|([a-zA-Z])-([a-zA-Z])|$1&ndash;$2|g;
-
-#### Ignore hyphenated words and just replace all hyphens (-) ####
+  #### Ignore hyphenated words and just replace all hyphens (-) with &#8211; ####
   $c =~ s|-|&#8211;|g;
 
-# move dashes
+  # move dashes
   $c =~ s|&#8212; </q>([^ ])|&#8212;</q> $1|g;
   $c =~ s|&#8212; </q>|&#8212;</q>|g;
   $c =~ s|([^ ])<q> &#8212;|$1 <q>&#8212;|g;
-
-# Should we really remove these spaces??
-#  $c =~ s| &#8212;|&#8212;|g;
-#  $c =~ s| &qdash;|&qdash;|g;
 
   # SUPERSCRIPT
   $c =~ s|(\^)([^ ]+)|<sup>$2</sup>|g;
@@ -1311,52 +1245,45 @@ sub post_process {
   $c =~ s|(\w)_([0-9])|$1<sub>$2</sub>|g;
   $c =~ s|H2O|H<sub>2</sub>O|g; # In case no underscore has been added.
 
-
-# insert a non-breaking space after Mr. Ms. Mrs.
-  $c =~ s|(Mr?s?\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after Mme.
-  $c =~ s|(Mme\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after Dr.
-  $c =~ s|(Dr\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after St.
-  $c =~ s|(St\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after No.
-  $c =~ s|(No\.?)[ \n]+([[:digit:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after Rev.
-  $c =~ s|(Rev\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after Capt.
-  $c =~ s|(Capt\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-# insert a non-breaking space after Gen.
-  $c =~ s|(Gen\.?)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
-
-  $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&nbsp;$2|g;
+  # insert a non-breaking space after Mr. Ms. Mrs., etc.
+  $c =~ s|(Mr?s?\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Mme\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Dr\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(St\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(No\.?)[ \n]+([[:digit:]])|$1&#160;$2|g;
+  $c =~ s|(Rev\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Sgt\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Capt\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Gen\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(M\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
+  $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&#160;$2|g;
 
 ################################################################################
 # various cosmetics
 #
-# strip multiple spaces
+
+  # strip multiple spaces
   $c =~ s|[ \t]+| |g;
 
-# strip spaces before new line
+  # strip spaces before new line
   $c =~ s| \n|\n|g;
 
-
-### Don't worry about Marcellos stuff here
-#    $c =~ s|<qpre>|<q rend=\"post: none\">|g;
-#    $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
+  ### Don't worry about Marcellos stuff here
+  # $c =~ s|<qpre>|<q rend=\"post: none\">|g;
+  # $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
   $c =~ s|<qpre>|<q>|g;
   $c =~ s|<qpost>|<q>|g;
 
-# [BLANK PAGE]
+  # [BLANK PAGE]
   $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
 
-# ILLUSTRATIONS ...
+  # ILLUSTRATIONS ...
   # Original formula....keep!
   # $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
     # my $tmp = change_case($1);
     my $tmp = $1;
-#    $tmp =~ s|[\r\n]+| |g;
+    # $tmp =~ s|[\r\n]+| |g;
     $tmp =~ s|\n+| |g;
     $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
   }
@@ -1367,16 +1294,28 @@ sub post_process {
   $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
   # substitute <milestone> to include the unit="tb" attribute.
-  $c =~ s|<milestone>|<milestone unit="tb" \/>|g;
+  $c =~ s|<milestone>|<milestone unit="tb" />|g;
+
+  # substitute <footnote> to include full tag
+  if ($c =~ s|<footnote=(.*?)>|<note place="foot">\n\n[PLACE FOOTNOTE HERE] -- $1\n\n</note>|g) {
+    $footnote_exists = 1;
+  }
+
+  #### ------------ ------------- ####
+  ####    DO SOME FINAL FIXING UP ####
+  #### ------------ ------------- ####
+
+  $c =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
+  $c =~ s/([NMQ])dash/$1dash/g; # Fix &#8211; caps
 
   # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
-  $c =~ s|&nbsp;|&#160;|g;
-  $c =~ s|&ndash;|&#8211;|g;
-  $c =~ s|&#8212;|&#8212;|g;
-  $c =~ s|&qdash;|&#8213;|g;
-  $c =~ s|&hellip;|&#8230;|g;
-  $c =~ s|&deg;|&#176;|g;
+#  $c =~ s|&nbsp;|&#160;|g;
+#  $c =~ s|&ndash;|&#8211;|g;
+#  $c =~ s|&mdash;|&#8212;|g;
+#  $c =~ s|&qdash;|&#8213;|g;
+#  $c =~ s|&hellip;|&#8230;|g;
+#  $c =~ s|&deg;|&#176;|g;
 
   return $c;
 }
@@ -1452,7 +1391,6 @@ sub encode_month {
     11     => "Nov",
     12     => "Dec"
   );
-
   my %months = (
      1     => "January",
      2     => "February",
@@ -1519,7 +1457,6 @@ sub encode_numbers {
     14     => "XIV",
     15     => "XV",
   );
-
   my %ordinal_numbers = (
      1     => "FIRST",
      2     => "SECOND",
@@ -1599,7 +1536,7 @@ sub process_names {
 sub list_languages {
   my $langlist = "";
   foreach my $key (sort (keys %languages)) {
-	  $langlist .= "      <language id=\"$key\">$languages{$key}</language>\n";
+    $langlist .= "      <language id=\"$key\">$languages{$key}</language>\n";
   }
   return $langlist;
 }
@@ -1612,64 +1549,64 @@ sub guess_quoting_convention {
   my $closequote2 = "";
 
   if ( length($override_quotes) ) {
-  	$openquote1  = substr ($override_quotes, 0, 1);
-  	$openquote2  = substr ($override_quotes, 1, 1);
-  	$closequote2 = substr ($override_quotes, 2, 1);
-  	$closequote1 = substr ($override_quotes, 3, 1);
+    $openquote1  = substr ($override_quotes, 0, 1);
+    $openquote2  = substr ($override_quotes, 1, 1);
+    $closequote2 = substr ($override_quotes, 2, 1);
+    $closequote1 = substr ($override_quotes, 3, 1);
   } else {
-  	my $body = shift;
-  	$body = $$body;
+    my $body = shift;
+    $body = $$body;
 
-#	my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
-	my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
-#	my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
-	my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
-	my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
-	my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
-	my $count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
+    #  my $count_84 = ($body =~ tr/\x84/\x84/); # win-1252 („) opening double quote
+    my $count_22 = ($body =~ tr/\x22/\x22/); # " ascii double quote
+    #  my $count_27 = ($body =~ tr/\x27/\x27/); # ' ascii single quote
+    my $count_60 = ($body =~ tr/\x60/\x60/); # ` ascii single opening quote (grave accent)
+    my $count_b4 = ($body =~ tr/\xb4/\xb4/); # ´ ascii single closing quote (acute accent)
+    my $count_ab = ($body =~ tr/\xab/\xab/); # « left guillemet
+    my $count_bb = ($body =~ tr/\xbb/\xbb/); # » right guillemet
 
-#	my $single_quotes = $count_27 + $count_60 + $count_b4;
-	my $single_quotes = $count_60 + $count_b4;
-#	my $double_quotes = $count_22 + $count_84;
-	my $double_quotes = $count_22;
-	my $guillemets    = $count_ab + $count_bb;
+    #  my $single_quotes = $count_27 + $count_60 + $count_b4;
+    my $single_quotes = $count_60 + $count_b4;
+    #  my $double_quotes = $count_22 + $count_84;
+    my $double_quotes = $count_22;
+    my $guillemets    = $count_ab + $count_bb;
 
-	my $french_quotes   = ($guillemets > $single_quotes + $double_quotes);
-	my $american_quotes = ($double_quotes > $single_quotes);
+    my $french_quotes   = ($guillemets > $single_quotes + $double_quotes);
+    my $american_quotes = ($double_quotes > $single_quotes);
 
-	if ($french_quotes) {
-	    $openquote1  = "\xab";
-	    $closequote1 = "\xbb";
-	    $openquote2  = "<";
-	    $closequote2 = ">";
-	} elsif ($american_quotes) {
-#	    $openquote1 = $count_84 ? "\x84" : "\x22";
-	    $openquote1  = "\x22";
-	    $closequote1 = "\x22";
-#	    $openquote2  = $count_60 ? "\x60" : "\x27";
-	    $openquote2  = "\x60";
-#	    $closequote2 = "\x27";
-	    $closequote2 = "\xb4";
-#	} else { # british quotes
-#	    $openquote1  = $count_60 ? "\x60" : "\x27";
-#	    $closequote1 = "\x27";
-#	    $openquote2  = $count_84 ? "\x84" : "\x22";
-#	    $closequote2 = "\x22";
-	}
-	print ("\nguessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
+    if ($french_quotes) {
+      $openquote1  = "\xab";
+      $closequote1 = "\xbb";
+      $openquote2  = "<";
+      $closequote2 = ">";
+    } elsif ($american_quotes) {
+      # $openquote1 = $count_84 ? "\x84" : "\x22";
+      $openquote1  = "\x22";
+      $closequote1 = "\x22";
+      # $openquote2  = $count_60 ? "\x60" : "\x27";
+      $openquote2  = "\x60";
+      # $closequote2 = "\x27";
+      $closequote2 = "\xb4";
+      #  } else { # british quotes
+      #      $openquote1  = $count_60 ? "\x60" : "\x27";
+      #      $closequote1 = "\x27";
+      #      $openquote2  = $count_84 ? "\x84" : "\x22";
+      #      $closequote2 = "\x22";
     }
-    # how to catch quoted material
-    # on nesting level1 and level2
-    # pre is for paragraphs without closing quote
-    # \B matches non-(word boundary), ^ and $ are considered non-words
+    print ("\nguessed quotes: $openquote1 $closequote1 and $openquote2 $closequote2\n");
+  }
+  # how to catch quoted material
+  # on nesting level1 and level2
+  # pre is for paragraphs without closing quote
+  # \B matches non-(word boundary), ^ and $ are considered non-words
 
-# Marcello only checked quote when followed by limited characters :alpha: _ $ etc.
-#    $quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
-#    $quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
-#    $quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
-    $quotes1    = qr/\B$openquote1(.*?)$closequote1\B/s;
-    $quotes1pre = qr/\B$openquote1(.*?)$/s;
-    $quotes2    = qr/\B$openquote2(.*?)$closequote2\B/s;
+  # Marcello only checked quote when followed by limited characters :alpha: _ $ etc.
+  # $quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
+  # $quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
+  # $quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
+  $quotes1    = qr/\B$openquote1(.*?)$closequote1\B/s;
+  $quotes1pre = qr/\B$openquote1(.*?)$/s;
+  $quotes2    = qr/\B$openquote2(.*?)$closequote2\B/s;
 }
 
 sub study_paragraph {
@@ -1690,11 +1627,16 @@ sub study_paragraph {
   my $cnt_short  = 0;
   my $cnt_center = 0;
 
-
   # Compute % of max line length (currently: 84%)
   my $threshhold = int ($max_line_length * 84 / 100);
 
   for (@lines) {
+    # On rare occassions a <milestone> is included in a <lg>
+    # need to skip this line as it messes up the checks
+    if (m/<milestone>/) {
+      $cnt_lines -= 1;
+      next;
+    }
     # min, max, avg line length
     my $len = length ($_);
     $min_len = $len if ($len < $min_len);
@@ -1720,9 +1662,9 @@ sub study_paragraph {
 
     # count centered lines
     if ($indent > 0) {
-	    if (($right_indent / $indent) < 2) {
+      if (($right_indent / $indent) < 2) {
         $cnt_center++;
-	    }
+      }
     }
   }
 
@@ -1758,7 +1700,6 @@ sub is_para_verse {
   
   # If only one line and no indent then we don't know if it is a <l>
   return 0 if $o->{'cnt_lines'} < 2 && $o->{'min_indent'} == 0;
-
 
   ######################################
   # are all lines indented ?
@@ -1835,10 +1776,10 @@ sub change_case {
 
   $case =~ s/(.*?)/\l$1/g;
   $case =~ s/(\b)([a-z])/$1\u$2/g;
-  $case =~ s/and/and/gi; # Replace 'And' with 'and'
+  $case =~ s/and/and/gi;                # Replace 'And' with 'and'
   $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g;
-  $case =~ s/([NMQ])dash/$1dash/g; # Fix &ndash; caps
-  $case =~ s/(.*?)\'S/$1's/g; # change 'S to 's
+  $case =~ s/([NMQ])dash/$1dash/g;      # Fix &#8211; caps
+  $case =~ s/(.*?)\'S/$1's/g;           # change 'S to 's
 
   return $case;
 }
@@ -1859,9 +1800,38 @@ sub uuid_gen {
   # UUID NameSpace_URL and name "www.mycompany.com"
 
   ## NOTE: This does not create a random number each time...it is always the same
-#  my $uuid = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
+  # my $uuid = $ug->create_from_name_str(NameSpace_URL, "www.epubbooks.com");
 
   return $uuid;
+}
+
+%languages = (
+  "de"     => "German",
+  "el"     => "Greek",
+  "en-gb"  => "British",
+  "en-us"  => "American",
+  "en"     => "English",
+  "es"     => "Spanish",
+  "fr"     => "French",
+  "it"     => "Italian",
+  "la"     => "Latin",
+  "nl"     => "Dutch",
+  "pl"     => "Polish",
+  "pt"     => "Portuguese",
+);
+
+GetOptions (
+  "quotes=s"    => \$override_quotes,
+  "chapter=i"   => \$cnt_chapter_sep,
+  "head=i"      => \$cnt_head_sep,
+  "paragraph=i" => \$cnt_paragraph_sep,
+  "verse!"      => \$is_verse,
+  "locale=s"    => \$locale,
+  "help|h|?!"   => \$help,
+);
+
+if ($help) {
+    usage (); exit;
 }
 
 sub usage {
@@ -1873,7 +1843,7 @@ usage: gut2tei.pl [options] pgtextfile > teifile
 
 --quotes="[()]"    quoting convention used (default: automatic detection)
                    [] = outer quotes, () = inner quotes
-		   eg. --quotes="\\\"''\\\""
+       eg. --quotes="\\\"''\\\""
 --chapter=n        empty lines before chapter        (default: $cnt_chapter_sep)
 --head=n           empty lines after chapter heading (default: $cnt_head_sep)
 --paragraph=n      empty lines before paragraph      (default: $cnt_paragraph_sep)
