@@ -50,7 +50,7 @@ my $avg_line_length   = 0;
 my $max_line_length   = 0;
 
 # some hints as to what is being converted
-my $is_verse = 1;             # work is a poem
+my $is_verse = 0;             # work is a poem
 
 # regexps how to catch quotes (filled in later)
 my ($quotes1, $quotes1pre, $quotes2);
@@ -235,9 +235,15 @@ sub output_para {
   my $p = shift;
   $p .= "\n";
 
+  # We need to check for "[Footnote" entries to stop them being caught as a <lg>
+  my $is_foonote_entry = '';
+  if ($p =~ /^\[Footnote/) {
+    $is_foonote_entry = 1;
+  }
+  
   my $o = study_paragraph ($p);
   
-  if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n") {
+  if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
     print "<quote>\n <lg>\n";
@@ -1147,6 +1153,10 @@ sub pre_process {
     } elsif ( $c =~ s|\{([\d\*\+]+)\}|[$1]|g ) {
       $note_exists = 1;
     }
+   # In some rare cases there are mixed letter/number notes using {1a} styling
+    if ($note_exists == 0) {
+      $c =~ s|\{(\d+[a-z]+)\}|[$1]|g;
+    }
    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
     if ($note_exists == 0) {
       $c =~ s|\(([\d\*\+]+)\)|[$1]|g;
@@ -1157,12 +1167,18 @@ sub pre_process {
   $c =~ s|(?=[^\[])(\*+)(?=[^\]])|[$1]|g; # Change * footnotes to [*]
 
   ## Check for * footnotes and fix up
-  $c =~ s|([\n\r ]+)\[\*\*\*\] |$1\[Footnote 3: |g;     # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|([\n\r ]+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g; # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|([\n\r ]+)\[\*\] |$1\[Footnote 1: |g;         # If a footnote uses [* ...] then replace (footnote 1)
+  $c =~ s|(\n+)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|(\n+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|(\n+)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
+
+  ## Check for [1], [1a] style footnotes and fix up
+  $c =~ s|(\n+)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
+  $c =~ s|(\n+)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
   # FOOTNOTES: Semi-auto process on footnotes.    
   if ($c =~ s/\[(\d+|\*+|\w)\]/<footnote=$1>/g) {
+    $footnote_exists = 1;
+  }  elsif ($c =~ s/\[(\d+[a-z]+)\]/<footnote=$1>/g) {
     $footnote_exists = 1;
   }
 
@@ -1189,8 +1205,8 @@ sub pre_process {
 # these characters will give TeX trouble if left in
 
   $c =~ s|\\|&#92;|g;
-  $c =~ s|\{|&#123;|g;
-  $c =~ s|\}|&#125;|g;
+#  $c =~ s|\{|&#123;|g;
+#  $c =~ s|\}|&#125;|g;
 
   # substitute ___ 10+ to <pb/>
   $c =~ s|_{10,}|<pb/>|g;
