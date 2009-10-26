@@ -1632,8 +1632,8 @@ sub study_paragraph {
   my $o = { };
   
   my $cnt_lines  = scalar (@lines);
-  my $min_len    = 10000;
-  my $max_len    = 0;
+  my $min_len    = 10000; # Not sure why Marcello included this variable
+  my $max_len    = 0;     # Not sure why Marcello included this variable
   my $sum_len    = 0;
   my $min_indent = 10000;
   my $max_indent = 0;
@@ -1644,7 +1644,7 @@ sub study_paragraph {
   my $cnt_center = 0;
 
   # Compute % of max line length (currently: 84%)
-  my $threshhold = int ($max_line_length * 84 / 100);
+  my $threshhold = int ($max_line_length * 80 / 100);
 
   for (@lines) {
     # On rare occassions a <milestone> is included in a <lg>
@@ -1655,6 +1655,7 @@ sub study_paragraph {
     }
     # min, max, avg line length
     my $len = length ($_);
+
     $min_len = $len if ($len < $min_len);
     $max_len = $len if ($len > $min_len);
     $sum_len += $len;
@@ -1729,8 +1730,12 @@ sub is_para_verse {
   }
 
   # do all lines begin with capital letters ?
-  if ($o->{'cnt_lines'} > 1) {                # Only check if more than one line
+  if ($o->{'cnt_lines'} > 1) {
     return 0 if $o->{'cnt_caps'} < $o->{'cnt_lines'};
+    
+    # Extra check as some two-liners bith contain Capitals at the start.
+    # Sometimes there are caps at start of 3 or more lines; but this should be rare.
+    return 0 if $o->{'cnt_lines'} == 2 && $o->{'max_indent'} == 0;
   }
 
   # are all lines shorter than average ?
