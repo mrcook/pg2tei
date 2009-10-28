@@ -682,12 +682,18 @@ sub output_header () {
     }
 
     # Who Scanned/Proofed the original text?
-    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
+#    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
+    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.*?)\n/i) {
       $produced_by = $3;
+    } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
+      $produced_by = $6;
+      $publisher   = $4;
+      $publishdate = $1;
     } elsif (/proof(ed| ?read) by:? +(.*?)\n/i) {
       $produced_by = $2;
     }
-    $produced_by =~ s/^(.*?)[, ]$/$1/;  # Clean up any end spaces or commas
+    $produced_by =~ s/^(.*?)\n(.*?)$/$1 $2/;  # Remove the newline if exists
+    $produced_by =~ s/^(.*?)[, ]$/$1/;        # Clean up any end spaces or commas
 
     if ($produced_by eq "unknown") {
       $produced_by = $prod_first_by;
@@ -1159,7 +1165,7 @@ sub pre_process {
     }
    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
     if ($note_exists == 0) {
-      $c =~ s|\(([\d\*\+]+)\)|[$1]|g;
+      $c =~ s/\((\d\d?|\*+|\++)\)/[$1]/g;
     }
   }
 
