@@ -237,12 +237,12 @@ sub output_para {
 
   # We need to check for "[Footnote" entries to stop them being caught as a <lg>
   my $is_foonote_entry = '';
-  if ($p =~ /^\[Footnote/) {
+  if ($p =~ /^[\n\s]+\[Footnote/) {
     $is_foonote_entry = 1;
   }
-  
+
   my $o = study_paragraph ($p);
-  
+
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
     # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
@@ -1173,13 +1173,13 @@ sub pre_process {
   $c =~ s|(?=[^\[])(\*+)(?=[^\]])|[$1]|g; # Change * footnotes to [*]
 
   ## Check for * footnotes and fix up
-  $c =~ s|(\n+)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|(\n+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|(\n+)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
+  $c =~ s|(\n\s+)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|(\n\s+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|(\n\s+)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
 
   ## Check for [1], [1a] style footnotes and fix up
-  $c =~ s|(\n+)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
-  $c =~ s|(\n+)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
+  $c =~ s|(\n\s+)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
+  $c =~ s|(\n\s+)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
   # FOOTNOTES: Semi-auto process on footnotes.    
   if ($c =~ s/\[(\d+|\*+|\w)\]/<footnote=$1>/g) {
