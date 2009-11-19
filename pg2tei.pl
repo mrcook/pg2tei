@@ -85,6 +85,9 @@ my  $publishdate        = '';
 my  $language_code      = '';
 my  $charset            = '***';
 
+my  $series_title       = '****';
+my  $series_volume      = '**';
+
 my  $posteddate         = '';
 my  $releasedate        = '';
 my  $lastupdated        = '';
@@ -515,6 +518,9 @@ sub output_header () {
     if (!$language)                           { $language = 'English'; }
     $language_code = encode_lang ($language);
 
+    if (/\nSeries?: *(.*?)\n/)                { $series_title  = $1; }
+    if (/\nSeries Volume?: *(\d+)\n/)         { $series_volume = $1; }
+
     ############################################################################
     # Find the Posting/Release/Updated Dates
     # Release Date is usually old than the Posting Date (But not always)
@@ -869,8 +875,8 @@ print <<HERE;
       </availability>
     </publicationStmt>
     <seriesStmt>
-      <title level="s">****</title>
-      <idno type="vol">**</idno>
+      <title level="s">$series_title</title>
+      <idno type="vol">$series_volume</idno>
     </seriesStmt>
     <notesStmt>
       <note resp="redactor">$redactors_notes</note>
@@ -1247,6 +1253,11 @@ sub post_process {
   $c =~ s|</i>|</emph>|g;
   $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
   $c =~ s|<emph></emph>|__|g;           # empty tags - perhaps these are meant to be underscores?
+
+  # Add <b> tags; changing = and <b> to <hi>
+  $c =~ s|<b>|<hi>|g;
+  $c =~ s|</b>|</hi>|g;
+  $c =~ s|=(.*?)=|<hi>$1</hi>|gis;
 
 
 ################################################################################

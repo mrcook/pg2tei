@@ -52,9 +52,9 @@ Footnotes
   <l></l>
  </lg>
 
-<lg rend="text-align(center)">
-<lg rend="text-align(right) margin-right(10%)">
-<lg rend="font-style(italic)">
+ <lg rend="text-align(center)">
+ <lg rend="text-align(right) margin-right(10%)">
+ <lg rend="font-style(italic)">
 
  rend="margin-left(2)"
  rend="margin-right(10%)"
