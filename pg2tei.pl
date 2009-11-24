@@ -518,8 +518,10 @@ sub output_header () {
     if (!$language)                           { $language = 'English'; }
     $language_code = encode_lang ($language);
 
-    if (/\nSeries?: *(.*?)\n/)                { $series_title  = $1; }
-    if (/\nSeries Volume?: *(\d+)\n/)         { $series_volume = $1; }
+    if (/\nSeries: *(.*?)\n/)                 { $series_title  = $1; }
+    if (/\nSeries Volume: *(\d+)\n/)          { $series_volume = $1; }
+
+    if (/\nPublished: *(\d+)\n/)              { $publishdate = $1; }
 
     ############################################################################
     # Find the Posting/Release/Updated Dates
@@ -692,9 +694,12 @@ sub output_header () {
     if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.*?)\n/i) {
       $produced_by = $3;
     } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
+      print $6 . "---" . $4 . "\n\n";
       $produced_by = $6;
       $publisher   = $4;
-      $publishdate = $1;
+      if (!$publishdate) {
+        $publishdate = $1;
+      }
     } elsif (/proof(ed| ?read) by:? +(.*?)\n/i) {
       $produced_by = $2;
     }
@@ -714,12 +719,14 @@ sub output_header () {
 
 
     # Get the published date
-    if (m/\n *([0-9]{4})\n/i) {
-      $publishdate = $1;
-    } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
-      $publishdate = $1;
-    } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*([0-9]{4})/i) {
-      $publishdate = $2;
+    if (!$publishdate) {
+      if (m/\n *([0-9]{4})\n/i) {
+        $publishdate = $1;
+      } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
+        $publishdate = $1;
+      } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*([0-9]{4})/i) {
+        $publishdate = $2;
+      }
     }
     # Get the published place
     if (m/^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
