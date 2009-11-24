@@ -83,7 +83,7 @@ my  $publisher          = '';
 my  $publishdate        = '';
 
 my  $language_code      = '';
-my  $charset            = '***';
+my  $encoding            = 'iso-8859-1';
 
 my  $series_title       = '****';
 my  $series_volume      = '**';
@@ -505,12 +505,20 @@ sub output_header () {
       $title = $1; $sub_title = "";
     }
     
-    if (/\nAuthors?: *(.*?)\n/)               { $author_string = $1; }
-    if (/\nEditors?: *(.*?)\n/)               { $editor = $1; }
-    if (/\nIllustrat(or|ions): *(.*?)\n/)     { $illustrated_by = change_case($2); }
-    if (/\nEdition: *(.*?)\n/)                { $edition = $1; }
-    if (/\nCharacter set encoding: *(.*?)\n/) { $charset = $1; }
-    if (/\nLanguage: *(.*?)\n/)               {
+    if (/\nAuthors?: *(.*?)\n/i)               { $author_string = $1; }
+    if (/\nEditors?: *(.*?)\n/i)               { $editor = $1; }
+    if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrated_by = change_case($2); }
+    if (/\nEdition: *(.*?)\n/i)                { $edition = $1; }
+
+    if (/\nCharacter set encoding: *(.*?)\n/i) {
+      $1 = lc($1);
+      if ($1 =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+        $1 = 'iso-8859-1';
+      }
+      $encoding = $1;
+    }
+
+    if (/\nLanguage: *(.*?)\n/i)               {
       if ($1 ne 'English' && $language ne 'British') {
         $language = $1;
       }
@@ -518,10 +526,10 @@ sub output_header () {
     if (!$language)                           { $language = 'English'; }
     $language_code = encode_lang ($language);
 
-    if (/\nSeries: *(.*?)\n/)                 { $series_title  = $1; }
-    if (/\nSeries Volume: *(\d+)\n/)          { $series_volume = $1; }
+    if (/\nSeries: *(.*?)\n/i)                 { $series_title  = $1; }
+    if (/\nSeries Volume: *(\d+)\n/i)          { $series_volume = $1; }
 
-    if (/\nPublished: *(\d+)\n/)              { $publishdate = $1; }
+    if (/\nPublished: *(\d+)\n/i)              { $publishdate = $1; }
 
     ############################################################################
     # Find the Posting/Release/Updated Dates
@@ -798,7 +806,7 @@ sub output_header () {
   my $uuid =  uuid_gen();
 
   print <<HERE;
-<?xml version="1.0" encoding="iso-8859-1" ?>
+<?xml version="1.0" encoding="$encoding"?>
 
 <TEI>
 <teiHeader>
