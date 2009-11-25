@@ -510,12 +510,13 @@ sub output_header () {
     if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrated_by = change_case($2); }
     if (/\nEdition: *(.*?)\n/i)                { $edition = $1; }
 
+    my $tmp_enc = '';
     if (/\nCharacter set encoding: *(.*?)\n/i) {
-      $1 = lc($1);
-      if ($1 =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
-        $1 = 'iso-8859-1';
+      $tmp_enc = lc($1);
+      if ($tmp_enc =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+        $tmp_enc = 'iso-8859-1';
       }
-      $encoding = $1;
+      $encoding = $tmp_enc;
     }
 
     if (/\nLanguage: *(.*?)\n/i)               {
