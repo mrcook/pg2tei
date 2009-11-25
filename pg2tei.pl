@@ -83,7 +83,7 @@ my  $publisher          = '';
 my  $publishdate        = '';
 
 my  $language_code      = '';
-my  $encoding            = 'iso-8859-1';
+my  $encoding           = 'iso-8859-1';
 
 my  $series_title       = '****';
 my  $series_volume      = '**';
@@ -166,16 +166,26 @@ while (<>) {
     $language = "British";
   }
 
-  # process gutenberg header and output tei header
+# process gutenberg header and output tei header
+
+###### OLD CODE ######
 # A simpler rule for certain books
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
-
 # This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
-  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]))(.*?)\n)/output_header($1)/egis) {
-
+#  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]))(.*?)\n)/output_header($1)/egis) {
 # this one works - for the most part!!
 #  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I)(.*?)\n)/output_header ($1)/egis) {
+###### OLD CODE ######
 
+
+####### NEW CODE (2009-11-25) Let's see if we can rewrite this properly ########
+# First check for Preface, Introduction, etc.
+  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD)\n)(.*?)//egis) {
+    output_header($1);
+
+# Then check for Chapters, Volumes, etc.
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)(.*?)//egis) {
+    output_header($1);
   } else {
     print "**************************************\n";
     print "**** ERROR! No FRONT MATTER Found ****\n";
@@ -433,7 +443,7 @@ sub output_chapter {
   $chapter .= "\n" x 10;
 
   if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
-    print "\n\n<div type=\"" . lower_case($1) . "\" n=\"1\">\n\n";
+    print "\n\n<div type=\"" . lc($1) . "\" n=\"1\">\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
@@ -443,7 +453,7 @@ sub output_chapter {
     $part_number = encode_numbers($3);
     if (!$part_number) { $part_number = "xx"; }
       
-    print "<div type=\"" . lower_case($1) . "\" n=\"" . $part_number . "\">\n\n";
+    print "<div type=\"" . lc($1) . "\" n=\"" . $part_number . "\">\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } else {
@@ -703,7 +713,6 @@ sub output_header () {
     if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.*?)\n/i) {
       $produced_by = $3;
     } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
-      print $6 . "---" . $4 . "\n\n";
       $produced_by = $6;
       $publisher   = $4;
       if (!$publishdate) {
@@ -733,7 +742,7 @@ sub output_header () {
         $publishdate = $1;
       } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
         $publishdate = $1;
-      } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*([0-9]{4})/i) {
+      } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
         $publishdate = $2;
       }
     }
