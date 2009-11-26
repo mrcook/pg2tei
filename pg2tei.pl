@@ -180,11 +180,15 @@ while (<>) {
 
 ####### NEW CODE (2009-11-25) Let's see if we can rewrite this properly ########
 # First check for Preface, Introduction, etc.
-  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD)\n)(.*?)//egis) {
+  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD)\n)//egis) {
     output_header($1);
 
 # Then check for Chapters, Volumes, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)(.*?)//egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION)\n)//egis) {
+    output_header($1);
+
+# No chapter name? Try just for an actual "1" or "I" or "ONE"
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)//egis) {
     output_header($1);
   } else {
     print "**************************************\n";
