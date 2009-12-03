@@ -184,7 +184,7 @@ while (<>) {
     output_header($1);
 
 # Then check for Chapters, Volumes, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION)\n)//egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)//egis) {
     output_header($1);
 
 # No chapter name? Try just for an actual "1" or "I" or "ONE"
@@ -1768,20 +1768,28 @@ sub is_para_verse {
   # are all lines indented ?
   # return 0 if $o->{'min_indent'} == 0; # Marcello's Original
 
-  ## Here we check for number of indented lines instead of min_indent
+  ## Here we check for the number of indented lines instead of min_indent
   if ($o->{'cnt_indent'} < 2 && $o->{'min_indent'} == 0) {
     if ($o->{'cnt_long'} > 0) {
       return 0;
     }
   }
 
+  ############################################
   # do all lines begin with capital letters ?
+  #
+  # first check for more than one line
   if ($o->{'cnt_lines'} > 1) {
+    # Not all caps?
     return 0 if $o->{'cnt_caps'} < $o->{'cnt_lines'};
-    
-    # Extra check as some two-liners bith contain Capitals at the start.
-    # Sometimes there are caps at start of 3 or more lines; but this should be rare.
-    return 0 if $o->{'cnt_lines'} == 2 && $o->{'max_indent'} == 0;
+
+    # NEW! 2009-12-03
+    # All Caps and no indent
+    return 0 if $o->{'cnt_caps'} == $o->{'cnt_lines'} && $o->{'max_indent'} == 0;
+
+    ##### Is this line still needed with the line above? -- Only if the line above doesn't work! ####
+    # Extra check as some two-liners both contain Capitals at the start.
+    # return 0 if $o->{'cnt_lines'} == 2 && $o->{'max_indent'} == 0;
   }
 
   # are all lines shorter than average ?
