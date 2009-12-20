@@ -180,7 +180,7 @@ while (<>) {
 
 ####### NEW CODE (2009-11-25) Let's see if we can rewrite this properly ########
 # First check for Preface, Introduction, etc.
-  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD)\n)//egis) {
+  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)//egis) {
     output_header($1);
 
 # Then check for Chapters, Volumes, etc.
@@ -1172,7 +1172,6 @@ sub pre_process {
   #### maybe move to the end of the routine...?
   $c =~ s|<|&lt;|g;
   $c =~ s|>|&gt;|g;
-
  
   ### <milestone> and <footnote> are replaced with full tags in the "post_process" sub
   
@@ -1268,7 +1267,7 @@ sub post_process {
   # Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
   $c =~ s|“|<q>|g;
   $c =~ s|”|</q>|g;
-
+  
   # Try to remove any silly BOX formating. +----+, | (...text...) |  stuff!
   $c =~ s|\+-+\+|\n|g;
   $c =~ s/ *\|(.+)\| *\n/$1\n/g;

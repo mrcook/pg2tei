@@ -65,7 +65,6 @@ Footnotes
 
 
   <div type="figures">
-    <index index="pdf"/>
     <head>Illustrations</head>
     <divGen type="fig"/>
   </div>
