@@ -651,12 +651,14 @@ sub output_header () {
     # Translated from ...
     if (/[\n ]*(Translated (from.*)?by)[\s\t\r\n]+(.+)/i) {
       $translated = $1;
-      $translated_by = $3;
+      $translated_by = change_case($3);
     } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
       $translated = $1;
-      $translated_by = $3;
+      $translated_by = change_case($3);
     }
   }
+  $translated_by =~ s/\.$//;
+  my @translators = process_names ($translated_by);
 
   my $languages = list_languages ($language_code);
 
@@ -855,10 +857,19 @@ HERE
 HERE
   }
 }
-if ($translated_by) {
-print <<HERE;
-      <editor role="translator">$translated_by</editor>
+if (@translators) {
+  foreach my $translator_name (@translators) {
+    if ($translator_name->[2]) {
+      print <<HERE;
+      <editor role="translator"><name reg="$translator_name->[2], $translator_name->[0]">$translator_name->[1] $translator_name->[2]</name></editor>
 HERE
+    } else {
+
+      print <<HERE;
+      <editor role="translator><name reg="$translator_name->[0]">$translator_name->[0]</name></editor>
+HERE
+    }
+  }
 }
 if (@editors) {
   foreach my $editor_name (@editors) {
@@ -926,10 +937,19 @@ HERE
 HERE
   }
 }
-if ($translated_by) {
-  print <<HERE;
-          <editor role="translator">$translated_by</editor>
+if (@translators) {
+  foreach my $translator_name (@translators) {
+    if ($translator_name->[2]) {
+      print <<HERE;
+          <editor role="translator"><name reg="$translator_name->[2], $translator_name->[0]">$translator_name->[1] $translator_name->[2]</name></editor>
 HERE
+    } else {
+
+      print <<HERE;
+          <editor role="translator><name reg="$translator_name->[0]">$translator_name->[0]</name></editor>
+HERE
+    }
+  }
 }
 if (@editors) {
   foreach my $editor_name (@editors) {
