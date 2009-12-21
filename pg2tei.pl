@@ -658,7 +658,10 @@ sub output_header () {
     }
   }
   $translated_by =~ s/\.$//;
-  my @translators = process_names ($translated_by);
+  my @translators = ();
+  if ($translated_by) {
+    @translators = process_names ($translated_by);
+  }
 
   my $languages = list_languages ($language_code);
 
@@ -759,8 +762,8 @@ sub output_header () {
     # Get the publisher
     if (m/[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
       $publisher = change_case($1 . $2 . $3);
-      $publisher =~ s|&|&amp;|; # Convert ampersand
     }
+    $publisher =~ s|&|&amp;|; # Convert ampersand
 
     # REDACTOR'S NOTES
     if (s/ *\[Redactor\'?s? Note[s:\n ]*(.*?)\]//is) {
