@@ -1305,7 +1305,8 @@ sub post_process {
   # Add <b> tags; changing = and <b> to <hi>
   $c =~ s|<b>|<hi>|g;
   $c =~ s|</b>|</hi>|g;
-  $c =~ s|=(.*?)=|<hi>$1</hi>|gis;
+  #$c =~ s|=(.*?)=|<hi>$1</hi>|gis; // This one captures some <footnotes>. I don't know why
+  $c =~ s|=(.*?)=|<hi>$1</hi>|gi;
 
 
 ################################################################################
