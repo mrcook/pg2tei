@@ -16,29 +16,24 @@
 
 require 5.004;
 use strict;
-use Getopt::Long;
-use Getopt::Long;
-use POSIX qw(strftime);
-use POSIX qw(locale_h);
-use Text::Wrap;
+
 use Data::UUID;
 use Data::Dumper;
-
-use utf8;
+use Getopt::Long;
 use locale;
+use POSIX qw(strftime);
+use POSIX qw(locale_h);
+# use Text::Wrap;                                               # Only needed when re-wrapping text. Delete?
+# use utf8;                                                     # Apparently in Perl 5.6+ it does not need to be specified.
+# use open IN => ':encoding(iso-8859-1)', OUT => 'iso-8859-1';  # Used to specify an input - probably not needed
 
-my $locale = "en";
-setlocale (LC_CTYPE, $locale);
-$locale = setlocale (LC_CTYPE);
-#print "NEW locale: $locale\n";
-
-my $help   = 0;
-
-my %languages = ();
+# Let's convert and output the document to UTF-8
+binmode STDOUT, ":utf8";
 
 
 ################################################################################
-# some pg2tei specific parameters
+####                    Set some pg2tei specific parameters                  ###
+################################################################################
 
 $Text::Wrap::columns = 78;
 
@@ -50,26 +45,34 @@ my $avg_line_length   = 0;
 my $max_line_length   = 0;
 
 # some hints as to what is being converted
-my $is_verse = 0;             # work is a poem
+my $is_verse = 0;                           # work is a poem
 
 # regexps how to catch quotes (filled in later)
 my ($quotes1, $quotes1pre, $quotes2);
 
 my $override_quotes = '';
 
-my $date_string     = "<date value=\"" . strftime ("%Y-%m", localtime ()) . "\">" . strftime ("%B %Y", localtime ()) . "</date>";
 my $dcurdate        = strftime ("%Y-%m-%d", localtime ());
 my $current_date    = strftime ("%d %B %Y", localtime ());
 
+print "HELLO" . $dcurdate . "\n";
+print $current_date . "\n";
 
 ################################################################################
-# setup all needed variables with some defaults
+####                      Set all variables with defaults                    ###
+################################################################################
+
+my $help   = 0;
+my %languages = ();
+
+my $locale = "en";
+setlocale (LC_CTYPE, $locale);
+$locale = setlocale (LC_CTYPE);
 
 use vars '$language';
 use vars '$front_matter_block';
 use vars '@illutrators';
 
-my  $producer           = '*** unknown';
 my  $title              = '';
 my  $sub_title          = '';
 my  $author_string      = '';
@@ -117,7 +120,7 @@ my  $is_book_div        = 0;
 
 ################################################################################
 # how to catch chapters and paragraphs etc.
-# regexes get applied in this order:
+# regex's get applied in this order:
 # chapter1           <div>
 #    head1           <head>
 #       paragraph1   <head type="sub">
@@ -143,14 +146,17 @@ undef $/;  # slurp it all, mem is cheap
 
 
 ################################################################################
+####                           THE CORE PARSING                             ####
+################################################################################
 
-# Here is the core parsing
 while (<>) {
   s|\r||g;         # cure M$-DOS files
   s|\t| |g;        # replace tabs
   s|[ \t]+\n|\n|g; # remove spaces at end of line
 
-  # Do a quick check on the language to see if it is British English
+  ####--------------------------------------------------####
+  #### Quick check to see if the doc is British English ####
+  ####--------------------------------------------------####
   my $uk_count = 0;
   my $us_count = 0;
   my $word = '';
@@ -166,28 +172,19 @@ while (<>) {
     $language = "British";
   }
 
-# process gutenberg header and output tei header
-
-###### OLD CODE ######
-# A simpler rule for certain books
-#  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d]|:upper:O:upper:N:upper:E)(.*?)\n)/output_header ($1)/egis) {
-# This one Checks for a PREFAC/INTRO's/etc and then checks for Chapters, etc. including "The First" type stuff
-#  if (s/^(.*?)(?=\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR\'S NOTE|((CHAPTER|PART|BOOK|VOLUME) )?(((\w+) )?[1[^\d\.]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]))(.*?)\n)/output_header($1)/egis) {
-# this one works - for the most part!!
-#  if (s/^(.*?)(?=\n\n[_ ]*((CHAPTER|PART|BOOK|VOLUME) )?(1[^\d\.]|:upper:O:upper:N:upper:E|I)(.*?)\n)/output_header ($1)/egis) {
-###### OLD CODE ######
-
-
-####### NEW CODE (2009-11-25) Let's see if we can rewrite this properly ########
-# First check for Preface, Introduction, etc.
+  ####-----------------------------------------####
+  #### Process PG header and output TEI header ####
+  ####-----------------------------------------####
+  
+  # First check for PREFACE, INTRODUCTION, etc.
   if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)//egis) {
     output_header($1);
 
-# Then check for Chapters, Volumes, etc.
+  # Now check for CHAPTERS, VOLUMES, etc.
   } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)//egis) {
     output_header($1);
 
-# No chapter name? Try just for an actual "1" or "I" or "ONE"
+  # No chapter name? Just look for an actual "1" or "I" or "ONE"
   } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)//egis) {
     output_header($1);
   } else {
@@ -203,17 +200,22 @@ while (<>) {
     print "\n\n";
   }
 
-
-# process body
+  # Process the body
   if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) {
-#    output_body ($front_matter_block .= $_);
+    # output_body ($front_matter_block .= $_);
   }
 
-# output tei footer
-    output_footer ();
+  # output tei footer
+  output_footer ();
 }
 
-### end of main () #############################################################
+####                           END CORE PARSING                             ####
+################################################################################
+
+
+################################################################################
+####                          START OF FUNCTIONS                            ####
+################################################################################
 
 sub output_line {
   my $line = shift;
@@ -450,7 +452,7 @@ sub output_chapter {
     print "\n\n<div type=\"" . lc($1) . "\" n=\"1\">\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([\. -]+(.*?)\n|\n)/i) {
+  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([- .]+(.*?)\n|\n)/i) {
     print "</div>\n\n";
     print "</div>\n\n\n";
     #   Grab the Part/Book number
@@ -524,14 +526,13 @@ sub output_header () {
     if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrated_by = change_case($2); }
     if (/\nEdition: *(.*?)\n/i)                { $edition = $1; }
 
-    my $tmp_enc = '';
     if (/\nCharacter set encoding: *(.*?)\n/i) {
-      $tmp_enc = lc($1);
-      if ($tmp_enc =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
-        $tmp_enc = 'iso-8859-1';
+      $encoding = lc($1);
+      if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+        $encoding = 'iso-8859-1';
       }
-      $encoding = $tmp_enc;
     }
+    $encoding = 'utf-8';  # We're going to force utf-8 on all documents
 
     if (/\nLanguage: *(.*?)\n/i)               {
       if ($1 ne 'English' && $language ne 'British') {
@@ -644,7 +645,7 @@ sub output_header () {
     # Sometimes Author get assigned wierd info...fix it
     if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
 
-    if (/This etext was produced by (.*?)[\.,]?\n/) {
+    if (/This etext was produced by (.*?)[.,]?\n/) {
       $produced_by = $1;
     }
 
@@ -744,6 +745,9 @@ sub output_header () {
     }
     $prod_first_by =~ s/\.$//;
 
+    # Let's remove any http://www.pgdp.net from the producers
+    $produced_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
+    $prod_first_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
 
     # Get the published date
     if (!$publishdate) {
@@ -766,7 +770,7 @@ sub output_header () {
     $publisher =~ s|&|&amp;|; # Convert ampersand
 
     # REDACTOR'S NOTES
-    if (s/ *\[Redactor\'?s? Note[s:\n ]*(.*?)\]//is) {
+    if (s/ *\[Redactor'?s? Note[s:\n ]*(.*?)\]//is) {
       $redactors_notes = $1;
     } elsif (s/Redactor\'s Note[s:\n ]*(.*?)\n\n\n//is) {
       $redactors_notes = $1;
@@ -779,7 +783,7 @@ sub output_header () {
     $redactors_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
 
     # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
-    if (s/ *\[Transcriber\'?s? Note[s:\n ]+(.*?)\]//is) {
+    if (s/ *\[Transcriber'?s? Note[s:\n ]+(.*?)\]//is) {
       $transcriber_notes = $1;
     } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
       $transcriber_notes = $1;
@@ -800,7 +804,7 @@ sub output_header () {
 
 
     # ILLUSTRATED BY ...
-    if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[\._]*$/i) {
+    if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
       if ($1) {
         $illustrated_text = change_case($1);
       }
@@ -1211,6 +1215,8 @@ sub pre_process {
   if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
   ## If footnotes are detected with the above, then we don't need to process these do we.
   if ($note_exists == 0) {
+    ################### using \< might mean a regex word boundary --- check this ###############################
+    ################### i should not need to escape these character class entries \* \+ ########################
     if ( $c =~ s|\<([\d\*\+]+)\>|[$1]|g ) {
       $note_exists = 1;
     } elsif ( $c =~ s|\{([\d\*\+]+)\}|[$1]|g ) {
@@ -1256,6 +1262,7 @@ sub pre_process {
   $c =~ s| *\.{3,}|&#8230;|g;
   $c =~ s| *(\. ){3,}|&#8230;|g;
   $c =~ s|&#8230; ?\.|&#8230;|g;          # Fix '&#8230; .'
+  ############################### DO I NEED TO ESCAPE THESE CHARACTER CLASSES?? ###################################
   $c =~ s|&#8230; ?([\!\?])|&#8230;$1|g;  # Fix '&#8230; ! or ?'
 
   #substitute °, @ OR #o (lowercase O) for &#176;
@@ -1431,6 +1438,7 @@ sub process_dates {
   }
 
   # 9/19/01
+  #################################################WHY AM I ESCAPING THIS \/ ?? ###############################
   if ($wdate =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
     ($year, $month, $day) = ($3, $1, $2);
     $tmp_month = $month;
@@ -1591,7 +1599,7 @@ sub process_names {
 
   my $count = 0;
   foreach my $name (@names_list) {
-    if ($name =~ m/^(.*?) +([\w-]+)$/i) {
+    if ($name =~ m/^(.*?) +([-\w]+)$/i) {
       my $orig_firstname = $1; # Keep the original first name for <front> data
       my $firstname = $1;
       my $lastname = $2;
