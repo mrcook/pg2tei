@@ -32,42 +32,35 @@ binmode STDOUT, ":utf8";
 
 
 ################################################################################
-####                    Set some pg2tei specific parameters                  ###
+####                       Set some specific parameters                      ###
 ################################################################################
 
-$Text::Wrap::columns = 78;
+my  $is_verse          = 0;    # Work is a poem? Some hints as to what is being converted.
 
-my $cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
-my $cnt_head_sep      = "2";
-my $cnt_paragraph_sep = "1";
+my  $cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
+my  $cnt_head_sep      = "2";
+my  $cnt_paragraph_sep = "1";
 
-my $avg_line_length   = 0;
-my $max_line_length   = 0;
-
-# some hints as to what is being converted
-my $is_verse = 0;                           # work is a poem
+my  $avg_line_length   = 0;
+my  $max_line_length   = 0;
+# $Text::Wrap::columns   = 78;
 
 # regexps how to catch quotes (filled in later)
-my ($quotes1, $quotes1pre, $quotes2);
+my  ($quotes1, $quotes1pre, $quotes2);
 
-my $override_quotes = '';
+my  $override_quotes   = '';
 
-my $dcurdate        = strftime ("%Y-%m-%d", localtime ());
-my $current_date    = strftime ("%d %B %Y", localtime ());
+my  $help              = 0;
 
-print "HELLO" . $dcurdate . "\n";
-print $current_date . "\n";
+my  $current_date_iso  = strftime ("%Y-%m-%d", localtime ());
+my  $current_date      = strftime ("%d %B %Y", localtime ());
 
-################################################################################
-####                      Set all variables with defaults                    ###
-################################################################################
-
-my $help   = 0;
-my %languages = ();
-
-my $locale = "en";
+my  $locale = "en";
 setlocale (LC_CTYPE, $locale);
 $locale = setlocale (LC_CTYPE);
+
+
+####  Many variables need to be set/given defaults ###
 
 use vars '$language';
 use vars '$front_matter_block';
@@ -77,14 +70,15 @@ my  $title              = '';
 my  $sub_title          = '';
 my  $author_string      = '';
 my  $editor             = '';
-my  $illustrated_text   = 'Illustrated by';
-my  $illustrated_by     = '';
-my  $translated         = '';
-my  $translated_by      = '';
-my  $publishedplace     = '';
+my  $illustrators       = '';
+my  $illustratedby_tag  = 'Illustrated by';
+my  $translators        = '';
+my  $translatedby_tag   = '';
+my  $published_place    = '';
 my  $publisher          = '';
-my  $publishdate        = '';
+my  $published_date     = '';
 
+my  %languages          = ();
 my  $language_code      = '';
 my  $encoding           = 'iso-8859-1';
 
@@ -113,13 +107,17 @@ my  $transcriber_notes  = '';
 my  $transcriber_errors = '';
 my  $redactors_notes    = '';
 
+my  $rend               = '';
+
 my  $footnote_exists    = 0;
 my  $is_book            = 0;
 my  $is_book_div        = 0;
 
 
 ################################################################################
-# how to catch chapters and paragraphs etc.
+####                 How to catch Chapters, Paragraphs, etc.                ####
+################################################################################
+
 # regex's get applied in this order:
 # chapter1           <div>
 #    head1           <head>
@@ -129,6 +127,7 @@ my  $is_book_div        = 0;
 # chapter1 gets applied on body. The result of the match(es)
 # gets fed first into head1 and then into epigraph1 and paragraph1,
 # the result of head1 gets fed into paragraph1
+
 my $tmp = "(.*?)\n{$cnt_chapter_sep}\n+";
 
 my $chapter1   = qr/$tmp/s;
@@ -150,9 +149,9 @@ undef $/;  # slurp it all, mem is cheap
 ################################################################################
 
 while (<>) {
-  s|\r||g;         # cure M$-DOS files
-  s|\t| |g;        # replace tabs
-  s|[ \t]+\n|\n|g; # remove spaces at end of line
+  s|\r||g;       # cure M$-DOS files
+  s|\t| |g;      # replace tabs
+  s| +\n|\n|g;   # remove spaces at end of line
 
   ####--------------------------------------------------####
   #### Quick check to see if the doc is British English ####
@@ -217,13 +216,13 @@ while (<>) {
 ####                          START OF FUNCTIONS                            ####
 ################################################################################
 
-sub output_line {
+sub output_line {     # Output <l>'s.
   my $line = shift;
   my $min_indent = shift;
 
-  $line =~ m/\S/g;
+  $line =~ m/\S/g; # What does this do?
   my $indent = (pos ($line) - $min_indent - 1);
-  $line =~ s/^\s*//;
+  $line =~ s/^\s+//;
 
   if (length ($line)) {
     $indent = 6 if $indent >= 7;
@@ -238,15 +237,14 @@ sub output_line {
     # $line = process_quotes_1 ($line);
     # $line = fix_unbalanced_quotes_line ($line);
 
-    $line = post_process ($line);
-
     # Fix some double <q> tags
-    $line =~ s|</q></q>|</q>|g;
-    $line =~ s|<q></q>|</q>|g;
-    $line =~ s|<q><q>|<q>|g;
+    # $line =~ s|</q></q>|</q>|g;
+    # $line =~ s|<q></q>|</q>|g;
+    # $line =~ s|<q><q>|<q>|g;
+
+    $line = post_process ($line);
     print "  <l$line_indent>$line</l>\n";
   }
-
   return '';
 }
 
@@ -256,15 +254,15 @@ sub output_para {
 
   # We need to check for "[Footnote" entries to stop them being caught as a <lg>
   my $is_foonote_entry = '';
-  if ($p =~ /^[\n\s]+\[Footnote/) {
+  if ($p =~ /^[\n|\s]+\[Footnote/) {
     $is_foonote_entry = 1;
   }
 
   my $o = study_paragraph ($p);
 
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
-    # $p = process_quotes_1 ($p); ## Not sure if this should be enabled...probably not.
-    # $p = post_process ($p);     ## Not sure if this should be enabled...probably not.
+    # $p = process_quotes_1 ($p); # Not sure if this should be enabled...probably not.
+    # $p = post_process ($p);     # Not sure if this should be enabled...probably not.
     print "<quote>\n <lg>\n";
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
@@ -272,30 +270,23 @@ sub output_para {
       }
     }
     print " </lg>\n</quote>\n\n";
-  } else {
-    # paragraph is prose
+  } else { # paragraph is prose
     # join end-of-line hyphenated words
-    $p =~ s|([^- ])- ?\n([^ ]+) |$1-$2\n|g;
+    $p =~ s/([^- ])- ?\n([^ ]+) /$1-$2\n/g;
 
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
 
-    $p =~ s/ +/ /g;
-    $p =~ s/\s*$//g;
-
-    my $rend = '';
     $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
     $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
-
-    $p =~ s|^ (.*?)|$1|;  # remove any leading spaces
 
     if ($p =~ m/^(<(figure|milestone|div|pb))/) {
     } else {
       $p = "<p$rend>$p</p>";
     }
 
+    # print wrap ("", "", $p); # We are not going to perform any re-wrapping
     print $p;  # No WRAP
-#   print wrap ("", "", $p);  # WRAP - Marcello's Line
 
     print "\n\n";
   }
@@ -304,9 +295,7 @@ sub output_para {
 
 sub output_stage {
   my $stage = shift;
-
   $stage =~ s/[ \t\n]+/ /g;
-
   print "<stage>$stage</stage>\n\n";
   return '';
 }
@@ -322,7 +311,7 @@ sub output_head {
   $head_tmp = process_quotes_1 ($1);
   $head_tmp = post_process ($head_tmp);
 
-  $head_tmp =~ s/^\s//; # Strip out leading whitespace
+  $head_tmp =~ s/^\s+//; # Strip out leading whitespace
 
   if ($head_tmp =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
@@ -334,8 +323,7 @@ sub output_head {
     my $subhead = post_process ($1);
 
     $subhead =~ s|^\"(.*?)\"$|<q>$1</q>|; # Rough fix of Quotes
-
-    $subhead =~ s/^\s//gm; # Strip out leading whitespace
+    $subhead =~ s|^\s||gm;                # Strip out leading whitespace
 
     if ($subhead =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
       print $subhead . "\n\n";
@@ -343,20 +331,20 @@ sub output_head {
      print "<head type=\"sub\">$subhead</head>\n\n";
    }
   }
-  print ("\n");
+  print "\n";
   return '';
 }
 
-# quotes involve pretty much guesswork and probably
-# we will get some quotes wrong
 
+####------------------------------------------####
+#### quotes involve pretty much guesswork and ####
+#### we will probably get some quotes wrong.  ####
+####------------------------------------------####
 sub process_quotes_2 {
   my $c = shift;
-
-  if ($c =~ m/$quotes2/) {
+  if ($c =~ m|$quotes2|) {
     while ($c =~ s|$quotes2|"<q>" . process_quotes_1 ($1) . "</q>"|es) {};
   }
-
   return $c;
 }
 
@@ -372,16 +360,19 @@ sub process_quotes_1 {
 
   # attract user's attention to these remaining quotes
   # $c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
-  #### just convert to <q> and hope XSL catches it
-  $c =~ s|([\"«»\x84])|<q>|g;
+  #### @Mike - just convert to <q> and deal with it in XSLT ####
+  $c =~ s|(["«»\x84])|<q>|g;
 
   $c = do_fixes ($c);
 
   return $c;
 }
 
+
+####----------------------------------------####
+#### try to fix unbalanced quotes in verses ####
+####----------------------------------------####
 sub fix_unbalanced_quotes_line {
-  # tries to fix unbalanced quotes in verse lines
   my $line = shift;
   my $balance = 0;
 
@@ -402,20 +393,19 @@ sub fix_unbalanced_quotes_line {
     }
     $line =~ s|§(/?q)§|<$1>|g;
   }
-
   $line = do_fixes ($line);
 
   return $line;
 }
 
+
+#### try to fix various quotes ####
 sub do_fixes {
-  # tries to fix various quotes
   my $fix = shift;
-
   $fix =~ s| </q>|</q>|g; # Tidy up </q> tags with space before.
-
   return $fix;
 }
+
 
 sub output_epigraph {
   my $epigraph = shift;
@@ -428,13 +418,14 @@ sub output_epigraph {
   $epigraph = post_process ($epigraph);
   $citation = post_process ($citation);
 
-  $epigraph =~ s/\s+/ /g;
+  $epigraph =~ s|\s+| |g;
   $epigraph = "<p>$epigraph</p>";
 
-  print wrap ("", "", $epigraph);
+  # print wrap ("", "", $epigraph);
+  print $epigraph;  # No WRAP
   print "\n\n";
 
-  $citation =~ s/&#160;&#8212;/&#8213;/g;
+  $citation =~ s|&#160;&#8212;|&#8213;|g;
 
   print "<p rend=\"text-align(right)\">$citation</p>\n\n";
 
@@ -442,14 +433,14 @@ sub output_epigraph {
   return '';
 }
 
+
 sub output_chapter {
   my $chapter = shift;
-
   my $part_number = "";
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\dIVX])(.*?)/i) {
-    print "\n\n<div type=\"" . lc($1) . "\" n=\"1\">\n\n";
+  if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
+    print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([- .]+(.*?)\n|\n)/i) {
@@ -459,7 +450,7 @@ sub output_chapter {
     $part_number = encode_numbers($3);
     if (!$part_number) { $part_number = "xx"; }
       
-    print "<div type=\"" . lc($1) . "\" n=\"" . $part_number . "\">\n\n";
+    print '<div type="' . lc($1) . '" n="' . $part_number . '">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } else {
@@ -468,16 +459,19 @@ sub output_chapter {
     } else {
       $is_book_div = 0;
     }
-    print "<div type=\"chapter\">\n\n";
+    print '<div type="chapter">' . "\n\n";
   }
+  $chapter =~ s/$head1/output_head ($1)/es;
 
-  $chapter =~ s|$head1|output_head ($1)|es;
+  # while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
 
-# while ($chapter =~ s|$epigraph1|output_epigraph ($1, $2)|es) {};
-  while ($chapter =~ s|$paragraph1|output_para ($1)|es) {};
+  # This is Marcello's line, we should be able to change this now with a later Perl.
+  # while ($chapter =~ s/$paragraph1/output_para ($1)/es) {}; # egs doesn't work in 5.6.1
+  $chapter =~ s/$paragraph1/output_para ($1)/egs; # (2009-12-25)
 
   return '';
 }
+
 
 sub output_body {
   my $body = shift;
@@ -494,15 +488,20 @@ sub output_body {
 
   $body .= "\n{$cnt_chapter_sep}\n";
 
-  while ($body =~ s|$chapter1|output_chapter ($1)|es) {}; # egs doesn't work in 5.6.1
+  # This is Marcello's line, we should be able to change this now with a later Perl.
+  # while ($body =~ s/$chapter1/output_chapter ($1)/es) {}; # egs doesn't work in 5.6.1
+  $body =~ s/$chapter1/output_chapter ($1)/egs; # (2009-12-25)
 
   return '';
 }
 
+
+####-------------------------------------------------####
+#### Scan the PG header for useful info. The problem ####
+#### here is that there are a gazillion different    ####
+#### <soCalled>standard headers</soCalled>           ####
+####-------------------------------------------------####
 sub output_header () {
-  # scan the gutenberg header for useful info
-  # the problem here is that there are a gazillion different
-  # <soCalled>standard headers</soCalled>
   my $h = shift;
 
   # Grab the front matter from this header for printing.
@@ -514,26 +513,28 @@ sub output_header () {
 
   for ($h) {
 
-    # Try to grab the sub title too!
-    if (/Title: *(.*?)\n  +(.*?)\n/) {
+    # Grab the title and sub-title (if exists)
+    if (/Title: *(.*?)\n  +(.*?)\n/)           { 
       $title = $1; $sub_title = $2;
-    } elsif (/Title: *(.*?)\n/) {
+    } elsif (/Title: *(.*?)\n/)                { 
       $title = $1; $sub_title = "";
     }
-    
     if (/\nAuthors?: *(.*?)\n/i)               { $author_string = $1; }
     if (/\nEditors?: *(.*?)\n/i)               { $editor = $1; }
-    if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrated_by = change_case($2); }
+    if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrators = change_case($2); }
     if (/\nEdition: *(.*?)\n/i)                { $edition = $1; }
-
     if (/\nCharacter set encoding: *(.*?)\n/i) {
       $encoding = lc($1);
       if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
         $encoding = 'iso-8859-1';
       }
     }
-    $encoding = 'utf-8';  # We're going to force utf-8 on all documents
+    ####---------------------------------------------####
+    #### We're going to force UTF-8 on all documents ####
+    ####---------------------------------------------####
+    $encoding = 'utf-8'; 
 
+    if (/\nPublished: *(\d+)\n/i)              { $published_date = $1; }
     if (/\nLanguage: *(.*?)\n/i)               {
       if ($1 ne 'English' && $language ne 'British') {
         $language = $1;
@@ -541,16 +542,19 @@ sub output_header () {
     }
     if (!$language)                           { $language = 'English'; }
     $language_code = encode_lang ($language);
+    print "TITS: " . $language_code . "\n\n\n";
 
+    # The Series information is sometimes added manually by myself
+    # This helps to speed things up in the manual-post-processing.
     if (/\nSeries: *(.*?)\n/i)                 { $series_title  = $1; }
     if (/\nSeries Volume: *(\d+)\n/i)          { $series_volume = $1; }
 
-    if (/\nPublished: *(\d+)\n/i)              { $publishdate = $1; }
 
-    ############################################################################
-    # Find the Posting/Release/Updated Dates
-    # Release Date is usually old than the Posting Date (But not always)
-    # Posting Date usually contains the EBook #
+    ####--------------------------------------------------------------------####
+    #### Find the Posting/Release/Updated Dates
+    #### Release Date is usually old than the Posting Date (But not always)
+    #### Posting Date usually contains the EBook number.
+    ####--------------------------------------------------------------------####
 
     # OFFICIAL RELEASE DATE - Usually NO EBook #.
     if (/\n((Official|Original) )?Release Date: *(.*?)\n/i) { $releasedate = $3; }
@@ -590,9 +594,13 @@ sub output_header () {
     $posteddate_iso  = process_dates ($posteddate)  if ($posteddate);
     $lastupdated_iso = process_dates ($lastupdated) if ($lastupdated);
 
-    # SAFE Option for Dates is to create an array and sort them.
-    # This is because PG often mixes up Posted/Released dates, etc.
-    # This will then give the proper date sequence.
+
+    ####--------------------------------------------------------------####
+    #### SAFE Option for Dates is to create an array and sort them.   ####
+    #### This is because PG often mixes up Posted/Released dates.     ####
+    #### This will then give a proper date sequence; even if it's not ####
+    #### 100% as PG intended -- how much manual work do you want! :)  ####
+    ####--------------------------------------------------------------####
     my @book_dates   = ();
     my @dates_sorted = ();
     if ($releasedate) { push(@book_dates, [$releasedate_iso, $releasedate]); }
@@ -604,7 +612,7 @@ sub output_header () {
     $releasedate     = $dates_sorted[0]->[1];
     $releasedate_iso = $dates_sorted[0]->[0];
     # Set FIRST UPDATED
-    # If there is a 3rd date there is a FIRST RELEASED DATE
+    # If there is a 3rd date, there is a FIRST RELEASED DATE
     if ($dates_sorted[2]->[0]) {
       $firstupdated     = $dates_sorted[1]->[1];
       $firstupdated_iso = $dates_sorted[1]->[0];
@@ -642,8 +650,10 @@ sub output_header () {
     } elsif (!$author_string) {
       if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author_string = change_case($1); }
     }
+    
+    #### Commenting out. Not sure if this still applies (2009-12-25)
     # Sometimes Author get assigned wierd info...fix it
-    if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
+    # if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
 
     if (/This etext was produced by (.*?)[.,]?\n/) {
       $produced_by = $1;
@@ -651,17 +661,17 @@ sub output_header () {
 
     # Translated from ...
     if (/[\n ]*(Translated (from.*)?by)[\s\t\r\n]+(.+)/i) {
-      $translated = $1;
-      $translated_by = change_case($3);
+      $translatedby_tag = $1;
+      $translators = change_case($3);
     } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
-      $translated = $1;
-      $translated_by = change_case($3);
+      $translatedby_tag = $1;
+      $translators = change_case($3);
     }
   }
-  $translated_by =~ s/\.$//;
+  $translators =~ s/\.$//;
   my @translators = ();
-  if ($translated_by) {
-    @translators = process_names ($translated_by);
+  if ($translators) {
+    @translators = process_names ($translators);
   }
 
   my $languages = list_languages ($language_code);
@@ -725,8 +735,8 @@ sub output_header () {
     } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
       $produced_by = $6;
       $publisher   = $4;
-      if (!$publishdate) {
-        $publishdate = $1;
+      if (!$published_date) {
+        $published_date = $1;
       }
     } elsif (/proof(ed| ?read) by:? +(.*?)\n/i) {
       $produced_by = $2;
@@ -750,18 +760,18 @@ sub output_header () {
     $prod_first_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
 
     # Get the published date
-    if (!$publishdate) {
+    if (!$published_date) {
       if (m/\n *([0-9]{4})\n/i) {
-        $publishdate = $1;
+        $published_date = $1;
       } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
-        $publishdate = $1;
+        $published_date = $1;
       } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
-        $publishdate = $2;
+        $published_date = $2;
       }
     }
     # Get the published place
     if (m/^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
-      $publishedplace = change_case($1);
+      $published_place = change_case($1);
     }
     # Get the publisher
     if (m/[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
@@ -806,19 +816,19 @@ sub output_header () {
     # ILLUSTRATED BY ...
     if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
       if ($1) {
-        $illustrated_text = change_case($1);
+        $illustratedby_tag = change_case($1);
       }
-      if (!$illustrated_by) {
-        $illustrated_by = change_case($9);
-        $illustrated_by =~ s/_$//;
+      if (!$illustrators) {
+        $illustrators = change_case($9);
+        $illustrators =~ s/_$//;
       }
     }
 
-    if ($illustrated_by) { 
-      @illutrators = process_names ($illustrated_by);
-      $illustrated_by =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
+    if ($illustrators) { 
+      @illutrators = process_names ($illustrators);
+      $illustrators =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
     } else {
-      $illustrated_text = "";
+      $illustratedby_tag = "";
     }
 
   } # END OF $front_matter_block() PROCESSING
@@ -993,9 +1003,9 @@ HERE
 }
 print <<HERE;
           <imprint>
-            <pubPlace>$publishedplace</pubPlace>
+            <pubPlace>$published_place</pubPlace>
             <publisher>$publisher</publisher>
-            <date>$publishdate</date>
+            <date>$published_date</date>
           </imprint>
         </monogr>
       </biblStruct>
@@ -1018,13 +1028,13 @@ HERE
 print <<HERE;
       <normalization></normalization>
       <quotation marks="all" form="std">
-        <p>All double quotation marks rendered with q tags.</p>
+        <p>Not all double quotation marks have been rendered with q tags.</p>
       </quotation>
       <hyphenation eol="none">
-        <p>Hyphenated words that appear at the end of the line have been reformed.</p>
+        <p>Hyphenated words that appear at the end of the line may have been reformed.</p>
       </hyphenation>
       <stdVals>
-        <p>Standard date values are given in ISO form: yyyy-mm-dd.</p>
+        <p>Standard date values in the header are recorded in the attribute "value=" and are given in ISO form yyyy-mm-dd.</p>
       </stdVals>
       <interpretation>
         <p>Italics are recorded without interpretation.</p>
@@ -1038,7 +1048,7 @@ print <<HERE;
   </encodingDesc>
   <profileDesc>
     <creation>
-      <date value="$dcurdate">$current_date</date>
+      <date value="$current_date_iso">$current_date</date>
     </creation>
       <langUsage>
         <language id="$language_code">$language</language>
@@ -1053,7 +1063,7 @@ print <<HERE;
     </textClass>
   </profileDesc>
   <revisionDesc>
-    <change when="$dcurdate" who="Cook, Michael">
+    <change when="$current_date_iso" who="Cook, Michael">
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
     </change>
 HERE
@@ -1102,26 +1112,26 @@ HERE
 HERE
   }
 }
-if ($illustrated_by) {
+if ($illustrators) {
   print <<HERE;
     <byline>
-      $illustrated_text <name>$illustrated_by</name>
+      $illustratedby_tag <name>$illustrators</name>
     </byline>
 HERE
 }
-if ($translated_by) {
+if ($translators) {
   print <<HERE;
     <byline>
-      $translated <name>$translated_by</name>
+      $translatedby_tag <name>$translators</name>
     </byline>
 HERE
 }
 print <<HERE;
     <docEdition></docEdition>
     <docImprint>
-      <pubPlace>$publishedplace</pubPlace>
+      <pubPlace>$published_place</pubPlace>
       <publisher>$publisher</publisher>
-      <docDate>$publishdate</docDate>
+      <docDate>$published_date</docDate>
     </docImprint>
   </titlePage>
 
@@ -1302,9 +1312,9 @@ sub post_process {
   $c =~ s|\+-+\+|\n|g;
   $c =~ s/ *\|(.+)\| *\n/$1\n/g;
 
-################################################################################
-# text highlighting
-################################################################################
+  ################################################################################
+  # text highlighting
+  ################################################################################
 
   # Add <emph> tags; changing _ and <i> to <emph>
   $c =~ s|<i>|<emph>|g;
@@ -1319,9 +1329,9 @@ sub post_process {
   $c =~ s|=(.*?)=|<hi>$1</hi>|gi;
 
 
-################################################################################
-# typografical entities
-#
+  ################################################################################
+  # typografical entities
+  #
 
   #### Ignore hyphenated words and just replace all hyphens (-) with &#8211; ####
   $c =~ s|-|&#8211;|g;
@@ -1350,15 +1360,19 @@ sub post_process {
   $c =~ s|(M\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
   $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&#160;$2|g;
 
-################################################################################
-# various cosmetics
-#
+  ################################################################################
+  # various cosmetics
+  #
 
   # strip multiple spaces
   $c =~ s|[ \t]+| |g;
 
-  # strip spaces before new line
-  $c =~ s| \n|\n|g;
+  # strip spaces before new line/end of text
+  $c =~ s| *\n|\n|g;
+  $c =~ s|\s*$||g;   # This line was origianlly in output_para() after post_process()
+
+  # strip leading spaces
+  $c =~ s|^ +||;
 
   ### Don't worry about Marcellos stuff here
   # $c =~ s|<qpre>|<q rend=\"post: none\">|g;
@@ -1402,12 +1416,12 @@ sub post_process {
 
   # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
-#  $c =~ s|&nbsp;|&#160;|g;
-#  $c =~ s|&ndash;|&#8211;|g;
-#  $c =~ s|&mdash;|&#8212;|g;
-#  $c =~ s|&qdash;|&#8213;|g;
-#  $c =~ s|&hellip;|&#8230;|g;
-#  $c =~ s|&deg;|&#176;|g;
+  #  $c =~ s|&nbsp;|&#160;|g;
+  #  $c =~ s|&ndash;|&#8211;|g;
+  #  $c =~ s|&mdash;|&#8212;|g;
+  #  $c =~ s|&qdash;|&#8213;|g;
+  #  $c =~ s|&hellip;|&#8230;|g;
+  #  $c =~ s|&deg;|&#176;|g;
 
   return $c;
 }
@@ -1418,8 +1432,9 @@ sub encode_lang {
   if ($lang eq "English") {
     $lang = "American";
   }
-
+  print "Lang:" . $lang . "\n\n\n";
   while (my ($key, $value) = each (%languages)) {
+    print "Lang:" . $key . "|" .$value . "\n\n\n";
     if ($value eq $lang) {
       return $key;
     }
