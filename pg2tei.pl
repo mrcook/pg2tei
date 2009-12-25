@@ -30,6 +30,20 @@ use POSIX qw(locale_h);
 # Let's convert and output the document to UTF-8
 binmode STDOUT, ":utf8";
 
+my %languages = (
+  "de"     => "German",
+  "el"     => "Greek",
+  "en-gb"  => "British",
+  "en-us"  => "American",
+  "en"     => "English",
+  "es"     => "Spanish",
+  "fr"     => "French",
+  "it"     => "Italian",
+  "la"     => "Latin",
+  "nl"     => "Dutch",
+  "pl"     => "Polish",
+  "pt"     => "Portuguese",
+);
 
 ################################################################################
 ####                       Set some specific parameters                      ###
@@ -78,7 +92,6 @@ my  $published_place    = '';
 my  $publisher          = '';
 my  $published_date     = '';
 
-my  %languages          = ();
 my  $language_code      = '';
 my  $encoding           = 'iso-8859-1';
 
@@ -1434,7 +1447,6 @@ sub encode_lang {
   }
   print "Lang:" . $lang . "\n\n\n";
   while (my ($key, $value) = each (%languages)) {
-    print "Lang:" . $key . "|" .$value . "\n\n\n";
     if ($value eq $lang) {
       return $key;
     }
@@ -1925,21 +1937,6 @@ sub uuid_gen {
 
   return $uuid;
 }
-
-%languages = (
-  "de"     => "German",
-  "el"     => "Greek",
-  "en-gb"  => "British",
-  "en-us"  => "American",
-  "en"     => "English",
-  "es"     => "Spanish",
-  "fr"     => "French",
-  "it"     => "Italian",
-  "la"     => "Latin",
-  "nl"     => "Dutch",
-  "pl"     => "Polish",
-  "pt"     => "Portuguese",
-);
 
 GetOptions (
   "quotes=s"    => \$override_quotes,
