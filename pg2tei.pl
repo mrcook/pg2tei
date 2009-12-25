@@ -73,6 +73,8 @@ my  $locale = "en";
 setlocale (LC_CTYPE, $locale);
 $locale = setlocale (LC_CTYPE);
 
+my $uuid =  uuid_gen(); # Create a UUID
+
 
 ####  Many variables need to be set/given defaults ###
 
@@ -649,7 +651,7 @@ sub output_header () {
 
 
     # If not set try to grab title, author, etc.
-    # I HAVE REMOVED the \n from the start of these two string -- Keep an eye on this.
+    # I HAVE REMOVED the \n from the start of these two strings -- Keep an eye on this (2009-11-xx).
     if (/\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
       if (!$author_string) { $author_string = change_case($2); }
@@ -705,23 +707,23 @@ sub output_header () {
     }
   }
 
-### If $edition still equals nothing then assign default: 1
+  # If $edition still equals nothing then assign default: 1
   if (!$edition) {
     $edition = '1';
     # Increase to next version if file has been updated
     if ($releasedate_iso ne $lastupdated_iso) { $edition = '2'; }
   }
 
-### If $edition equals PG 10 or 11 change to 1 and 2 respectively.
+  # If $edition equals PG 10 or 11 change to 1 and 2 respectively.
   my $pg_edition = $edition; # Keep the original PG edition number if it exists.
   if ( $edition == 10 ) { $edition = '1'; }
   if ( $edition == 11 ) { $edition = '2'; }
   if ( $edition == 12 ) { $edition = '3'; }
 
 
-################################################################################
-###                       Now process FRONT MATTER                           ###
-################################################################################
+  ##############################################################################
+  ###                       Now process FRONT MATTER                         ###
+  ##############################################################################
 
   for ($front_matter_block) {
 
@@ -742,7 +744,7 @@ sub output_header () {
     }
 
     # Who Scanned/Proofed the original text?
-#    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
+    # if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
     if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.*?)\n/i) {
       $produced_by = $3;
     } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
@@ -847,9 +849,6 @@ sub output_header () {
   } # END OF $front_matter_block() PROCESSING
 
   $front_matter_block .= "\n\n"; # Some padding
-
-  # Create a UUID
-  my $uuid =  uuid_gen();
 
   print <<HERE;
 <?xml version="1.0" encoding="$encoding"?>
@@ -1172,6 +1171,7 @@ HERE
   return '';
 }
 
+
 sub output_footer {
   print <<HERE;
 </div>
@@ -1212,10 +1212,9 @@ HERE
 }
 
 
-################################################################################
-# various cosmetic tweaks before output
-################################################################################
-
+####---------------------------------------####
+#### Various cosmetic tweaks before output ####
+####---------------------------------------####
 sub pre_process {
   my $c = shift;
 
@@ -1238,7 +1237,6 @@ sub pre_process {
   if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
   ## If footnotes are detected with the above, then we don't need to process these do we.
   if ($note_exists == 0) {
-    ################### using \< might mean a regex word boundary --- check this ###############################
     ################### i should not need to escape these character class entries \* \+ ########################
     if ( $c =~ s|\<([\d\*\+]+)\>|[$1]|g ) {
       $note_exists = 1;
@@ -1274,9 +1272,9 @@ sub pre_process {
     $footnote_exists = 1;
   }
 
-
-################################################################################
-# Do some other basic pre-processing
+  ####------------------------------------####
+  #### Do some other basic pre-processing ####
+  ####------------------------------------####
 
   # substitute &
   $c =~ s|&|&amp;|g;
@@ -1292,14 +1290,10 @@ sub pre_process {
   $c =~ s|(°\|@)|&#176;|g;
   $c =~ s|(\d{1,3})o|$1&#176;|g;
 
- ################################################################################
-# reserved characters
-#
-# these characters will give TeX trouble if left in
-
+  # Reserved characters; these characters will give TeX trouble if left in
   $c =~ s|\\|&#92;|g;
-#  $c =~ s|\{|&#123;|g;
-#  $c =~ s|\}|&#125;|g;
+  # $c =~ s|\{|&#123;|g;
+  # $c =~ s|\}|&#125;|g;
 
   # substitute ___ 10+ to <pb/>
   $c =~ s|_{10,}|<pb/>|g;
@@ -1314,6 +1308,7 @@ sub pre_process {
   return $c;
 }
 
+
 sub post_process {
   my $c = shift;
 
@@ -1325,9 +1320,9 @@ sub post_process {
   $c =~ s|\+-+\+|\n|g;
   $c =~ s/ *\|(.+)\| *\n/$1\n/g;
 
-  ################################################################################
-  # text highlighting
-  ################################################################################
+  ####-------------------####
+  #### Text Highlighting ####
+  ####-------------------####
 
   # Add <emph> tags; changing _ and <i> to <emph>
   $c =~ s|<i>|<emph>|g;
@@ -1338,15 +1333,14 @@ sub post_process {
   # Add <b> tags; changing = and <b> to <hi>
   $c =~ s|<b>|<hi>|g;
   $c =~ s|</b>|</hi>|g;
-  #$c =~ s|=(.*?)=|<hi>$1</hi>|gis; // This one captures some <footnotes>. I don't know why
+  # $c =~ s|=(.*?)=|<hi>$1</hi>|gis; // This one captures some <footnotes>. I don't know why
   $c =~ s|=(.*?)=|<hi>$1</hi>|gi;
 
+  ####-----------------------####
+  #### Typografical Entities ####
+  ####-----------------------####
 
-  ################################################################################
-  # typografical entities
-  #
-
-  #### Ignore hyphenated words and just replace all hyphens (-) with &#8211; ####
+  # Ignore hyphenated words and just replace all hyphens (-) with &#8211;
   $c =~ s|-|&#8211;|g;
 
   # move dashes
@@ -1373,9 +1367,9 @@ sub post_process {
   $c =~ s|(M\.?)[ \n]+([[:upper:]])|$1&#160;$2|g;
   $c =~ s|(Ew\.)[ \n]+([[:upper:]])|$1&#160;$2|g;
 
-  ################################################################################
-  # various cosmetics
-  #
+  ####-------------------####
+  #### Various Cosmetics ####
+  ####-------------------####
 
   # strip multiple spaces
   $c =~ s|[ \t]+| |g;
@@ -1387,7 +1381,7 @@ sub post_process {
   # strip leading spaces
   $c =~ s|^ +||;
 
-  ### Don't worry about Marcellos stuff here
+  # Don't worry about Marcellos stuff here
   # $c =~ s|<qpre>|<q rend=\"post: none\">|g;
   # $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
   $c =~ s|<qpre>|<q>|g;
@@ -1420,12 +1414,12 @@ sub post_process {
     $footnote_exists = 1;
   }
 
-  #### ------------ ------------- ####
-  ####    DO SOME FINAL FIXING UP ####
-  #### ------------ ------------- ####
+  ####-------------------------####
+  #### DO SOME FINAL FIXING UP ####
+  ####-------------------------####
 
-  $c =~ s|</figure></q></q>|</figure>|g; # quotes after </figure>
-  $c =~ s/([NMQ])dash/$1dash/g; # Fix &#8211; caps
+  $c =~ s|</figure></q></q>|</figure>|g;  # quotes after </figure>
+  $c =~ s/([NMQ])dash/$1dash/g;           # Fix &#8211; caps
 
   # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
@@ -1438,6 +1432,7 @@ sub post_process {
 
   return $c;
 }
+
 
 sub encode_lang {
   my $lang = shift;
@@ -1454,29 +1449,30 @@ sub encode_lang {
   return $lang;
 }
 
+
 sub process_dates {
   my ($year, $month, $day) = (0, 0, 0);
   my $tmp_month = 0;
   my $wdate = shift;
 
-  # January 1, 2000
+  # Look for: January 1, 2000
   if ($wdate =~ m/^(\w+)\s+(\d{1,2}),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($3, $1, $2);
   }
 
-  # 9/19/01
+  # Look for: 9/19/01
   #################################################WHY AM I ESCAPING THIS \/ ?? ###############################
   if ($wdate =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
     ($year, $month, $day) = ($3, $1, $2);
     $tmp_month = $month;
   }
 
-  # January, 2000 or January 2000
+  # Look for: January, 2000 or January 2000
   if ($wdate =~ m/^(\w+),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($2, $1, 0);
   }
 
-  # English format: 21st January, 2002
+  # Look for English format: 21st January, 2002
   if ($wdate =~ m/^(\d{1,2})(st|nd|rd|th)\s+(\w+),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($4, $3, $1);
   }
@@ -1492,6 +1488,7 @@ sub process_dates {
   if ($month ne "***") { return sprintf ("%04d-%02d", $year, $month); }
   return sprintf ("%04d", $year);
 }
+
 
 sub encode_month {
   my $wmonth = shift;
@@ -1538,6 +1535,7 @@ sub encode_month {
   }
   return 0;
 }
+
 
 sub encode_numbers {
   my $tmp_num = shift;
@@ -1614,6 +1612,7 @@ sub encode_numbers {
   return $tmp_num;
 }
 
+
 sub process_names {
   my $names_string = shift;
   my @names = ();
@@ -1652,6 +1651,7 @@ sub process_names {
 
   return @names;
 }
+
 
 sub list_languages {
   my $langlist = "";
@@ -1728,6 +1728,7 @@ sub guess_quoting_convention {
   $quotes1pre = qr/\B$openquote1(.*?)$/s;
   $quotes2    = qr/\B$openquote2(.*?)$closequote2\B/s;
 }
+
 
 sub study_paragraph {
   # learn interesting stuff about this paragraph
@@ -1814,6 +1815,7 @@ sub study_paragraph {
   return $o;
 }
 
+
 sub is_para_verse {
   # decide if paragraph is a verse
   # param is result from study_paragraph
@@ -1857,10 +1859,12 @@ sub is_para_verse {
   return 1;
 }
 
+
 sub is_para_centered {
   my $o = shift;
   return $o->{'cnt_center'} == $o->{'cnt_lines'};
 }
+
 
 sub is_para_right {
   my $o = shift;
@@ -1873,6 +1877,7 @@ sub is_para_right {
   return 1;
 }
 
+
 sub is_para_justified {
   my $o = shift;
 
@@ -1883,6 +1888,7 @@ sub is_para_justified {
   return 0 if $o->{'min_len'}    != $o->{'max_len'};
   return 1;
 }
+
 
 sub compute_line_length {
   # computes average and max line length of this text
@@ -1904,6 +1910,7 @@ sub compute_line_length {
   return ($sum_len / $lines, $max_len);
 }
 
+
 sub change_case {
   my $case = shift;
 
@@ -1917,6 +1924,7 @@ sub change_case {
   return $case;
 }
 
+
 sub lower_case {
   my $case = shift;
 
@@ -1924,6 +1932,7 @@ sub lower_case {
 
   return $case;
 }
+
 
 sub uuid_gen {
   my $ug = new Data::UUID;
@@ -1938,6 +1947,7 @@ sub uuid_gen {
   return $uuid;
 }
 
+
 GetOptions (
   "quotes=s"    => \$override_quotes,
   "chapter=i"   => \$cnt_chapter_sep,
@@ -1951,6 +1961,7 @@ GetOptions (
 if ($help) {
     usage (); exit;
 }
+
 
 sub usage {
   print <<HERE;
@@ -1976,5 +1987,5 @@ HERE
 
 # Local Variables:
 # mode:perl
-# coding:iso-8859-1-unix
+# coding:utf8-unix
 # End:
