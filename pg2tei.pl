@@ -91,7 +91,7 @@ my  $sub_title          = '';
 my  $authors            = '';
 my  $editor             = '';
 my  $illustrators       = '';
-my  $illustratedby_tag  = 'Illustrated by';
+my  $illustrated_by_tag  = 'Illustrated by';
 my  $translators        = '';
 my  $translated_by_tag  = '';
 my  $published_place    = '';
@@ -305,7 +305,7 @@ sub output_para {
       $p = "<p$rend>$p</p>";
     }
 
-    # print wrap ("", "", $p); # We are not going to perform any re-wrapping
+    # print wrap ('', '', $p); # We are not going to perform any re-wrapping
     print $p;  # No WRAP
 
     print "\n\n";
@@ -443,7 +443,7 @@ sub output_epigraph {
   $epigraph =~ s|\s+| |g;
   $epigraph = "<p>$epigraph</p>";
 
-  # print wrap ("", "", $epigraph);
+  # print wrap ('', '', $epigraph);
   print $epigraph;  # No WRAP
   print "\n\n";
 
@@ -458,7 +458,7 @@ sub output_epigraph {
 
 sub output_chapter {
   my $chapter = shift;
-  my $part_number = "";
+  my $part_number = '';
   $chapter .= "\n" x 10;
 
   if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
@@ -607,12 +607,13 @@ sub output_header () {
   }
 
 
-  ####----------------------------------------------------------------####
-  #### Not all books have the above information easily available.     ####
-  #### Now let's do some extra checks when this information is empty. ####
-  #### We're also going to check for other information like           ####
-  #### transcriber notes and produced by.                             ####
-  ####----------------------------------------------------------------####
+  ####------------------------------------------------------------------####
+  #### Not all books have the above information easily available.       ####
+  #### Now let's do some extra checks when this information is empty.   ####
+  ####------------------------------------------------------------------####
+  #### We're also going to check for other information like transcriber ####
+  #### notes and produced by and also do a little post-processing       ####
+  ####------------------------------------------------------------------####
 
   # Find both TITLE and AUTHOR from the file header tag.
   # I HAVE REMOVED the \n from the start of these two strings -- Keep an eye on this (2009-11-xx).
@@ -629,6 +630,11 @@ sub output_header () {
     if ($h =~ /\n$title\n+by (.*?)\n/i) { $authors = change_case($1); }
   } elsif (!$authors) {
     if ($h =~ /\n *by (.*?)\n/i) { $authors = change_case($1); }
+  }
+  @authors = process_names($authors);
+
+  if ($editor) {
+    @editors = process_names($editor);
   }
 
   # If no POSTING DATE
@@ -648,6 +654,9 @@ sub output_header () {
     $translated_by_tag = $1;
     $translators = change_case($3);
   }
+  if ($translators) {
+    @translators = process_names($translators);
+  }
 
   # If no EDITION
   if (!$edition) {
@@ -658,6 +667,21 @@ sub output_header () {
       $edition = '1'; # Still no EDITION so default to 1
     }
   }
+  # PG EDITION is used in the <revisionDesc> section.
+  $pg_edition = $edition;
+  # Change EDITION when 10, 11 or 12 to equal 1, 2 or 3
+  if ($edition =~ /^1\d$/) { $edition = $edition - 9; }
+
+  # Assign English as a default and check for UK or US English.
+  if (!$language) { $language = 'English'; }
+  if ($language eq 'English' and $lang_gb_check == 1) { $language = 'British'; }
+  $language_code = encode_lang($language);
+
+  # Check for encoding variations and assign the default 'is-8859-1'
+  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+    $encoding = 'iso-8859-1';
+  }
+  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
 
   ####--------------------------------------------------####
   #### Let's find out who created and updated this book ####
@@ -727,38 +751,51 @@ sub output_header () {
   }
 
   # REDACTOR'S NOTES
-
-  
-  
-
-
-  ####---------------------------------------------------------####
-  #### Let's do the final post-processing on this information. ####
-  ####---------------------------------------------------------####
-
-  @authors = process_names($authors);
-  if ($editor) {
-    @editors = process_names($editor);
+  if ($h =~ / *\[Redactor'?s? Note[s:\n ]*(.*?)\]/is) {
+    $redactors_notes = "\n" . $1;
+  } elsif ($h =~ /Redactor\'s Note[s:\n ]*(.*?)\n\n\n/is) {
+    $redactors_notes = "\n" . $1;
   }
-  if ($translators) {
-    @translators = process_names($translators);
+  $redactors_notes =~ s/\n/\n        /gis;   # Indent the text
+  $redactors_notes =~ s/\n\s+\n/\n\n/gis;    # Clear empty lines
+
+  # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
+  if ($h =~ / *\[Transcriber'?s? Note[s:\n ]+(.*?)\]/is) {
+    $transcriber_notes = "\n" . $1;
+  } elsif ($h =~ /Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n/is) {
+    $transcriber_notes = "\n" . $1;
+  }
+  # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
+  if ($h =~ /^ *\[Notes?: (.*?)\]/is) {
+    $transcriber_notes .= $1;
+  } elsif ($h =~ /^Notes?: (.*?)\n\n\n/is) {
+    $transcriber_notes .= $1;
+  }
+  $transcriber_notes =~ s/\n/\n        /gis;  # Indent the text
+  $transcriber_notes =~ s/\n\s+\n/\n\n/gis;   # Clear empty lines
+
+  # ILLUSTRATED BY ...
+  if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
+    if ($1) {
+      $illustrated_by_tag = change_case($1);
+    }
+    if (!$illustrators) {
+      $illustrators = change_case($9);
+      $illustrators =~ s/_//;
+    }
+  }
+  if ($illustrators) { 
+    @illutrators = process_names($illustrators);
+  } else {
+    $illustrated_by_tag = '';
   }
 
-  # Assign English as a default and check for UK or US English.
-  if (!$language) { $language = 'English'; }
-  if ($language eq 'English' and $lang_gb_check == 1) { $language = 'British'; }
-  $language_code = encode_lang($language);
 
-  # Check for encoding variations and assign the default 'is-8859-1'
-  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
-    $encoding = 'iso-8859-1';
-  }
-  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
+  ####-------------------------------------------------------####
+  #### Now we prepare the header tags <editors> etcd.        ####
+  #### We're doing this here to make the PRINT code cleaner. ####
+  ####-------------------------------------------------------####
 
-  # PG EDITION is used in the <revisionDesc> section.
-  $pg_edition = $edition;
-  # Change EDITION when 10, 11 or 12 to equal 1, 2 or 3
-  if ($edition =~ /^1\d$/) { $edition = $edition - 9; }
 
 
 
@@ -1039,7 +1076,7 @@ HERE
 if ($illustrators) {
   print <<HERE;
     <byline>
-      $illustratedby_tag <name>$illustrators</name>
+      $illustrated_by_tag <name>$illustrators</name>
     </byline>
 HERE
 }
@@ -1528,15 +1565,17 @@ sub process_names {
   my $names_string = shift;
   my @names = ();
 
-  $names_string =~ s/\(.*\)|\[.*\]//;     # Change () brackets to [] brackets
-  $names_string =~ s/ & / and /;          # Replace '&' to 'and' for the split
-  $names_string =~ s/^ *(.*?) *$/$1/;     # Strip any end spaces
+  # Tidy things up
+  $names_string =~ s/\(/[/;                 # Change () brackets to [] brackets
+  $names_string =~ s/\)/]/;                 # Change () brackets to [] brackets
+  $names_string =~ s/ +(&amp;|and|&) +/+/;  # Replace '&amp;' to '+' for the split
+  $names_string =~ s/^ *(.*?) *$/$1/;       # Strip any end spaces
 
-  my @names_list = split(/ and /, $names_string);
+  my @names_list = split(/\+/, $names_string);
 
   my $count = 0;
   foreach my $name (@names_list) {
-    if ($name =~ m/^(.*?) +([-\w]+)$/i) {
+    if ($name =~ /^(.*?) +([-\w]+)$/i) {
       my $orig_firstname = $1; # Keep the original first name for <front> data
       my $firstname = $1;
       my $lastname = $2;
@@ -1565,7 +1604,7 @@ sub process_names {
 
 
 sub list_languages {
-  my $langlist = "";
+  my $langlist = '';
   foreach my $key (sort (keys %languages)) {
     $langlist .= "      <language id=\"$key\">$languages{$key}</language>\n";
   }
@@ -1574,10 +1613,10 @@ sub list_languages {
 
 sub guess_quoting_convention {
   # study the text and decide which quoting convention is used
-  my $openquote1  = "";
-  my $closequote1 = "";
-  my $openquote2  = "";
-  my $closequote2 = "";
+  my $openquote1  = '';
+  my $closequote1 = '';
+  my $openquote2  = '';
+  my $closequote2 = '';
 
   if ( length($override_quotes) ) {
     $openquote1  = substr ($override_quotes, 0, 1);
@@ -1883,7 +1922,7 @@ usage: gut2tei.pl [options] pgtextfile > teifile
 
 --quotes="[()]"    quoting convention used (default: automatic detection)
                    [] = outer quotes, () = inner quotes
-       eg. --quotes="\\\"''\\\""
+       eg. --quotes="\\\"''\\\''
 --chapter=n        empty lines before chapter        (default: $cnt_chapter_sep)
 --head=n           empty lines after chapter heading (default: $cnt_head_sep)
 --paragraph=n      empty lines before paragraph      (default: $cnt_paragraph_sep)
