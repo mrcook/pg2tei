@@ -14,8 +14,8 @@
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
 #
 
-require 5.004;
-use strict;
+#require 5.004;
+#use strict;
 
 use Data::UUID;
 use Data::Dumper;
@@ -78,34 +78,39 @@ my $uuid =  uuid_gen(); # Create a UUID
 
 ####  Many variables need to be set/given defaults ###
 
-use vars '$language';
+use vars '$lang_gb_check';
 use vars '$front_matter_block';
 use vars '@illutrators';
 
+my  @translators        = ();
+my  @editors            = ();
+my  @authors            = ();
+
 my  $title              = '';
 my  $sub_title          = '';
-my  $author_string      = '';
+my  $authors            = '';
 my  $editor             = '';
 my  $illustrators       = '';
 my  $illustratedby_tag  = 'Illustrated by';
 my  $translators        = '';
-my  $translatedby_tag   = '';
+my  $translated_by_tag  = '';
 my  $published_place    = '';
 my  $publisher          = '';
 my  $published_date     = '';
 
+my  $language           = '';
 my  $language_code      = '';
 my  $encoding           = 'iso-8859-1';
 
 my  $series_title       = '****';
 my  $series_volume      = '**';
 
-my  $posteddate         = '';
-my  $releasedate        = '';
-my  $lastupdated        = '';
-my  $posteddate_iso     = '';
-my  $releasedate_iso    = '';
-my  $lastupdated_iso    = '';
+my  $posted_date        = '';
+my  $release_date       = '';
+my  $last_updated       = '';
+my  $posted_date_iso    = '';
+my  $release_date_iso   = '';
+my  $last_updated_iso   = '';
 my  $revision_lastupdated = ''; # Needed for <revisionDesc>
 my  $firstupdated       = '';
 my  $firstupdated_iso   = '';
@@ -113,10 +118,11 @@ my  $firstupdated_iso   = '';
 my  $filename           = '';
 my  $gutenberg_num      = '';
 my  $edition            = '';
+my  $pg_edition         = '';
 
-my  $prod_first_by      = 'unknown';
-my  $produced_by        = 'unknown';
-my  $produced_update_by = 'unknown';
+my  $scanned_by         = '';
+my  $created_by         = '';
+my  $updated_by         = '';
 
 my  $transcriber_notes  = '';
 my  $transcriber_errors = '';
@@ -182,13 +188,11 @@ while (<>) {
       $us_count++;
     }
   }
-  if ($uk_count > $us_count) {
-    $language = "British";
-  }
+  if ($uk_count > $us_count) { $lang_gb_check = 1; } else { $lang_gb_check = 0; }
 
-  ####-----------------------------------------####
-  #### Process PG header and output TEI header ####
-  ####-----------------------------------------####
+  ####--------------------------------------####
+  #### Grab PG header and output TEI header ####
+  ####--------------------------------------####
   
   # First check for PREFACE, INTRODUCTION, etc.
   if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)//egis) {
@@ -263,6 +267,7 @@ sub output_line {     # Output <l>'s.
   return '';
 }
 
+
 sub output_para {
   my $p = shift;
   $p .= "\n";
@@ -307,6 +312,7 @@ sub output_para {
   }
   return '';
 }
+
 
 sub output_stage {
   my $stage = shift;
@@ -362,6 +368,7 @@ sub process_quotes_2 {
   }
   return $c;
 }
+
 
 sub process_quotes_1 {
   my $c = shift;
@@ -519,336 +526,241 @@ sub output_body {
 sub output_header () {
   my $h = shift;
 
-  # Grab the front matter from this header for printing.
-  if ($h =~ m/^(.*?)\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/gis) {
-    $front_matter_block = $3;
-  } elsif ($h =~ m/^(.*?)\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/gis) {
-    $front_matter_block = $2;
+  # Let's clean up a couple of things....
+  $h =~ s/&/&amp;/; # Fix all "&" signs and change to "&amp;" -- Hope this doesn't break anything below!!
+
+  # Grab the front matter from this header for printing to output .tei
+  if ($h =~ /\n\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/is) {
+    $front_matter_block = $2 . "\n\n";
+  } elsif ($h =~ /\n\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/is) {
+    $front_matter_block = $1 . "\n\n";
   }
 
-  for ($h) {
+  ####------------------------------------------------####
+  #### Grab easy data when it is assigned with a tag  ####
+  #### (most PG texts now have some/all of this info) ####
+  ####------------------------------------------------####
+  if ($h =~ /\nTitle: *(.+)\n/i)                  { $title = $1; }
+  if ($h =~ /\nTitle:.+\n  +(.+)\n/i)             { $sub_title = $1; } else { $sub_title = ''; }
+  if ($h =~ /\nAuthors?: *(.+)\n/i)               { $authors = $1; }
+  if ($h =~ /\nEditors?: *(.+)\n/i)               { $editor = $1; }
+  if ($h =~ /\nIllustrat(ors?|ions( by)?): *(.+)\n/i) { $illustrators = change_case($3); }
+  if ($h =~ /\nTranslat(ors?|ion( by)?): *(.+)\n/i)   { $translators  = change_case($3); }
+  if ($h =~ /\nEdition: *(\d+)\n/i)               { $edition = $1; }
+  if ($h =~ /\nPublished: *(\d+)\n/i)             { $published_date = $1; }
+  if ($h =~ /\nLanguage: *(.+)\n/i)               { $language = $1; }
+  if ($h =~ /\nCharacter set encoding: *(.+)\n/i) { $encoding = lc($1); }
 
-    # Grab the title and sub-title (if exists)
-    if (/Title: *(.*?)\n  +(.*?)\n/)           { 
-      $title = $1; $sub_title = $2;
-    } elsif (/Title: *(.*?)\n/)                { 
-      $title = $1; $sub_title = "";
-    }
-    if (/\nAuthors?: *(.*?)\n/i)               { $author_string = $1; }
-    if (/\nEditors?: *(.*?)\n/i)               { $editor = $1; }
-    if (/\nIllustrat(or|ions): *(.*?)\n/i)     { $illustrators = change_case($2); }
-    if (/\nEdition: *(.*?)\n/i)                { $edition = $1; }
-    if (/\nCharacter set encoding: *(.*?)\n/i) {
-      $encoding = lc($1);
-      if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
-        $encoding = 'iso-8859-1';
-      }
-    }
-    ####---------------------------------------------####
-    #### We're going to force UTF-8 on all documents ####
-    ####---------------------------------------------####
-    $encoding = 'utf-8'; 
+  # PG eBook number
+  if ($h =~ /\[E(Book|Text) #(\d+)\]\s+/i)        { $gutenberg_num = $2; }
 
-    if (/\nPublished: *(\d+)\n/i)              { $published_date = $1; }
-    if (/\nLanguage: *(.*?)\n/i)               {
-      if ($1 ne 'English' && $language ne 'British') {
-        $language = $1;
-      }
-    }
-    if (!$language)                           { $language = 'English'; }
-    $language_code = encode_lang ($language);
-    print "TITS: " . $language_code . "\n\n\n";
-
-    # The Series information is sometimes added manually by myself
-    # This helps to speed things up in the manual-post-processing.
-    if (/\nSeries: *(.*?)\n/i)                 { $series_title  = $1; }
-    if (/\nSeries Volume: *(\d+)\n/i)          { $series_volume = $1; }
+  # The Series information is sometimes added manually by myself.
+  # Better to do this in the source than in the manual post-processing.
+  if ($h =~ /\nSeries: *(.+)\n/i)                 { $series_title  = $1; }
+  if ($h =~ /\nSeries Volume: *(\d+)\n/i)         { $series_volume = $1; }
 
 
-    ####--------------------------------------------------------------------####
-    #### Find the Posting/Release/Updated Dates
-    #### Release Date is usually old than the Posting Date (But not always)
-    #### Posting Date usually contains the EBook number.
-    ####--------------------------------------------------------------------####
+  # There are four different dates possible in any PG text;
+  #   * (Official) Release Date
+  #   * First Posted
+  #   * Posting Date (Almost always includes the EBook No.)
+  #   * Last Updated
 
-    # OFFICIAL RELEASE DATE - Usually NO EBook #.
-    if (/\n((Official|Original) )?Release Date: *(.*?)\n/i) { $releasedate = $3; }
-    # POSTING DATE - This usually includes the EBook #.
-    if (/\nPosting Date: *(.*?)\n/)       { $posteddate  = $1; }
-      # If no Posting Date try this.
-    if (!$posteddate ) {
-      if (/\[(The actual date )?This file (was )?first posted (on|=) (.*?)\]\n/i) {
-        $posteddate  = $4;
-      }
-    }
-    # LAST UPDATED
-    if (/\nLast Updated?: *(.*?)\n/i)       { $lastupdated = $1; }
-      # If no Last Update try this.
-    if (!$lastupdated) {
-      if (/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.*?)\]/i) {
-        $lastupdated = $4;
-      }
-    }
+  # RELEASE DATE: A strange one as in the old days PG would set themselves 
+  # an 'intended' date for release (why on earth did they do this!) However, 
+  # books were often released before this actual date.
+  # WARNING! This might also be the 'true' release date! -- Needs confirming.
 
-    # Grab the PG ETEXT NUMBER
-    my $etext_regex = "";
-      # Get eBook Number from Posting/Release Date
-    if ($posteddate =~ /^(.*?)( +\[e(book|text) +\#(\d+)\])$/i) {
-      $posteddate = $1;
-      $gutenberg_num = $4;
-    }
-      # Sometimes the eBook number is on Release Date
-    if (!$gutenberg_num) {
-      if ($releasedate =~ /^(.*?)( +\[e(book|text) +\#(\d+)\])$/i) {
-        $releasedate = $1;
-        $gutenberg_num = $4;
-      } 
-    }
-    # PROCESS and get the ISO DATES
-    $releasedate_iso = process_dates ($releasedate) if ($releasedate);
-    $posteddate_iso  = process_dates ($posteddate)  if ($posteddate);
-    $lastupdated_iso = process_dates ($lastupdated) if ($lastupdated);
+  # FIRST POSTED: When this is given it is almost always going to be the 
+  # date the file was actually released. This is probably only when 
+  # no 'Posting Date' is given - see below.
 
+  # POSTING DATE: When no 'First Posted' date is given then this is usually 
+  # the date when the book is actually released. Otherise, this could be 
+  # the 'Last Updated' date; usually a more recent date than if an actual 
+  # 'Last Updated' date exists.
 
-    ####--------------------------------------------------------------####
-    #### SAFE Option for Dates is to create an array and sort them.   ####
-    #### This is because PG often mixes up Posted/Released dates.     ####
-    #### This will then give a proper date sequence; even if it's not ####
-    #### 100% as PG intended -- how much manual work do you want! :)  ####
-    ####--------------------------------------------------------------####
-    my @book_dates   = ();
-    my @dates_sorted = ();
-    if ($releasedate) { push(@book_dates, [$releasedate_iso, $releasedate]); }
-    if ($posteddate)  { push(@book_dates, [$posteddate_iso,  $posteddate]);  }
-    if ($lastupdated) { push(@book_dates, [$lastupdated_iso, $lastupdated]); }
-    # Sort into Date ASC order
-    @dates_sorted = sort {$a->[0] <=> $b->[0]} @book_dates;
-    # Set RELEASE DATE
-    $releasedate     = $dates_sorted[0]->[1];
-    $releasedate_iso = $dates_sorted[0]->[0];
-    # Set FIRST UPDATED
-    # If there is a 3rd date, there is a FIRST RELEASED DATE
-    if ($dates_sorted[2]->[0]) {
-      $firstupdated     = $dates_sorted[1]->[1];
-      $firstupdated_iso = $dates_sorted[1]->[0];
-    } else {                                # Otherewise, there is not middle date.
-      $firstupdated     = '';
-      $firstupdated_iso = '';
-    }
-    # Set LAST UPDATED
-    if ($dates_sorted[2]->[0]) {            # Are there 3 dates?
-      $revision_lastupdated = 1;
-      $lastupdated     = $dates_sorted[2]->[1];
-      $lastupdated_iso = $dates_sorted[2]->[0];
-    } elsif ($dates_sorted[1]->[0]) {       # Not 3 dates? How about 2?
-      $revision_lastupdated = 1;
-      $lastupdated     = $dates_sorted[1]->[1];
-      $lastupdated_iso = $dates_sorted[1]->[0];
-    } else {                                # Set to SAME AS RELEASE DATE (Needed for <edition> date info.)
-      $lastupdated     = $dates_sorted[0]->[1];
-      $lastupdated_iso = $dates_sorted[0]->[0];
-    }
+  # LAST UPDATED: This is the date the book was last updated. Sometimes - maybe 
+  # always - the 'Posted Date' is a newer date than this -- Need confirming.
+
+  # Welcome to the world of PG!
+
+  # OFFICIAL RELEASE DATE
+  if ($h =~ /\n(Official|Original)? ?Release Date: *(.+)\n/i) {
+    $release_date = $2;
+    $release_date_iso = process_dates($release_date)
+  }
+  # FIRST POSTED
+  if ($h =~ /\nFirst Posted: *(.+)\n/i)           {
+    $first_posted_date = $1;
+    $first_posted_date_iso = process_dates($first_posted_date)
+  }
+  # POSTING DATE (Usually includes the EBook No.)
+  if ($h =~ /\nPosting Date: *(.+)( +\[E(Book|Text) +#(\d+)\])\n/i) {
+    $posted_date  = $1;
+    $posted_date_iso  = process_dates($posted_date)
+  }
+  # LAST UPDATED
+  if ($h =~ /\nLast Updated?: *(.+)\n/i)          {
+    $last_updated = $1;
+    $last_updated_iso = process_dates($last_updated)
+  }
 
 
-    # If not set try to grab title, author, etc.
-    # I HAVE REMOVED the \n from the start of these two strings -- Keep an eye on this (2009-11-xx).
-    if (/\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
+  ####----------------------------------------------------------------####
+  #### Not all books have the above information easily available.     ####
+  #### Now let's do some extra checks when this information is empty. ####
+  #### We're also going to check for other information like           ####
+  #### transcriber notes and produced by.                             ####
+  ####----------------------------------------------------------------####
+
+  # Find both TITLE and AUTHOR from the file header tag.
+  # I HAVE REMOVED the \n from the start of these two strings -- Keep an eye on this (2009-11-xx).
+  if (!$title or !$authors) {
+   if ($h =~ /^\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
-      if (!$author_string) { $author_string = change_case($2); }
-    } elsif (/\** *The Project Gutenberg Etext of (.*?)\** *\n/) {
+      if (!$authors) { $authors = change_case($2); }
+    } elsif ($h =~ /^\** *The Project Gutenberg Etext of (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
     }
-
-    # Author still not aquired...this is a bit random but can often work
-    if (!$author_string && $title) {
-      if (/\n$title\n+by (.*?)\n/i) { $author_string = change_case($1); }
-    } elsif (!$author_string) {
-      if ($front_matter_block =~ m/\n *by (.*?)\n/i) { $author_string = change_case($1); }
-    }
-    
-    #### Commenting out. Not sure if this still applies (2009-12-25)
-    # Sometimes Author get assigned wierd info...fix it
-    # if ($author_string =~ m/Project Gutenberg/i) { $author_string = "Anonymous"; }
-
-    if (/This etext was produced by (.*?)[.,]?\n/) {
-      $produced_by = $1;
-    }
-
-    # Translated from ...
-    if (/[\n ]*(Translated (from.*)?by)[\s\t\r\n]+(.+)/i) {
-      $translatedby_tag = $1;
-      $translators = change_case($3);
-    } elsif ($front_matter_block =~ s/[\n ]*(Translated (from.*)?by) (.+)//i) {
-      $translatedby_tag = $1;
-      $translators = change_case($3);
-    }
   }
-  $translators =~ s/\.$//;
-  my @translators = ();
-  if ($translators) {
-    @translators = process_names ($translators);
+  # If still no AUTHOR found -- these are a bit random but can often work
+  if (!$authors && $title) {
+    if ($h =~ /\n$title\n+by (.*?)\n/i) { $authors = change_case($1); }
+  } elsif (!$authors) {
+    if ($h =~ /\n *by (.*?)\n/i) { $authors = change_case($1); }
   }
 
-  my $languages = list_languages ($language_code);
-
-  my @editors = ();
-  if ($editor) {
-    @editors = process_names ($editor);
+  # If no POSTING DATE
+  if (!$posted_date) {
+    $h =~ /\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i;
+    $posted_date  = $4;
+  }    
+  # If no LAST UPDATED
+  if (!$last_updated) {
+    $h =~ /\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i;
+    $last_updated = $4;
   }
 
-  my @authors = process_names ($author_string);
-  $author_string =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
-
-  if (!$filename) {
-    $filename = "$ARGV";
-    if ($filename =~ s/(\w{4,5})((10|11)\w?)(\..*)$//) {
-      $filename = $1;
-      if (!$edition) {$edition  = $2; }
-    }
+  # If no TRANSLATORS
+  if (!$translators) {
+    $h =~ /[\n ]*(Translated (from.*)?by)\s+(.+)\.?/i;
+    $translated_by_tag = $1;
+    $translators = change_case($3);
   }
 
-  # If $edition still equals nothing then assign default: 1
+  # If no EDITION
   if (!$edition) {
-    $edition = '1';
-    # Increase to next version if file has been updated
-    if ($releasedate_iso ne $lastupdated_iso) { $edition = '2'; }
+    $filename = "$ARGV"; # Perhaps the filename has it (not many PG books still use the old filename system)
+    if ($filename =~ /^(\w{4,5})((10|11|12)\w?)\..+$/i) {
+      $edition  = $2;
+    } else { 
+      $edition = '1'; # Still no EDITION so default to 1
+    }
   }
 
-  # If $edition equals PG 10 or 11 change to 1 and 2 respectively.
-  my $pg_edition = $edition; # Keep the original PG edition number if it exists.
-  if ( $edition == 10 ) { $edition = '1'; }
-  if ( $edition == 11 ) { $edition = '2'; }
-  if ( $edition == 12 ) { $edition = '3'; }
-
-
-  ##############################################################################
-  ###                       Now process FRONT MATTER                         ###
-  ##############################################################################
-
-  for ($front_matter_block) {
-
-    # Who first produced this text for Project Gutenberg?
-    if (s/[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n//i) {
-      $prod_first_by = $5;
-      if ($6) {
-        $prod_first_by = $prod_first_by . " " . $6;
-      }
+  ####--------------------------------------------------####
+  #### Let's find out who created and updated this book ####
+  ####--------------------------------------------------####
+  # Who SCANNED/PROOFED the original text?
+  if ($h =~ /[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.+)\n/i) {
+    $scanned_by = $3;
+  } elsif ($h =~ /[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.+)( edition)? by:? +(.+)\n\n/is) {
+    $scanned_by = $6;
+  } elsif ($h =~ /proof(ed| ?read) by:? +(.+)[,. ]*\n/i) {
+    $scanned_by = $2;
+  }
+  # Who first PRODUCED this text for Project Gutenberg?
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n/i) {
+    $created_by = $5;
+    if ($6) {
+      $created_by = $created_by . " " . $6;
     }
-
-    # Who first produced the UPDATED version?
-    if (s/[\n ]+(This )?updated ([e-]*Text|edition) (was )?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n//i) {
-      $produced_update_by = $5;
-      if ($6) {
-        $produced_update_by = $produced_update_by . " " . $6;
-      }
+  }
+  # Who UPDATED this version?
+  if ($h =~ /[\n ]+(This )?updated ([e-]*Text|edition) (was )?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n/i) {
+    $updated_by = $5;
+    if ($6) {
+      $updated_by = $updated_by . " " . $6;
     }
-
-    # Who Scanned/Proofed the original text?
-    # if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)|Transcribed from the.*?) by:? +(.*?)\n/i) {
-    if (/[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.*?)\n/i) {
-      $produced_by = $3;
-    } elsif (/[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by:? +(.*?)\n\n/is) {
-      $produced_by = $6;
-      $publisher   = $4;
-      if (!$published_date) {
-        $published_date = $1;
-      }
-    } elsif (/proof(ed| ?read) by:? +(.*?)\n/i) {
-      $produced_by = $2;
+  }
+  # If no creator is found let's see what we can do about it.
+  # We need at least either scanned_by or created_by
+  if (!$created_by) {
+    if (!$scanned_by) {
+      $created_by = "Project Gutenberg";
     }
-    $produced_by =~ s/^(.*?)\n(.*?)$/$1 $2/;  # Remove the newline if exists
-    $produced_by =~ s/^(.*?)[, ]$/$1/;        # Clean up any end spaces or commas
+  }
+  # Let's remove any http://www.pgdp.net from the producers
+  $scanned_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
+  $created_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
 
-    if ($produced_by eq "unknown") {
-      $produced_by = $prod_first_by;
-    } elsif ($prod_first_by eq "unknown") {
-      $prod_first_by = $produced_by;
-    }
 
-    if ($prod_first_by eq "unknown") {
-      $prod_first_by = "Project Gutenberg";
+  ####-----------------------------------------------####
+  #### Getting the PUBLISHER, PUBLISHED DATE and the ####
+  #### PUBLISHED PLACE is not always very accurate.  ####
+  ####-----------------------------------------------####
+  # Very useful if this 'Transcribed' line exists.
+  if ($h =~ /[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by(.+)\n\n/is) {
+    $publisher = $4;
+    if (!$published_date) { $published_date = $1; }
+  }
+  # If still no PUBLISHED DATE
+  if (!$published_date) {
+    if ($h =~ /\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
+      $published_date = $2;
+    } elsif ($h =~ /\n *([0-9]{4})\n/i) {
+      $published_date = $1;
+    } elsif ($h =~ /[\[\(]([0-9]{4})[\]\)]/i) {
+      $published_date = $1;
     }
-    $prod_first_by =~ s/\.$//;
-
-    # Let's remove any http://www.pgdp.net from the producers
-    $produced_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
-    $prod_first_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
-
-    # Get the published date
-    if (!$published_date) {
-      if (m/\n *([0-9]{4})\n/i) {
-        $published_date = $1;
-      } elsif (m/[\[\(]([0-9]{4})[\]\)]/i) {
-        $published_date = $1;
-      } elsif (m/\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
-        $published_date = $2;
-      }
-    }
-    # Get the published place
-    if (m/^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
-      $published_place = change_case($1);
-    }
-    # Get the publisher
-    if (m/[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
+  }
+  # If still no PUBLISHER
+  if (!$publisher) {
+    if ($h =~ /[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
       $publisher = change_case($1 . $2 . $3);
     }
-    $publisher =~ s|&|&amp;|; # Convert ampersand
+  }
+  # Get the PUBLISHED PLACE --- Very hit 'n miss!!
+  if ($h =~ /^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
+    $published_place = change_case($1);
+  }
 
-    # REDACTOR'S NOTES
-    if (s/ *\[Redactor'?s? Note[s:\n ]*(.*?)\]//is) {
-      $redactors_notes = $1;
-    } elsif (s/Redactor\'s Note[s:\n ]*(.*?)\n\n\n//is) {
-      $redactors_notes = $1;
-    }
+  # REDACTOR'S NOTES
 
-    if ($redactors_notes) {
-      $redactors_notes = "\n" . $redactors_notes;
-    }
-    $redactors_notes =~ s/\n/\n        /gis;      # Indent the text
-    $redactors_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
-
-    # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
-    if (s/ *\[Transcriber'?s? Note[s:\n ]+(.*?)\]//is) {
-      $transcriber_notes = $1;
-    } elsif (s/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n//is) {
-      $transcriber_notes = $1;
-    }
-
-    # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
-    if (s/^ *\[Notes?: (.*?)\]//is) {
-      $transcriber_notes .= $1;
-    } elsif (s/^Notes?: (.*?)\n\n\n//is) {
-      $transcriber_notes = $1;
-    }
-
-    if ($transcriber_notes) {
-      $transcriber_notes = "\n" . $transcriber_notes;
-    }
-    $transcriber_notes =~ s/\n/\n        /gis;      # Indent the text
-    $transcriber_notes =~ s/\n\s+\n/\n\n/gis;  # Clear empty lines
+  
+  
 
 
-    # ILLUSTRATED BY ...
-    if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
-      if ($1) {
-        $illustratedby_tag = change_case($1);
-      }
-      if (!$illustrators) {
-        $illustrators = change_case($9);
-        $illustrators =~ s/_$//;
-      }
-    }
+  ####---------------------------------------------------------####
+  #### Let's do the final post-processing on this information. ####
+  ####---------------------------------------------------------####
 
-    if ($illustrators) { 
-      @illutrators = process_names ($illustrators);
-      $illustrators =~ s/&/&amp;/; # Now we have used the string let's fix  the &'s
-    } else {
-      $illustratedby_tag = "";
-    }
+  @authors = process_names($authors);
+  if ($editor) {
+    @editors = process_names($editor);
+  }
+  if ($translators) {
+    @translators = process_names($translators);
+  }
 
-  } # END OF $front_matter_block() PROCESSING
+  # Assign English as a default and check for UK or US English.
+  if (!$language) { $language = 'English'; }
+  if ($language eq 'English' and $lang_gb_check == 1) { $language = 'British'; }
+  $language_code = encode_lang($language);
 
-  $front_matter_block .= "\n\n"; # Some padding
+  # Check for encoding variations and assign the default 'is-8859-1'
+  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+    $encoding = 'iso-8859-1';
+  }
+  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
+
+  # PG EDITION is used in the <revisionDesc> section.
+  $pg_edition = $edition;
+  # Change EDITION when 10, 11 or 12 to equal 1, 2 or 3
+  if ($edition =~ /^1\d$/) { $edition = $edition - 9; }
+
+
 
   print <<HERE;
 <?xml version="1.0" encoding="$encoding"?>
@@ -917,10 +829,10 @@ HERE
 print <<HERE;
     </titleStmt>
     <editionStmt>
-      <edition n="$edition">Edition $edition, <date value="$lastupdated_iso">$lastupdated</date></edition>
+      <edition n="$edition">Edition $edition, <date value="$last_updated_iso">$last_updated</date></edition>
       <respStmt>
         <resp>Original e-Text edition prepared by</resp>
-        <name>$prod_first_by</name>
+        <name>$created_by</name>
       </respStmt>
     </editionStmt>
     <publicationStmt>
@@ -932,7 +844,7 @@ print <<HERE;
         <addrLine>UT 84116</addrLine>
         <addrLine>United States</addrLine>
       </address>
-      <date value="$releasedate_iso">$releasedate</date>
+      <date value="$release_date_iso">$release_date</date>
       <idno type="gutenberg-no">$gutenberg_num</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
@@ -1081,7 +993,7 @@ print <<HERE;
 HERE
   if ($revision_lastupdated) {
     print <<HERE;
-    <change when="$lastupdated_iso" who="$produced_update_by">
+    <change when="$last_updated_iso" who="$updated_by">
       Project Gutenberg Edition $pg_edition.
     </change>
 HERE
@@ -1134,7 +1046,7 @@ HERE
 if ($translators) {
   print <<HERE;
     <byline>
-      $translatedby_tag <name>$translators</name>
+      $translated_by_tag <name>$translators</name>
     </byline>
 HERE
 }
@@ -1440,7 +1352,6 @@ sub encode_lang {
   if ($lang eq "English") {
     $lang = "American";
   }
-  print "Lang:" . $lang . "\n\n\n";
   while (my ($key, $value) = each (%languages)) {
     if ($value eq $lang) {
       return $key;
