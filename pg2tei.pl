@@ -14,8 +14,8 @@
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
 #
 
-#require 5.004;
-#use strict;
+require 5.004;
+use strict;
 
 use Data::UUID;
 use Data::Dumper;
@@ -80,7 +80,7 @@ my $uuid =  uuid_gen(); # Create a UUID
 
 use vars '$lang_gb_check';
 use vars '$front_matter_block';
-use vars '@illutrators';
+use vars '@illustrators';
 
 my  @translators        = ();
 my  @editors            = ();
@@ -90,6 +90,8 @@ my  $title              = '';
 my  $sub_title          = '';
 my  $authors            = '';
 my  $editor             = '';
+my  $editors            = '';
+
 my  $illustrators       = '';
 my  $illustrated_by_tag  = 'Illustrated by';
 my  $translators        = '';
@@ -97,6 +99,7 @@ my  $translated_by_tag  = '';
 my  $published_place    = '';
 my  $publisher          = '';
 my  $published_date     = '';
+my  $dates_sorted       = '';
 
 my  $language           = '';
 my  $language_code      = '';
@@ -111,9 +114,11 @@ my  $last_updated       = '';
 my  $posted_date_iso    = '';
 my  $release_date_iso   = '';
 my  $last_updated_iso   = '';
-my  $revision_lastupdated = ''; # Needed for <revisionDesc>
-my  $firstupdated       = '';
-my  $firstupdated_iso   = '';
+my  $revision_last_updated = ''; # Needed for <revisionDesc>
+my  $first_updated      = '';
+my  $first_updated_iso  = '';
+my  $first_posted       = '';
+my  $first_posted_iso   = '';
 
 my  $filename           = '';
 my  $gutenberg_num      = '';
@@ -195,12 +200,10 @@ while (<>) {
   ####--------------------------------------####
   
   # First check for PREFACE, INTRODUCTION, etc.
-  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)//egis) {
-    output_header($1);
+  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
 
   # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)//egis) {
-    output_header($1);
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)/output_header($1)/egis) {
 
   # No chapter name? Just look for an actual "1" or "I" or "ONE"
   } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)//egis) {
@@ -219,7 +222,7 @@ while (<>) {
   }
 
   # Process the body
-  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [e|E](book|text))/output_body ($front_matter_block .= $1)/egis) {
+  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [eE](book|text)).*?\n/output_body($front_matter_block .= $1)/egis) {
     # output_body ($front_matter_block .= $_);
   }
 
@@ -534,6 +537,8 @@ sub output_header () {
     $front_matter_block = $2 . "\n\n";
   } elsif ($h =~ /\n\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/is) {
     $front_matter_block = $1 . "\n\n";
+  } elsif ($h =~ /\n[* ]+The Project Gutenberg [eE](book|text) of .+[* ]+\n(.*?)$/is) {
+    $front_matter_block = $2 . "\n\n";
   }
 
   ####------------------------------------------------####
@@ -561,7 +566,7 @@ sub output_header () {
 
 
   # There are four different dates possible in any PG text;
-  #   * (Official) Release Date
+  #   * (Official) Release Date (Some early books include the EBook No.)
   #   * First Posted
   #   * Posting Date (Almost always includes the EBook No.)
   #   * Last Updated
@@ -569,7 +574,8 @@ sub output_header () {
   # RELEASE DATE: A strange one as in the old days PG would set themselves 
   # an 'intended' date for release (why on earth did they do this!) However, 
   # books were often released before this actual date.
-  # WARNING! This might also be the 'true' release date! -- Needs confirming.
+  # WARNING! On a few very early books this is also be the 'true' 
+  # release date!
 
   # FIRST POSTED: When this is given it is almost always going to be the 
   # date the file was actually released. This is probably only when 
@@ -586,26 +592,25 @@ sub output_header () {
   # Welcome to the world of PG!
 
   # OFFICIAL RELEASE DATE
-  if ($h =~ /\n(Official|Original)? ?Release Date: *(.+)\n/i) {
+  if ($h =~ /\n(Official|Original)? ?Release Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
     $release_date = $2;
-    $release_date_iso = process_dates($release_date)
+    $release_date_iso = process_dates($release_date);
   }
   # FIRST POSTED
   if ($h =~ /\nFirst Posted: *(.+)\n/i)           {
-    $first_posted_date = $1;
-    $first_posted_date_iso = process_dates($first_posted_date)
+    $first_posted = $1;
+    $first_posted_iso = process_dates($first_posted);
   }
   # POSTING DATE (Usually includes the EBook No.)
   if ($h =~ /\nPosting Date: *(.+)( +\[E(Book|Text) +#(\d+)\])\n/i) {
     $posted_date  = $1;
-    $posted_date_iso  = process_dates($posted_date)
+    $posted_date_iso  = process_dates($posted_date);
   }
   # LAST UPDATED
   if ($h =~ /\nLast Updated?: *(.+)\n/i)          {
     $last_updated = $1;
-    $last_updated_iso = process_dates($last_updated)
+    $last_updated_iso = process_dates($last_updated);
   }
-
 
   ####------------------------------------------------------------------####
   #### Not all books have the above information easily available.       ####
@@ -639,20 +644,25 @@ sub output_header () {
 
   # If no POSTING DATE
   if (!$posted_date) {
-    $h =~ /\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i;
-    $posted_date  = $4;
+    if ($h =~ /\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i) {
+      $posted_date  = $4;
+      $posted_date_iso = process_dates($posted_date);
+    }
   }    
   # If no LAST UPDATED
   if (!$last_updated) {
-    $h =~ /\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i;
-    $last_updated = $4;
+    if ($h =~ /\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i) {
+      $last_updated = $4;
+      $last_updated_iso = process_dates($last_updated);
+    }
   }
-
+  
   # If no TRANSLATORS
   if (!$translators) {
-    $h =~ /[\n ]*(Translated (from.*)?by)\s+(.+)\.?/i;
-    $translated_by_tag = $1;
-    $translators = change_case($3);
+    if ($h =~ /[\n ]*(Translated (from.*)?by)\s+(.+)\.?/i) {
+      $translated_by_tag = $1;
+      $translators = change_case($3);
+    }
   }
   if ($translators) {
     @translators = process_names($translators);
@@ -785,20 +795,106 @@ sub output_header () {
     }
   }
   if ($illustrators) { 
-    @illutrators = process_names($illustrators);
+    @illustrators = process_names($illustrators);
   } else {
     $illustrated_by_tag = '';
   }
 
 
+  ####--------------------------------------------------------------####
+  #### SAFE Option for Dates is to create an array and sort them.   ####
+  #### This is because PG often mixes up Posted/Released dates.     ####
+  #### This will then give a proper date sequence; even if it's not ####
+  #### 100% as PG intended -- how much manual work do you want! :)  ####
+  ####--------------------------------------------------------------####
+  my @book_dates   = ();
+  my @dates_sorted = ();
+  if ($release_date) { push(@book_dates, [$release_date_iso, $release_date]); }
+  if ($first_posted) { push(@book_dates, [$first_posted_iso, $first_posted]); }
+  if ($posted_date)  { push(@book_dates, [$posted_date_iso,  $posted_date]);  }
+  if ($last_updated) { push(@book_dates, [$last_updated_iso, $last_updated]); }
+
+  # Sort into Date ASC order
+  @dates_sorted = sort {$a->[0] cmp $b->[0]} @book_dates;
+
+  # Set the real RELEASE DATE
+  $release_date     = $dates_sorted[0]->[1];
+  $release_date_iso = $dates_sorted[0]->[0];
+  # Set the real LAST UPDATED
+  $last_updated     = $dates_sorted[$#dates_sorted]->[1];
+  $last_updated_iso = $dates_sorted[$#dates_sorted]->[0];
+
+  # if there's more than one date entry then there is a last updated.
+  if ($#dates_sorted > 0) { $revision_last_updated = 1; }
+
+  # Now let's 'shift' the first RELEASED DATE from the array.
+  # This will leave us with only updates for the <revisionDesc> info.
+  shift(@dates_sorted);
+
+
   ####-------------------------------------------------------####
-  #### Now we prepare the header tags <editors> etcd.        ####
+  #### Now we prepare the header tags <author> and <editor>  ####
   #### We're doing this here to make the PRINT code cleaner. ####
   ####-------------------------------------------------------####
+  my $tmp_count = 0;
+  my @authors_list = (); $tmp_count = 0;
+  foreach $authors (@authors) {
+    if ($authors->[2]) {
+      $authors_list[$tmp_count] = "<author><name reg=\"$authors->[2], $authors->[0]\">$authors->[1] $authors->[2]</name></author>\n";
+    } else {
+      $authors_list[$tmp_count] = "<author><name reg=\"$authors->[0]\">$authors->[0]</name></author>\n";
+    }
+    $tmp_count++;
+  }
 
+  my @illustrators_list = (); $tmp_count = 0;
+  foreach $illustrators (@illustrators) {
+    if ($illustrators->[2]) {
+      $illustrators_list[$tmp_count] = "<editor role=\"illustrator\"><name reg=\"$illustrators->[2], $illustrators->[0]\">$illustrators->[1] $illustrators->[2]</name></editor>\n";
+    } else {
+      $illustrators_list[$tmp_count] = "<editor role=\"illustrator\"><name reg=\"$illustrators->[0]\">$illustrators->[0]</name></editor>\n";
+    }
+    $tmp_count++;
+  }
 
+  my @translators_list = (); $tmp_count = 0;
+  foreach $translators  (@translators) {
+    if ($translators->[2]) {
+      $translators_list[$tmp_count] = "<editor role=\"translator\"><name reg=\"$translators->[2], $translators->[0]\">$translators->[1] $translators->[2]</name></editor>\n";
+    } else {
+      $translators_list[$tmp_count] = "<editor role=\"translator\"><name reg=\"$translators->[0]\">$translators->[0]</name></editor>\n";
+    }
+    $tmp_count++;
+  }
 
+  my @editors_list = (); $tmp_count = 0;
+  foreach $editors (@editors) {
+    if ($editors->[2]) {
+      $editors_list[$tmp_count] = "<editor role=\"editor\"><name reg=\"$editors->[2], $editors->[0]\">$editors->[1] $editors->[2]</name></editor>\n";
+    } else {
+      $editors_list[$tmp_count] = "<editor role=\"editor\"><name reg=\"$editors->[0]\">$editors->[0]</name></editor>\n";
+    }
+    $tmp_count++;
+  }
 
+  # Now to prepare the UPDATED DATES for the file.
+  my @file_updates_list = (); my $last_updated_by; $tmp_count = 0;
+  foreach $dates_sorted (reverse(@dates_sorted)) {
+    if ($tmp_count == $#dates_sorted and $updated_by) { # Is there a last updated person?
+      $last_updated_by = $updated_by;
+    } else {
+      $last_updated_by = 'Unknown';
+    }
+    $file_updates_list[$tmp_count] = "    <change when=\"$dates_sorted->[0]\" who=\"$last_updated_by\">\n" . 
+                                     "      Project Gutenberg Update Release.\n" . 
+                                     "    </change>\n";
+
+    $tmp_count++;
+  }
+
+  ####-------------------------------####
+  #### Time to print the <teiHeader> ####
+  ####-------------------------------####
   print <<HERE;
 <?xml version="1.0" encoding="$encoding"?>
 
@@ -813,55 +909,17 @@ print <<HERE;
       <title type="sub">$sub_title</title>
 HERE
 }
-foreach my $author_name (@authors) {
-  if ($author_name->[2]) {
-    print <<HERE;
-      <author><name reg="$author_name->[2], $author_name->[0]">$author_name->[1] $author_name->[2]</name></author>
-HERE
-  } else {
-    print <<HERE;
-      <author><name reg="$author_name->[0]">$author_name->[0]</name></author>
-HERE
-  }
+foreach (@authors_list) {
+  print "      " . $_;          # <author><name reg=""></name></author>
 }
-foreach my $illustrator_name (@illutrators) {
-  if ($illustrator_name->[2]) {
-    print <<HERE;
-      <editor role="illustrator"><name reg="$illustrator_name->[2], $illustrator_name->[0]">$illustrator_name->[1] $illustrator_name->[2]</name></editor>
-HERE
-  } else {
-    print <<HERE;
-      <editor role="illustrator"><name reg="$illustrator_name->[0]">$illustrator_name->[0]</name></editor>
-HERE
-  }
+foreach (@illustrators_list) {
+  print "      " . $_;          # <editor role="illustrator"><name reg=""></name></editor>
 }
-if (@translators) {
-  foreach my $translator_name (@translators) {
-    if ($translator_name->[2]) {
-      print <<HERE;
-      <editor role="translator"><name reg="$translator_name->[2], $translator_name->[0]">$translator_name->[1] $translator_name->[2]</name></editor>
-HERE
-    } else {
-
-      print <<HERE;
-      <editor role="translator><name reg="$translator_name->[0]">$translator_name->[0]</name></editor>
-HERE
-    }
-  }
+foreach (@translators_list) {
+  print "      " . $_;          # <editor role="translator"><name reg=""></name></editor>
 }
-if (@editors) {
-  foreach my $editor_name (@editors) {
-    if ($editor_name->[2]) {
-      print <<HERE;
-      <editor role="editor"><name reg="$editor_name->[2], $editor_name->[0]">$editor_name->[1] $editor_name->[2]</name></editor>
-HERE
-    } else {
-
-      print <<HERE;
-      <editor role="editor"><name reg="$editor_name->[0]">$editor_name->[0]</name></editor>
-HERE
-    }
-  }
+foreach (@editors_list) {
+  print "      " . $_;          # <editor role="editor"><name reg=""></name></editor>
 }
 print <<HERE;
     </titleStmt>
@@ -903,64 +961,24 @@ print <<HERE;
     <sourceDesc>
       <biblStruct>
         <monogr>
-HERE
-foreach my $illustrator_name (@illutrators) {
-  if ($illustrator_name->[2]) {
-    print <<HERE;
-          <editor role="illustrator"><name reg="$illustrator_name->[2], $illustrator_name->[0]">$illustrator_name->[1] $illustrator_name->[2]</name></editor>
-HERE
-  } else {
-    print <<HERE;
-          <editor role="illustrator"><name reg="$illustrator_name->[0]">$illustrator_name->[0]</name></editor>
-HERE
-  }
-}
-if (@translators) {
-  foreach my $translator_name (@translators) {
-    if ($translator_name->[2]) {
-      print <<HERE;
-          <editor role="translator"><name reg="$translator_name->[2], $translator_name->[0]">$translator_name->[1] $translator_name->[2]</name></editor>
-HERE
-    } else {
-
-      print <<HERE;
-          <editor role="translator><name reg="$translator_name->[0]">$translator_name->[0]</name></editor>
-HERE
-    }
-  }
-}
-if (@editors) {
-  foreach my $editor_name (@editors) {
-    if ($editor_name->[2]) {
-      print <<HERE;
-          <editor role="editor">$editor_name->[2], $editor_name->[0]</editor>
-HERE
-    } else {
-      print <<HERE;
-          <editor role="editor">$editor_name->[2], $editor_name->[0]</editor>
-HERE
-    }
-  }
-}
-foreach my $author_name (@authors) {
-  if ($author_name->[2]) {
-    print <<HERE;
-          <author>$author_name->[2], $author_name->[0]</author>
-HERE
-  } else {
-
-    print <<HERE;
-          <author>$author_name->[0]</author>
-HERE
-  }
-}
-print <<HERE;
           <title>$title</title>
 HERE
 if ($sub_title) {
   print <<HERE;
           <title type="sub">$sub_title</title>
 HERE
+}
+foreach (@authors_list) {
+  print "          " . $_;      # <author><name reg=""></name></author>
+}
+foreach (@illustrators_list) {
+  print "          " . $_;      # <editor role="illustrator"><name reg=""></name></editor>
+}
+foreach (@translators_list) {
+  print "      " . $_;          # <editor role="translator"><name reg=""></name></editor>
+}
+foreach (@editors_list) {
+  print "          " . $_;      # <editor role="editor"><name reg=""></name></editor>
 }
 print <<HERE;
           <imprint>
@@ -1028,20 +1046,9 @@ print <<HERE;
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
     </change>
 HERE
-  if ($revision_lastupdated) {
-    print <<HERE;
-    <change when="$last_updated_iso" who="$updated_by">
-      Project Gutenberg Edition $pg_edition.
-    </change>
-HERE
-  }
-  if ($firstupdated) {
-    print <<HERE;
-    <change when="$firstupdated_iso" who="unknown">
-      Project Gutenberg Update Release.
-    </change>
-HERE
-  }
+foreach (@file_updates_list) {
+  print $_;      # <change when="1900-01-01" who="Unknown">Details</change>
+}
   print <<HERE;
   </revisionDesc>
 </teiHeader>
@@ -1075,16 +1082,12 @@ HERE
 }
 if ($illustrators) {
   print <<HERE;
-    <byline>
-      $illustrated_by_tag <name>$illustrators</name>
-    </byline>
+    <byline>$illustrated_by_tag <name>$illustrators</name></byline>
 HERE
 }
 if ($translators) {
   print <<HERE;
-    <byline>
-      $translated_by_tag <name>$translators</name>
-    </byline>
+    <byline>$translated_by_tag <name>$translators</name></byline>
 HERE
 }
 print <<HERE;
