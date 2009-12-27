@@ -300,6 +300,7 @@ sub output_para {
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
 
+    $rend = ''; # $rend must be reset each time.
     $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
     $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
@@ -756,7 +757,7 @@ sub output_header () {
     }
   }
   # Get the PUBLISHED PLACE --- Very hit 'n miss!!
-  if ($h =~ /^ *((New York|London|Cambridge|Boston).*?)_?\n/i) {
+  if ($h =~ /\n *((New York|London|Cambridge|Boston).*?)_?\n/i) {
     $published_place = change_case($1);
   }
 
@@ -768,6 +769,7 @@ sub output_header () {
   }
   $redactors_notes =~ s/\n/\n        /gis;   # Indent the text
   $redactors_notes =~ s/\n\s+\n/\n\n/gis;    # Clear empty lines
+  $redactors_notes .= "\n      ";
 
   # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
   if ($h =~ / *\[Transcriber'?s? Note[s:\n ]+(.*?)\]/is) {
@@ -783,7 +785,8 @@ sub output_header () {
   }
   $transcriber_notes =~ s/\n/\n        /gis;  # Indent the text
   $transcriber_notes =~ s/\n\s+\n/\n\n/gis;   # Clear empty lines
-
+  $transcriber_notes .= "\n      ";
+  
   # ILLUSTRATED BY ...
   if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
     if ($1) {
@@ -1302,6 +1305,7 @@ sub post_process {
 
   # SUPERSCRIPT
   $c =~ s|(\^)([^ ]+)|<sup>$2</sup>|g;
+  $c =~ s|([IVX]+)(er)(?=[^\w])|$1<sup>$2</sup>|g;
   # SUBSCRIPT (Only works for H_2O formula.)
   $c =~ s|(\w)_([0-9])|$1<sub>$2</sub>|g;
   $c =~ s|H2O|H<sub>2</sub>O|g; # In case no underscore has been added.

@@ -39,6 +39,8 @@ sub eachTEI {
   $file           = $_;
   $filename       = $file;
   $filename       =~ s|^(.*?)\.txt$|$1|;
+  $orig_filename  = $filename;         # Used for the copying of the .txt file
+  $filename       =~ s|^(.*?)-8$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
 
   $bookspath      = $File::Find::name;
   $bookspath      =~ s|/(.*?)/$file|/$1|;
@@ -50,7 +52,7 @@ sub eachTEI {
   mkdir($books_folder . $filename . DS . 'tei',     0777)  || print "\nCan't create TEI folder: $!\n";
 
   ## Make a backup copy of the .txt file in "pg-orig".
-  copy($file, $books_folder . $filename . DS . 'pg-orig' . DS . $filename . '.txt') or die "Failed to copy file: $!\n";
+  copy($file, $books_folder . $filename . DS . 'pg-orig' . DS . $orig_filename . '.txt') or die "Failed to copy file: $!\n";
 
   ## Now run the pg2tei.pl script using `backticks` to get file into variable.
   $pg2tei = `perl -w $pg2tei_script $books_folder $file`;

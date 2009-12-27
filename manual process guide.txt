@@ -47,6 +47,13 @@ Footnotes
  </lg>
 </quote>
 
+<quote>
+ <lg>
+  <l></l>
+  <l rend="margin-left(6)"></l>
+ </lg>
+</quote>
+
  <lg rend="text-align(center)">
   <l></l>
   <l></l>
@@ -56,7 +63,7 @@ Footnotes
  <lg rend="text-align(right) margin-right(10%)">
  <lg rend="font-style(italic)">
 
- rend="margin-left(2)"
+ rend="margin-left(6)"
  rend="margin-right(10%)"
 
  rend="text-align(center)"
