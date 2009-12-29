@@ -338,9 +338,13 @@ sub output_head {
 
   $head_tmp =~ s/^\s+//; # Strip out leading whitespace
 
-  if ($head_tmp =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
+  if ($head_tmp =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
   } else {
+    # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
+    if ($head_tmp =~ /^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.*)/is) {
+      $head_tmp = $1 . '</head>' . "\n\n" . '<head type="sub">' . $4;
+    }
     print "<head>" . $head_tmp . "</head>\n\n";
   }
 
@@ -350,7 +354,7 @@ sub output_head {
     $subhead =~ s|^\"(.*?)\"$|<q>$1</q>|; # Rough fix of Quotes
     $subhead =~ s|^\s||gm;                # Strip out leading whitespace
 
-    if ($subhead =~ m/^<(figure|milestone)/) { # stop <figure> and others getting caught
+    if ($subhead =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
       print $subhead . "\n\n";
     } else {
      print "<head type=\"sub\">$subhead</head>\n\n";
@@ -569,7 +573,7 @@ sub output_header () {
   # There are four different dates possible in any PG text;
   #   * (Official) Release Date (Some early books include the EBook No.)
   #   * First Posted
-  #   * Posting Date (Almost always includes the EBook No.)
+  #   * Posting Date ('Almost' always includes the EBook No.)
   #   * Last Updated
 
   # RELEASE DATE: A strange one as in the old days PG would set themselves 
@@ -592,7 +596,7 @@ sub output_header () {
 
   # Welcome to the world of PG!
 
-  # OFFICIAL RELEASE DATE
+  # OFFICIAL RELEASE DATE (Sometimes includes the EBook No.)
   if ($h =~ /\n(Official|Original)? ?Release Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
     $release_date = $2;
     $release_date_iso = process_dates($release_date);
@@ -603,7 +607,7 @@ sub output_header () {
     $first_posted_iso = process_dates($first_posted);
   }
   # POSTING DATE (Usually includes the EBook No.)
-  if ($h =~ /\nPosting Date: *(.+)( +\[E(Book|Text) +#(\d+)\])\n/i) {
+  if ($h =~ /\nPosting Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
     $posted_date  = $1;
     $posted_date_iso  = process_dates($posted_date);
   }
@@ -706,7 +710,7 @@ sub output_header () {
     $scanned_by = $2;
   }
   # Who first PRODUCED this text for Project Gutenberg?
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n/i) {
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\.?\n(.*?)\.?\n/i) {
     $created_by = $5;
     if ($6) {
       $created_by = $created_by . " " . $6;
@@ -729,6 +733,9 @@ sub output_header () {
   # Let's remove any http://www.pgdp.net from the producers
   $scanned_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
   $created_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
+  # We don't need to know who made the HTML version in this file.
+  $scanned_by =~ s|\.? +HTML version by .*?\.? *$||i;
+  $created_by =~ s|\.? +HTML version by .*?\.? *$||i;
 
 
   ####-----------------------------------------------####
@@ -1495,6 +1502,8 @@ sub encode_month {
 sub encode_numbers {
   my $tmp_num = shift;
 
+  $tmp_num = uc($tmp_num); # removes anys case sensitivity.
+  
   # fix numbers
   my %numbers = (
      1     => "ONE",
@@ -1512,6 +1521,11 @@ sub encode_numbers {
     13     => "THIRTEEN",
     14     => "FOURTEEN",
     15     => "FIFTHTEEN",
+    16     => "SIXTEEN",
+    17     => "SEVENTEEN",
+    18     => "EIGHTEEN",
+    19     => "NINETEEN",
+    20     => "TWENTY",
   );
   my %roman_numbers = (
      1     => "I",
@@ -1529,6 +1543,11 @@ sub encode_numbers {
     13     => "XIII",
     14     => "XIV",
     15     => "XV",
+    16     => "XVI",
+    17     => "XVII",
+    18     => "XVIII",
+    19     => "IX",
+    20     => "XX",
   );
   my %ordinal_numbers = (
      1     => "FIRST",
@@ -1546,6 +1565,11 @@ sub encode_numbers {
     13     => "THIRTEENTH",
     14     => "FOURTEENTH",
     15     => "FIFTEENTH",
+    16     => "SIXTEENTH",
+    17     => "SEVENTEENTH",
+    18     => "EIGHTEENTH",
+    19     => "NINETEENTH",
+    20     => "TWENTIETH",
   );
 
   while (my ($key, $value) = each(%numbers)) {
