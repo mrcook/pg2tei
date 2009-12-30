@@ -673,7 +673,7 @@ sub output_header () {
     @translators = process_names($translators);
   }
 
-  # If no EDITION
+  # If no EDITION (We do an additional check against releases further down.)
   if (!$edition) {
     $filename = "$ARGV"; # Perhaps the filename has it (not many PG books still use the old filename system)
     if ($filename =~ /^(\w{4,5})((10|11|12)\w?)\..+$/i) {
@@ -770,13 +770,15 @@ sub output_header () {
 
   # REDACTOR'S NOTES
   if ($h =~ / *\[Redactor'?s? Note[s:\n ]*(.*?)\]/is) {
-    $redactors_notes = "\n" . $1;
+    $redactors_notes = $1;
   } elsif ($h =~ /Redactor\'s Note[s:\n ]*(.*?)\n\n\n/is) {
-    $redactors_notes = "\n" . $1;
+    $redactors_notes = $1;
   }
-  $redactors_notes =~ s/\n/\n        /gis;   # Indent the text
-  $redactors_notes =~ s/\n\s+\n/\n\n/gis;    # Clear empty lines
-  $redactors_notes .= "\n      ";
+  if ($redactors_notes) {
+    $redactors_notes .= "\n";  
+    $redactors_notes =~ s|\n|\n        |gis;   # Indent the text
+    $redactors_notes =~ s|\n\s+\n|\n\n|gis;    # Clear empty lines
+  }
 
   # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
   if ($h =~ / *\[Transcriber'?s? Note[s:\n ]+(.*?)\]/is) {
@@ -790,10 +792,12 @@ sub output_header () {
   } elsif ($h =~ /^Notes?: (.*?)\n\n\n/is) {
     $transcriber_notes .= $1;
   }
-  $transcriber_notes =~ s/\n/\n        /gis;  # Indent the text
-  $transcriber_notes =~ s/\n\s+\n/\n\n/gis;   # Clear empty lines
-  $transcriber_notes .= "\n      ";
-  
+  if ($transcriber_notes) {
+    $transcriber_notes .= "\n";
+    $transcriber_notes =~ s|\n|\n        |gis;  # Indent the text
+    $transcriber_notes =~ s|\n\s+\n|\n\n|gis;   # Clear empty lines
+  }
+
   # ILLUSTRATED BY ...
   if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
     if ($1) {
@@ -809,7 +813,6 @@ sub output_header () {
   } else {
     $illustrated_by_tag = '';
   }
-
 
   ####--------------------------------------------------------------####
   #### SAFE Option for Dates is to create an array and sort them.   ####
@@ -841,6 +844,12 @@ sub output_header () {
   # This will leave us with only updates for the <revisionDesc> info.
   shift(@dates_sorted);
 
+
+  # How many releases/updates have there been? 
+  # Checking here so we can assign a new (and proper?) value to $edition.
+  if ($edition < @dates_sorted + 1) {
+    $edition = @dates_sorted + 1; # Add the original release back on.
+  }
 
   ####-------------------------------------------------------####
   #### Now we prepare the header tags <author> and <editor>  ####

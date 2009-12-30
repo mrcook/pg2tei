@@ -6,24 +6,27 @@ THINGS TO CHECK
 ---------------
 
 1.
-Fix up the Front matter section and make sure all is Tagged correctly.
-
-2.
 <head> - Check that head's, div's, etc, are correct
          if not then it may be worth adjusting the origianl txt
          to fix any CHAPTER spacings. Best is 3 / 2.
 
-3.
+2.
 <figure - CHECK all figures and correct the path/filename
 
-4.
+3.
 [       - FOOTNOTE
 *       - FOOTNOTE
+
+4.
+Fix up the Front matter section and make sure all is Tagged correctly.
 
 5.
 LoC Class
 
 6.
+Check for "*", "[", "]" and "_" and mark up appropriately. 
+
+7.
 ^[sp]   - CHECK Indents on Original TXT file.
 
 ---------------------------------------
