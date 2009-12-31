@@ -342,9 +342,7 @@ sub output_head {
     print $head_tmp . "\n\n";
   } else {
     # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
-    if ($head_tmp =~ /^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.*)/is) {
-      $head_tmp = $1 . '</head>' . "\n\n" . '<head type="sub">' . $4;
-    }
+    $head_tmp =~ s/^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.+(\n.+)*)$/$1<\/head>\n\n<head type="sub">$4/is;
     print "<head>" . $head_tmp . "</head>\n\n";
   }
 
@@ -710,7 +708,7 @@ sub output_header () {
     $scanned_by = $2;
   }
   # Who first PRODUCED this text for Project Gutenberg?
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\.?\n(.*?)\.?\n/i) {
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\.?\n(.*?)(\.| at)?\n/i) {
     $created_by = $5;
     if ($6) {
       $created_by = $created_by . " " . $6;
