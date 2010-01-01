@@ -76,6 +76,9 @@ sub eachTEI {
     $pg2tei =~ s|</div> *<div type="preface">|</div>\n\n  <div type="preface">|g;
   }
 
+  # In rare cases, a <milestone> is given where it shouldn't
+  $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
+
 
   #############################
   ## Write out to a TEI file ##

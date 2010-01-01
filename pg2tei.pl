@@ -343,6 +343,8 @@ sub output_head {
   } else {
     # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
     $head_tmp =~ s/^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.+(\n.+)*)$/$1<\/head>\n\n<head type="sub">$4/is;
+    # If a chapter/book has a 'dash' then it's probably not meant to be split into heading/subheading.
+    $head_tmp =~ s/<\/head>\n\n<head type="sub">&#8212;/&#8212;/is; # There must be a better way to do this!
     print "<head>" . $head_tmp . "</head>\n\n";
   }
 
@@ -1196,7 +1198,7 @@ sub pre_process {
   #### Replace <milestone> events
   # substitute * * * * * for <milestone> BEFORE footnotes
   # <milestone> will be replaced later, on line: ~1250
-  $c =~ s|\n( +\*){3,}|\n<milestone>|g;
+  $c =~ s|( +\*){3,}|\n<milestone>|g;
 
   #### Some pre-processing for the Footnotes.
   $c =~ s|[\{\<\[]l[\}\>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
