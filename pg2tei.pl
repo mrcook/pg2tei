@@ -471,7 +471,7 @@ sub output_chapter {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)([- .]+(.*?)\n|\n)/i) {
+  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)(&#8212;|[-. ]+)(.*?)\n/i) {
     print "</div>\n\n";
     print "</div>\n\n\n";
     #   Grab the Part/Book number
@@ -1196,7 +1196,7 @@ sub pre_process {
   #### Replace <milestone> events
   # substitute * * * * * for <milestone> BEFORE footnotes
   # <milestone> will be replaced later, on line: ~1250
-  $c =~ s|( +\*){3,}|<milestone>|g;
+  $c =~ s|\n( +\*){3,}|\n<milestone>|g;
 
   #### Some pre-processing for the Footnotes.
   $c =~ s|[\{\<\[]l[\}\>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.

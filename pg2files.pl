@@ -65,6 +65,17 @@ sub eachTEI {
   # Remove those extra quote tags
   $pg2tei =~ s|</quote>\n\n<quote>||g;
 
+  # Move the PREFACE to the front matter.
+  my @preface_text; my $tmp_count = 0;
+  while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||s) {
+    $preface_text[$tmp_count] = "  <div type=\"preface\">\n    $1    <signed></signed>\n  </div>";
+    $tmp_count++;
+  }
+  if ($tmp_count > 0) {
+    $pg2tei =~ s| *<div type="preface">\n *<head>Preface</head>\n *<p></p>\n *<signed></signed>\n *</div> *|@preface_text|;
+    $pg2tei =~ s|</div> *<div type="preface">|</div>\n\n  <div type="preface">|g;
+  }
+
 
   #############################
   ## Write out to a TEI file ##
