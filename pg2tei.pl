@@ -710,7 +710,8 @@ sub output_header () {
     $scanned_by = $2;
   }
   # Who first PRODUCED this text for Project Gutenberg?
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\.?\n(.*?)(\.| at)?\n/i) {
+  $h =~ s|\n\*+.+Prepared By Thousands of Volunteers\!\*+\n||i; #Remove this stupid thing.
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.+)\.?\n(.*?)(\.| at)?\n/i) {
     $created_by = $5;
     if ($6) {
       $created_by = $created_by . " " . $6;

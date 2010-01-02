@@ -40,7 +40,7 @@ sub eachTEI {
   $filename       = $file;
   $filename       =~ s|^(.*?)\.txt$|$1|;
   $orig_filename  = $filename;         # Used for the copying of the .txt file
-  $filename       =~ s|^(.*?)-8$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
+  $filename       =~ s|^(.*?)-[80]$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
 
   $bookspath      = $File::Find::name;
   $bookspath      =~ s|/(.*?)/$file|/$1|;
