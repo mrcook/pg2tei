@@ -24,67 +24,44 @@ use locale;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
 # use Text::Wrap;                                               # Only needed when re-wrapping text. Delete?
-# use utf8;                                                     # Apparently in Perl 5.6+ it does not need to be specified.
-# use open IN => ':encoding(iso-8859-1)', OUT => 'iso-8859-1';  # Used to specify an input - probably not needed
 
-# Let's convert and output the document to UTF-8
-binmode STDOUT, ":utf8";
 
-my %languages = (
-  "de"     => "German",
-  "el"     => "Greek",
-  "en-gb"  => "British",
-  "en-us"  => "American",
-  "en"     => "English",
-  "es"     => "Spanish",
-  "fr"     => "French",
-  "it"     => "Italian",
-  "la"     => "Latin",
-  "nl"     => "Dutch",
-  "pl"     => "Polish",
-  "pt"     => "Portuguese",
-);
+################################################################################
+####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
+################################################################################
+use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+binmode STDOUT, ':utf8';
+
 
 ################################################################################
 ####                       Set some specific parameters                      ###
 ################################################################################
 
-my  $is_verse          = 0;    # Work is a poem? Some hints as to what is being converted.
+my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
 
-my  $cnt_chapter_sep   = "3,"; # chapters are separated by 3 empty lines
-my  $cnt_head_sep      = "2";
-my  $cnt_paragraph_sep = "1";
+my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
+my  $cnt_head_sep       = "2";
+my  $cnt_paragraph_sep  = "1";
 
-my  $avg_line_length   = 0;
-my  $max_line_length   = 0;
-# $Text::Wrap::columns   = 78;
+my  $avg_line_length    = 0;
+my  $max_line_length    = 0;
+# $Text::Wrap::columns    = 78;
 
 # regexps how to catch quotes (filled in later)
 my  ($quotes1, $quotes1pre, $quotes2);
 
-my  $override_quotes   = '';
+my  $override_quotes    = '';
 
-my  $help              = 0;
+my  $help               = 0;
 
-my  $current_date_iso  = strftime ("%Y-%m-%d", localtime ());
-my  $current_date      = strftime ("%d %B %Y", localtime ());
+my  $current_date_iso   = strftime ("%Y-%m-%d", localtime ());
+my  $current_date       = strftime ("%d %B %Y", localtime ());
 
 my  $locale = "en";
 setlocale (LC_CTYPE, $locale);
 $locale = setlocale (LC_CTYPE);
 
 my $uuid =  uuid_gen(); # Create a UUID
-
-
-####  Many variables need to be set/given defaults ###
-
-use vars '$lang_gb_check';
-use vars '$front_matter_block';
-use vars '@illustrators';
-
-my  @translators        = ();
-my  @editors            = ();
-my  @authors            = ();
 
 my  $title              = '';
 my  $sub_title          = '';
@@ -93,7 +70,7 @@ my  $editor             = '';
 my  $editors            = '';
 
 my  $illustrators       = '';
-my  $illustrated_by_tag  = 'Illustrated by';
+my  $illustrated_by_tag = 'Illustrated by';
 my  $translators        = '';
 my  $translated_by_tag  = '';
 my  $published_place    = '';
@@ -138,6 +115,39 @@ my  $rend               = '';
 my  $footnote_exists    = 0;
 my  $is_book            = 0;
 my  $is_book_div        = 0;
+
+use vars '$lang_gb_check';
+use vars '$front_matter_block';
+use vars '@illustrators';
+
+my  @translators        = ();
+my  @editors            = ();
+my  @authors            = ();
+
+my %languages = (
+  "de"     => "German",
+  "el"     => "Greek",
+  "en-gb"  => "British",
+  "en-us"  => "American",
+  "en"     => "English",
+  "es"     => "Spanish",
+  "fr"     => "French",
+  "it"     => "Italian",
+  "la"     => "Latin",
+  "nl"     => "Dutch",
+  "pl"     => "Polish",
+  "pt"     => "Portuguese",
+);
+
+GetOptions (
+  "quotes=s"    => \$override_quotes,
+  "chapter=i"   => \$cnt_chapter_sep,
+  "head=i"      => \$cnt_head_sep,
+  "paragraph=i" => \$cnt_paragraph_sep,
+  "verse!"      => \$is_verse,
+  "locale=s"    => \$locale,
+  "help|h|?!"   => \$help,
+);
 
 
 ################################################################################
@@ -1938,17 +1948,6 @@ sub uuid_gen {
 
   return $uuid;
 }
-
-
-GetOptions (
-  "quotes=s"    => \$override_quotes,
-  "chapter=i"   => \$cnt_chapter_sep,
-  "head=i"      => \$cnt_head_sep,
-  "paragraph=i" => \$cnt_paragraph_sep,
-  "verse!"      => \$is_verse,
-  "locale=s"    => \$locale,
-  "help|h|?!"   => \$help,
-);
 
 if ($help) {
     usage (); exit;
