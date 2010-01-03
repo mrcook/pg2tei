@@ -479,11 +479,11 @@ sub output_chapter {
   my $part_number = '';
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ /^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
+  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ /^(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|\. ?|\n)(.*?)\n/i) {
+  } elsif ($chapter =~ /^ *(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|\. ?|\n)(.*?)\n/i) {
     print "</div>\n\n";
     print "</div>\n\n\n";
 
