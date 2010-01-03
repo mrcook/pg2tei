@@ -1205,6 +1205,11 @@ sub pre_process {
   $c =~ s|<|&lt;|g;
   $c =~ s|>|&gt;|g;
  
+  # Add <b> tags; changing = and <b> to <hi>
+  $c =~ s|<b>|<hi>|g;
+  $c =~ s|</b>|</hi>|g;
+  $c =~ s|=(.*?)=|<hi>$1</hi>|gis;
+
   ### <milestone> and <footnote> are replaced with full tags in the "post_process" sub
   
   #### Replace <milestone> events
@@ -1312,12 +1317,6 @@ sub post_process {
   $c =~ s|</i>|</emph>|g;
   $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
   $c =~ s|<emph></emph>|__|g;           # empty tags - perhaps these are meant to be underscores?
-
-  # Add <b> tags; changing = and <b> to <hi>
-  $c =~ s|<b>|<hi>|g;
-  $c =~ s|</b>|</hi>|g;
-  # $c =~ s|=(.*?)=|<hi>$1</hi>|gis; // This one captures some <footnotes>. I don't know why
-  $c =~ s|=(.*?)=|<hi>$1</hi>|gi;
 
   ####-----------------------####
   #### Typografical Entities ####
