@@ -469,14 +469,15 @@ sub output_chapter {
   my $part_number = '';
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ m/^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
+  if ($chapter =~ /^(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ m/^(BOOK|PART|VOLUME) +(THE )?(.*?)(&#8212;|[-. ]+)(.*?)\n/i) {
+  } elsif ($chapter =~ /^(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|\. ?|\n)(.*?)\n/i) {
     print "</div>\n\n";
     print "</div>\n\n\n";
-    #   Grab the Part/Book number
+
+    # Grab the Part/Book number
     $part_number = encode_numbers($3);
     if (!$part_number) { $part_number = "xx"; }
       
