@@ -61,12 +61,13 @@ sub eachTEI {
   #######################################
   ## Now let's do some post-processing ##
   #######################################
-
+  my $tmp_count = 0; # setup our default counter
+  
   # Remove those extra quote tags
   $pg2tei =~ s|</quote>\n\n<quote>||g;
 
   # Move the PREFACE to the front matter.
-  my @preface_text; my $tmp_count = 0;
+  my @preface_text; $tmp_count = 0;
   while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||s) {
     $preface_text[$tmp_count] = "  <div type=\"preface\">\n    $1    <signed></signed>\n  </div>";
     $tmp_count++;
@@ -79,6 +80,21 @@ sub eachTEI {
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
 
+  ##-------------------------------------------------------------##
+  ## PROCESS FOOTNOTES -- MUST HAVE A CLOSING SQUARE BRACKET "]" ##
+  ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##
+  ##-------------------------------------------------------------##
+  my $process_footnotes = 0; # Careful - will not catch the "full" note unless there is a closing "]".
+  if ($process_footnotes) {
+    my %footnotes;
+    while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+): (.*?)\]<\/p>\n\n//s) {
+      push @{ $footnotes{$1} }, "$2";
+    }
+    my $note_content = '';
+    for $note ( keys %footnotes ) {
+      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
+    }
+  }
 
   #############################
   ## Write out to a TEI file ##
