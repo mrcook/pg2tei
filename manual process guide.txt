@@ -14,17 +14,17 @@ THINGS TO CHECK
 <figure - CHECK all figures and correct the path/filename
 
 3.
-[       - FOOTNOTE
-*       - FOOTNOTE
+<note       - Search and check Footnotes
+
 
 4.
-Fix up the Front matter section and make sure all is Tagged correctly.
+Check for "*", "[", "]" and "_" and mark up appropriately - usually footnotes
 
 5.
-LoC Class
+Fix up the Front matter section and make sure all is Tagged correctly.
 
 6.
-Check for "*", "[", "]" and "_" and mark up appropriately. 
+LoC Class
 
 7.
 ^[sp]   - CHECK Indents on Original TXT file.
