@@ -83,6 +83,9 @@ sub eachTEI {
   #############################
   ## Write out to a TEI file ##
   #############################
+  if (unlink($tei_path_file) == 1) {
+    print "\n\n--- Old file has been deleted ---\n\n";
+  }
   open (OUT,  ">", $tei_path_file) or die "Could not open file\n";
     print OUT $pg2tei;
   close(OUT);
