@@ -80,6 +80,10 @@ sub eachTEI {
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
 
+  # In rare cases, a <note place="foot"> is given where it should be three stars; * * *
+  $pg2tei =~ s|(<note place="foot">\n\n\[PLACE FOOTNOTE HERE\] -- \*\n\n</note> ){3}|* * * |g;
+
+  
   ##-------------------------------------------------------------##
   ## PROCESS FOOTNOTES -- MUST HAVE A CLOSING SQUARE BRACKET "]" ##
   ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##

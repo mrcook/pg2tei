@@ -29,7 +29,7 @@ use POSIX qw(locale_h);
 ################################################################################
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
-use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 
@@ -1201,7 +1201,7 @@ HERE
 sub pre_process {
   my $c = shift;
 
-  #### maybe move to the end of the routine...?
+  #### Needs to be here otherwise all <tags> will be broken!
   $c =~ s|<|&lt;|g;
   $c =~ s|>|&gt;|g;
  
@@ -1210,7 +1210,13 @@ sub pre_process {
   $c =~ s|</b>|</hi>|g;
   $c =~ s|=(.*?)=|<hi>$1</hi>|gis;
 
-  ### <milestone> and <footnote> are replaced with full tags in the "post_process" sub
+
+  ###################################
+  ### PAGES NUMBERS or FOOTNOTES? ###
+  ###################################
+  $c =~ s|\{(\d+)\}|<pb n=$1>|g;  # Comment out if a eText uses {curly brackets} as footnotes.  
+  
+  ### <milestone>, <pb n=$1 /> and <footnote> are replaced with full tags in the "post_process" sub
   
   #### Replace <milestone> events
   # substitute * * * * * for <milestone> BEFORE footnotes
@@ -1283,10 +1289,10 @@ sub pre_process {
   # $c =~ s|\{|&#123;|g;
   # $c =~ s|\}|&#125;|g;
 
-  # substitute ___ 10+ to <pb/>
-  $c =~ s|_{10,}|<pb/>|g;
-  # substitute ------ 15+ for <pb>
-  $c =~ s|-{15,}|<pb/>|g;
+  # substitute ___ 10+ to <milestone/>
+  $c =~ s|_{10,}|milestone>|g;
+  # substitute ------ 15+ for <milestone>
+  $c =~ s|-{15,}|<milestone>|g;
 
   # substitute ----, --, -
   $c =~ s|----|&#8213;|g;
@@ -1388,6 +1394,9 @@ sub post_process {
   $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
   $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
   $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
+
+  # substitute <pb n=179> to include the "quotes"; <pb n="179" />
+  $c =~ s|<pb n=(\d+)>|<pb n="$1" />|g;
 
   # substitute <milestone> to include the unit="tb" attribute.
   $c =~ s|<milestone>|<milestone unit="tb" />|g;
