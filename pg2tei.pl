@@ -955,7 +955,7 @@ foreach (@editors_list) {
 print <<HERE;
     </titleStmt>
     <editionStmt>
-      <edition n="$edition">Edition $edition, <date value="$last_updated_iso">$last_updated</date></edition>
+      <edition n="$edition">Edition $edition, <date when="$last_updated_iso">$last_updated</date></edition>
       <respStmt>
         <resp>Original e-Text edition prepared by</resp>
         <name>$created_by</name>
@@ -970,7 +970,7 @@ print <<HERE;
         <addrLine>UT 84116</addrLine>
         <addrLine>United States</addrLine>
       </address>
-      <date value="$release_date_iso">$release_date</date>
+      <date when="$release_date_iso">$release_date</date>
       <idno type="gutenberg-no">$gutenberg_num</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
@@ -1044,7 +1044,7 @@ print <<HERE;
         <p>Hyphenated words that appear at the end of the line may have been reformed.</p>
       </hyphenation>
       <stdVals>
-        <p>Standard date values in the header are recorded in the attribute "value=" and are given in ISO form yyyy-mm-dd.</p>
+        <p>Standard date values in the header are recorded in the attribute "when=" and are given in ISO form yyyy-mm-dd.</p>
       </stdVals>
       <interpretation>
         <p>Italics are recorded without interpretation.</p>
@@ -1058,7 +1058,7 @@ print <<HERE;
   </encodingDesc>
   <profileDesc>
     <creation>
-      <date value="$current_date_iso">$current_date</date>
+      <date when="$current_date_iso">$current_date</date>
     </creation>
       <langUsage>
         <language id="$language_code">$language</language>
