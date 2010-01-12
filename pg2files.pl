@@ -68,7 +68,7 @@ sub eachTEI {
 
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
-  while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>_?PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||is) {
+  while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>(?:<emph>)?PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||is) {
     $preface_text[$tmp_count] = "  <div type=\"preface\">\n    $1    <signed></signed>\n  </div>";
     $tmp_count++;
   }
@@ -78,7 +78,7 @@ sub eachTEI {
   }
 
   # Mark-up the "Introduction" div as <div type="introduction">
-  $pg2tei =~ s|<div type="chapter">\n\n(<head>_?INTRODUCTION(.*?)</head>\n)\n+|  <div type=\"introduction\">\n\n    $1\n    |is;
+  $pg2tei =~ s|<div type="chapter">\n\n(<head>(?:<emph>)?INTRODUCTION(.*?)</head>\n)\n+|  <div type=\"introduction\">\n\n    $1\n    |is;
 
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
