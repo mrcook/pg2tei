@@ -1640,13 +1640,14 @@ sub process_names {
       my $firstname = $1;
       my $lastname = $2;
       ## Some authors use initials, so assign proper name also
-      if ($lastname eq 'Fitzgerald' and $firstname =~ /F. ?Scott/)   { $firstname = 'Francis Scott'; }
-      if ($lastname eq 'Montgomery' and $firstname =~ /L. ?M./)      { $firstname = 'Lucy Maud'; }
-      if ($lastname eq 'Nesbit'     and $firstname =~ /E./)          { $firstname = 'Edith'; }
-      if ($lastname eq 'Smith'      and $firstname =~ /E. ?E./)      { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Baum'       and $firstname =~ /L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
+      if ($lastname eq 'Fitzgerald' and $firstname =~ /F\. ?Scott/)  { $firstname = 'Francis Scott'; }
+      if ($lastname eq 'Montgomery' and $firstname =~ /L\. ?M./)     { $firstname = 'Lucy Maud'; }
+      if ($lastname eq 'Nesbit'     and $firstname =~ /E\./)         { $firstname = 'Edith'; }
+      if ($lastname eq 'Smith'      and $firstname =~ /E\. ?E./)     { $firstname = 'Edward Elmer'; }
       if ($lastname eq 'Smith'      and $firstname =~ /["']Doc["']/) { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Wells'      and $firstname =~ /H. ?G./)      { $firstname = 'Herbert George'; }
-      if ($lastname eq 'Wodehouse'  and $firstname =~ /P. ?G./)      { $firstname = 'Pelham Grenville'; }
+      if ($lastname eq 'Wells'      and $firstname =~ /H\. ?G./)     { $firstname = 'Herbert George'; }
+      if ($lastname eq 'Wodehouse'  and $firstname =~ /P\. ?G./)     { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } elsif ($name =~ m/^Anon/i) {
       $names[$count] = (['Anonymous']);    
