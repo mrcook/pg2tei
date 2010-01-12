@@ -811,7 +811,7 @@ sub output_header () {
   }
 
   # ILLUSTRATED BY ...
-  if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*$/i) {
+  if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*\n/i) {
     if ($1) {
       $illustrated_by_tag = change_case($1);
     }
