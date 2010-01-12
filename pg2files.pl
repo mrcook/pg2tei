@@ -78,7 +78,7 @@ sub eachTEI {
   }
 
   # Mark-up the "Introduction" div as <div type="introduction">
-  $pg2tei =~ s|<div type="chapter">\n\n(<head>_?INTRODUCTION(.*?)</head>\n)\n+|<div type=\"introduction\">\n\n  $1\n  |is;
+  $pg2tei =~ s|<div type="chapter">\n\n(<head>_?INTRODUCTION(.*?)</head>\n)\n+|  <div type=\"introduction\">\n\n    $1\n    |is;
 
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;

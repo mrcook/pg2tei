@@ -5,7 +5,7 @@
 # @author     Michael Cook | epubBooks (http://www.epubbooks.com)
 # @copyright  Copyright (c)2007-2009 Michael Cook
 # @package    img2tei - Collect images from HTML file and place in TEI
-# @created    May 2007
+# @created    Jan 2010
 # @version    $Id$
 #
 
