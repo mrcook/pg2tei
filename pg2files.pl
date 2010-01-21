@@ -91,7 +91,7 @@ sub eachTEI {
   ## PROCESS FOOTNOTES -- MUST HAVE A CLOSING SQUARE BRACKET "]" ##
   ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##
   ##-------------------------------------------------------------##
-  my $process_footnotes = 0; # Careful - will not catch the "full" note unless there is a closing "]".
+  my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
   if ($process_footnotes) {
     my %footnotes;
     while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+): (.*?)\]<\/p>\n\n//s) {

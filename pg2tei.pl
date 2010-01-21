@@ -577,7 +577,7 @@ sub output_header () {
 
   # The Series information is sometimes added manually by myself.
   # Better to do this in the source than in the manual post-processing.
-  if ($h =~ /\nSeries: *(.+)\n/i)                 { $series_title  = $1; }
+  if ($h =~ /\nSeries Name: *(.+)\n/i)                 { $series_title  = $1; }
   if ($h =~ /\nSeries Volume: *(\d+)\n/i)         { $series_volume = $1; }
 
 
@@ -1110,6 +1110,11 @@ HERE
     <docAuthor>$author_name->[0]</docAuthor>
 HERE
   }
+}
+if ($editor) {
+  print <<HERE;
+    <byline>Edited by <name>$editor</name></byline>
+HERE
 }
 if ($illustrators) {
   print <<HERE;
