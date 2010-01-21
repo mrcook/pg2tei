@@ -1445,26 +1445,26 @@ sub process_dates {
   my ($year, $month, $day) = (0, 0, 0);
   my $tmp_month = 0;
   my $wdate = shift;
+  
+  # Look for: 1990-12-23
+  if ($wdate =~ m|^(\d{4})-([01]?[0-9])-([0123]?[0-9])$|) {
+    ($year, $month, $day) = ($1, $2, $3);
+    $tmp_month = $month;
 
-  # Look for: January 1, 2000
-  if ($wdate =~ m/^(\w+)\s+(\d{1,2}),?\s+(\d{2,4})$/) {
+  } elsif ($wdate =~ m/^(\w+)\s+([01]?[0-9]),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($3, $1, $2);
-  }
-
-  # Look for: 9/19/01
-  #################################################WHY AM I ESCAPING THIS \/ ?? ###############################
-  if ($wdate =~ m/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/) {
+  
+  # Look for: 9/19/01 or 9-19-2000
+  } elsif ($wdate =~ m|^(\d{1,2})[/-]([01]?[0-9])[/-](\d{2,4})$|) {
     ($year, $month, $day) = ($3, $1, $2);
     $tmp_month = $month;
-  }
 
   # Look for: January, 2000 or January 2000
-  if ($wdate =~ m/^(\w+),?\s+(\d{2,4})$/) {
+  } elsif ($wdate =~ m/^(\w+),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($2, $1, 0);
-  }
 
   # Look for English format: 21st January, 2002
-  if ($wdate =~ m/^(\d{1,2})(st|nd|rd|th)\s+(\w+),?\s+(\d{2,4})$/) {
+  } elsif ($wdate =~ m/^([123]?[0-9])(st|nd|rd|th)\s+(\w+),?\s+(\d{2,4})$/) {
     ($year, $month, $day) = ($4, $3, $1);
   }
 
