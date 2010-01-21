@@ -89,10 +89,10 @@ sub eachTEI {
     $tmp = '';
     if (@$image[1] and @$image[1] ne 'logo') {
       @$image[1] =~ s|\s+| |g;
-      $data =~ s|<figure url="images/">\s+<figDesc>(.*?)</figDesc>\s+</figure>|  <figure url="images/@$image[0]">\n    <figDesc>@$image[1]</figDesc>\n  </figure>|;
+      $data =~ s|<figure url="images/">(\s+)<figDesc>(.*?)</figDesc>(\s+)</figure>|<figure url="images/@$image[0]">$1<figDesc>@$image[1]</figDesc>$3</figure>|;
     } else {
       @$image[1] =~ s|\s+| |g;
-      $data =~ s|<figure url="images/">\s+<figDesc>(.*?)</figDesc>\s+</figure>|  <figure url="images/@$image[0]">\n    <figDesc>$1</figDesc>\n  </figure>|;    
+      $data =~ s|<figure url="images/">(\s+)<figDesc>(.*?)</figDesc>(\s+)</figure>|<figure url="images/@$image[0]">$1<figDesc>$2</figDesc>$3</figure>|;    
     }
   }
 
