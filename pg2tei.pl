@@ -771,7 +771,7 @@ sub output_header () {
   }
   # If still no PUBLISHER
   if (!$publisher) {
-    if ($h =~ /[\n_ ]*(.*?)(Publish|Company|Co\.)(.*?){,20}_?\n/i) {
+    if ($h =~ /\s+_?(.*?)(Publisher|Press|Company|Co\.)(.*?)_?\s+/i) {
       $publisher = change_case($1 . $2 . $3);
     }
   }
