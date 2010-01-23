@@ -29,7 +29,8 @@ use POSIX qw(locale_h);
 ################################################################################
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
-#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+use utf8;
+use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 
@@ -119,6 +120,7 @@ my  $is_book_div        = 0;
 use vars '$lang_gb_check';
 use vars '$front_matter_block';
 use vars '@illustrators';
+use vars '$single_open_quotes_exist';
 
 my  @translators        = ();
 my  @editors            = ();
@@ -188,6 +190,10 @@ while (<>) {
   s|\r||g;       # cure M$-DOS files
   s|\t| |g;      # replace tabs
   s| +\n|\n|g;   # remove spaces at end of line
+
+  # substitute & for &amp;
+  s|&(?= )|&amp;|g;
+
 
   ####--------------------------------------------------####
   #### Quick check to see if the doc is British English ####
@@ -517,7 +523,7 @@ sub output_chapter {
 sub output_body {
   my $body = shift;
   $body =~ s/^\s*//;
-
+  
   # Let's clean up those <milestone> and footnote[*] tags
   $body = pre_process($body);
   
@@ -544,9 +550,6 @@ sub output_body {
 ####-------------------------------------------------####
 sub output_header () {
   my $h = shift;
-
-  # Let's clean up a couple of things....
-  $h =~ s/&/&amp;/; # Fix all "&" signs and change to "&amp;" -- Hope this doesn't break anything below!!
 
   # Grab the front matter from this header for printing to output .tei
   if ($h =~ /\n\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/is) {
@@ -776,7 +779,7 @@ sub output_header () {
     }
   }
   # Get the PUBLISHED PLACE --- Very hit 'n miss!!
-  if ($h =~ /\n *((New York|London|Cambridge|Boston).*?)_?\n/i) {
+  if ($h =~ /\n *((New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
     $published_place = change_case($1);
   }
 
@@ -1209,7 +1212,23 @@ sub pre_process {
   #### Needs to be here otherwise all <tags> will be broken!
   $c =~ s|<|&lt;|g;
   $c =~ s|>|&gt;|g;
- 
+
+
+  ###----------------------------------------------------------------------###
+  ### If English open quotes ‘ don't exist replace apostrophes with Entity ###
+  ### This bit is a real ultra-safe way of checking                        ###
+  ###----------------------------------------------------------------------###
+  # x60 = ` | x91 = ‘ | x2018 = ‘ | x201A = ‚
+  # Check for any opening quotes; including ' for full saftey
+  if ($c =~ /[\x{2018}\x{201A}\x{60}\x{91}\x{27}]/) {
+    $single_open_quotes_exist = 1;
+  }
+  # If not open quotes replace all single closing quote swith Entity
+  if ($single_open_quotes_exist == 0) {
+    # x92 = ’ | x2019 = ’
+    $c =~ s|[\x{2019}\x{92}]|&#8217;|g;
+  }
+
   # Add <b> tags; changing = and <b> to <hi>
   $c =~ s|<b>|<hi>|g;
   $c =~ s|</b>|</hi>|g;
@@ -1275,9 +1294,6 @@ sub pre_process {
   #### Do some other basic pre-processing ####
   ####------------------------------------####
 
-  # substitute &
-  $c =~ s|&|&amp;|g;
-
   #substitute hellip for ...
   $c =~ s| *\.{3,}|&#8230;|g;
   $c =~ s| *(\. ){3,}|&#8230;|g;
@@ -1310,11 +1326,45 @@ sub pre_process {
 
 sub post_process {
   my $c = shift;
-
-  # Some UNICODE files have angled quotes; “quotes”. Replace with <q> tags
-  $c =~ s|“|<q>|g;
-  $c =~ s|”|</q>|g;
   
+  #UNICODE Quote Replacement: Smart DOUBLE Quotes.
+  # x84 = „ | x93 = “ | x94 = ”
+  # x201C = “ (English Open)
+  # x201D = ” (English Closed)
+  # x201F = ‟ (???)
+  # x201E = „ (German Open)
+  $c =~ s|[\x{201C}\x{201E}\x{201F}\x{84}\x{93}]|<q>|g;
+  $c =~ s|[\x{201D}\x{94}]|</q>|g;
+
+  # Double Prime - What should I do with these...will they even exist?
+  # x2033 = ″ | x2036 = ‶ (reverse double prime)
+  #  $c =~ s|\x{2033}|</q>|g;
+  #  $c =~ s|\x{2036}|<q>|g;
+
+  #UNICODE Quote Replacement: APOSTROPHE.
+  $c =~ s|\b[\x{2019}\x{92}\x{27}]\b|&#8217;|g;
+
+  #UNICODE Apostrophe Replacement: SINGLE HIGH-REVERSED-9
+  # x201B = ‛
+  #     U+201B (HTML: &#8219;) – single high-reversed-9, or single reversed comma, quotation mark.
+  #     This is sometimes used to show dropped characters at the end of words, 
+  #     such as goin‛ instead of using goin‘, goin’, goin`, or goin' (see wikipedia)
+  $c =~ s|\x{201B}|&#8219;|g;
+  # Perhaps create a sub() with a word list for changing these dropped characters?
+  
+  #UNICODE Quote Replacement: Smart SINGLE Quotes.
+  # x60 = ` | x91 = ‘ | x92 = ’
+  # x2018 = ‘
+  # x2019 = ’
+  # x201A = ‚ (Low single curved quote, left - looks like a comma)
+  # $c =~ s|[\x{2018}\x{201A}\x{60}\x{91}]|\x{2018}|g;
+  # $c =~ s|[\x{2019}\x{92}]|\x{2019}|g;
+
+  # Single Prime - What should I do with these...will they even exist?
+  # x2033 = ’ | x2036 = ‵ (reverse double prime)
+  #  $c =~ s|\x{2032}|’|g;
+  #  $c =~ s|\x{2035}|‘|g;
+
   # Try to remove any silly BOX formating. +----+, | (...text...) |  stuff!
   $c =~ s|\+-+\+|\n|g;
   $c =~ s/ *\|(.+)\| *\n/$1\n/g;
@@ -1935,6 +1985,7 @@ sub change_case {
   $case =~ s/and/and/gi;                # Replace 'And' with 'and'
   $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g;
   $case =~ s/([NMQ])dash/$1dash/g;      # Fix &#8211; caps
+  $case =~ s/&Amp;/&amp;/g;             # &Amp;
   $case =~ s/(.*?)\'S/$1's/g;           # change 'S to 's
 
   return $case;
