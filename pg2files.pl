@@ -66,6 +66,13 @@ sub eachTEI {
   # Remove those extra quote tags
   $pg2tei =~ s|</quote>\n\n<quote>||g;
 
+  ### Add <lg rend="font-style(italic)"> where needed.
+  while ($pg2tei =~ s|<lg>\n  <l>_(.*?)</l>\n((  <l>[^_]+</l>\n)*)  <l>(.*?)_</l>\n </lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}
+  ### If there are any multi-line emphasis (but not every line in the <lg>)
+  ### then we can now SAFELY swap out and close off the rest of the _ (underscores)
+  $pg2tei =~ s|<l>_([^_]+)</l>|<l><emph>$1</emph></l>|g;
+  $pg2tei =~ s|<l>(.+)_</l>|<l><emph>$1</emph></l>|g;
+
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
   while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>(?:<emph>)?PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||is) {
