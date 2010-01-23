@@ -30,7 +30,7 @@ use POSIX qw(locale_h);
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
 use utf8;
-use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 
@@ -814,12 +814,15 @@ sub output_header () {
   }
 
   # ILLUSTRATED BY ...
-  if (/\n_?((With )?(full )?(colou?r )?(Illustrat(ions?|ed|er|or))( in colou?r)?( by|:)?)[ \n]?(.*?)[._]*\n/i) {
+  if (/\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
     if ($1) {
-      $illustrated_by_tag = change_case($1);
+      $illustrated_by_tag = $1;
+      $illustrated_by_tag =~ s|_||g;
+      $illustrated_by_tag =~ s|\n| |g;
+      $illustrated_by_tag = change_case($illustrated_by_tag);
     }
     if (!$illustrators) {
-      $illustrators = change_case($9);
+      $illustrators = change_case($8);
       $illustrators =~ s/_//;
     }
   }
@@ -1980,13 +1983,15 @@ sub compute_line_length {
 sub change_case {
   my $case = shift;
 
-  $case =~ s/(.*?)/\l$1/g;
-  $case =~ s/(\b)([a-z])/$1\u$2/g;
-  $case =~ s/and/and/gi;                # Replace 'And' with 'and'
-  $case =~ s/<(\/?)(.*?)>/<$1\l$2>/g;
-  $case =~ s/([NMQ])dash/$1dash/g;      # Fix &#8211; caps
-  $case =~ s/&Amp;/&amp;/g;             # &Amp;
-  $case =~ s/(.*?)\'S/$1's/g;           # change 'S to 's
+  $case = lc($case);
+  $case =~ s|(?<![a-z])([a-z])|\u$1|g;
+  $case =~ s|\bAnd\b|and|g;
+  $case =~ s|\bOf\b|of|g;
+  $case =~ s|\bBy\b|by|g;
+  $case =~ s|<(/)?(.*?)>|<$1\l$2>|g;
+  $case =~ s|([NMQ])dash|$1dash|g;      # Fix &#8211; caps
+  $case =~ s|&Amp;|&amp;|g;             # &Amp;
+  $case =~ s|(.*?)\'S|$1's|g;           # change 'S to 's
 
   return $case;
 }
