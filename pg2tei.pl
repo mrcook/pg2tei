@@ -1268,10 +1268,12 @@ sub pre_process {
     if ($note_exists == 0) {
       $c =~ s|\{(\d+[a-z]+)\}|[$1]|g;
     }
+    
+   ### Often (1), (2), etc are NOT used as footnotes. Uncomment if needed.
    # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
-    if ($note_exists == 0) {
-      $c =~ s/\((\d\d?|\*+|\++)\)/[$1]/g;
-    }
+#    if ($note_exists == 0) {
+#      $c =~ s/\((\d\d?|\*+|\++)\)/[$1]/g;
+#    }
   }
 
   $c =~ s|(\((\*+)\))|[$2]|g;             # Change (*) footnotes to *
