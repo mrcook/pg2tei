@@ -108,8 +108,16 @@ sub eachTEI {
     for $note ( keys %footnotes ) {
       $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
     }
+
+    # Now we've processed most footnotes let's check for "inline" footnotes.
+    while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+(.*?)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
   }
 
+
+  ### Fix part of the CHAPTER/SECTION issues.
+  $pg2tei =~ s|</head>\s+</div>\s+<div type="chapter">|</head>\n\n\n\n<div type="chapter">|g;
+  
+  
   #############################
   ## Write out to a TEI file ##
   #############################
