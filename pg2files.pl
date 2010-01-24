@@ -101,17 +101,20 @@ sub eachTEI {
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
   if ($process_footnotes) {
     my %footnotes;
-    while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+): (.*?)\]<\/p>\n\n//s) {
+    while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+):(?:<\/p>)?\s*(.*?)(?:<p>)?\]<\/p>\n\n//s) {
       push @{ $footnotes{$1} }, "$2";
     }
     my $note_content = '';
-    for $note ( keys %footnotes ) {
+    for $note ( keys %footnotes) {
       $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
     }
 
     # Now we've processed most footnotes let's check for "inline" footnotes.
     while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+(.*?)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
   }
+  # Can we somehow move these checks into the main loop above?
+  $pg2tei =~ s|<p><quote>|<quote>|g;
+  $pg2tei =~ s|</quote>\s*</p>|</quote>|g;
 
 
   ### Fix part of the CHAPTER/SECTION issues.
