@@ -117,8 +117,14 @@ sub eachTEI {
   $pg2tei =~ s|</quote>\s*</p>|</quote>|g;
 
 
-  ### Fix part of the CHAPTER/SECTION issues.
-  $pg2tei =~ s|</head>\s+</div>\s+<div type="chapter">|</head>\n\n\n\n<div type="chapter">|g;
+  ### Try to fix the CHAPTER/SECTION issues.
+  my $normal_chapter_exists = 0;
+  if ($pg2tei =~ m|<div type="chapter">\n\n<head>(?:.*?)CHAPTER(?:.*?)</head>|is) {
+    $normal_chapter_exists = 1;
+  }
+  if ($normal_chapter_exists) {
+    $pg2tei =~ s|<div type="chapter">(\n\n<head>\d+</head>)|<div type="section">$1|g;
+  }
   
   
   #############################

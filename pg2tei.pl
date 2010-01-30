@@ -29,9 +29,9 @@ use POSIX qw(locale_h);
 ################################################################################
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
-use utf8;
+#use utf8;
 #use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
-binmode STDOUT, ':utf8';
+#binmode STDOUT, ':utf8';
 
 
 ################################################################################
@@ -121,6 +121,8 @@ use vars '$lang_gb_check';
 use vars '$front_matter_block';
 use vars '@illustrators';
 use vars '$single_open_quotes_exist';
+use vars '$is_heading';
+use vars '$is_subheading';
 
 my  @translators        = ();
 my  @editors            = ();
@@ -217,13 +219,14 @@ while (<>) {
   
   # First check for PREFACE, INTRODUCTION, etc.
   if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
-
+    print "Found PREFACE/INTRO/etc. start.\n\n";
   # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])(.*?)\n)/output_header($1)/egis) {
-
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]|(THE )?FIRST)(.*?)\n)/output_header($1)/egis) {
+    print "Found BOOK/CHAPTER/etc. start.\n\n";
   # No chapter name? Just look for an actual "1" or "I" or "ONE"
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)//egis) {
-    output_header($1);
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)/output_header($1)/egis) {
+    print "Found NUMBERS ONLY start.\n\n";
+    #output_header($1);
   } else {
     print "**************************************\n";
     print "**** ERROR! No FRONT MATTER Found ****\n";
@@ -345,7 +348,6 @@ sub output_stage {
 sub output_head {
   my $head = shift;
   $head .= "\n" x 10;
-
   $head =~ s/$paragraph1//;
 
   my $head_tmp = '';
@@ -357,6 +359,8 @@ sub output_head {
   if ($head_tmp =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
   } else {
+    $is_heading = 1; # This is going to allow us to know if we have a sub <div> (book/chapter/section).
+
     # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
     $head_tmp =~ s/^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.+(\n.+)*)$/$1<\/head>\n\n<head type="sub">$4/is;
     # If a chapter/book has a 'dash' then it's probably not meant to be split into heading/subheading.
@@ -482,39 +486,40 @@ sub output_epigraph {
 
 sub output_chapter {
   my $chapter = shift;
-  my $part_number = '';
+  my $part_number;
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I|.*?first)(?=[^\d:upper:I:upper:V:upper:X])(.*?)/i) {
+  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I([^\d:upper:I:upper:V:upper:X])?|(THE )?FIRST)/i) {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ /^ *(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|\. ?|\n)(.*?)\n/i) {
+  } elsif ($chapter =~ /^ *(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|[:\.\s]+)(.*?)\n/i) {
     print "</div>\n\n";
-    print "</div>\n\n\n";
+    if (!$is_heading) { print "\n"; }
 
     # Grab the Part/Book number
     $part_number = encode_numbers($3);
     if (!$part_number) { $part_number = "xx"; }
       
-    print '<div type="' . lc($1) . '" n="' . $part_number . '">' . "\n\n";
+    print "\n" . '<div type="' . lc($1) . '" n="' . $part_number . '">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
   } else {
-    if ($is_book_div != 1) {
-      print "</div>\n\n\n";
-    } else {
-      $is_book_div = 0;
-    }
-    print '<div type="chapter">' . "\n\n";
+    $is_book_div = 0;
+    if (!$is_heading) { print "\n"; }
+    print "\n" . '<div type="chapter">' . "\n\n";
   }
   $chapter =~ s/$head1/output_head ($1)/es;
 
   # while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
 
-  # This is Marcello's line, we should be able to change this now with a later Perl.
-  # while ($chapter =~ s/$paragraph1/output_para ($1)/es) {}; # egs doesn't work in 5.6.1
-  $chapter =~ s/$paragraph1/output_para ($1)/egs; # (2009-12-25)
+  if ($chapter =~ s/$paragraph1/output_para ($1)/egs) {
+    $is_heading = 0;
+  }
+
+  if (!$is_heading) {
+    print "</div>\n\n";
+  }
 
   return '';
 }
@@ -1226,7 +1231,7 @@ sub pre_process {
   if ($c =~ /[\x{2018}\x{201A}\x{60}\x{91}\x{27}]/) {
     $single_open_quotes_exist = 1;
   }
-  # If not open quotes replace all single closing quote swith Entity
+  # If not open quotes replace all single closing quotes with Entity
   if ($single_open_quotes_exist == 0) {
     # x92 = ’ | x2019 = ’
     $c =~ s|[\x{2019}\x{92}]|&#8217;|g;
@@ -1745,7 +1750,7 @@ sub guess_quoting_convention {
     $openquote2  = substr ($override_quotes, 1, 1);
     $closequote2 = substr ($override_quotes, 2, 1);
     $closequote1 = substr ($override_quotes, 3, 1);
-  } else {
+    } else {
     my $body = shift;
     $body = $$body;
 
