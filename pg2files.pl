@@ -123,7 +123,7 @@ sub eachTEI {
     $normal_chapter_exists = 1;
   }
   if ($normal_chapter_exists) {
-    $pg2tei =~ s|<div type="chapter">(\n\n<head>\d+</head>)|<div type="section">$1|g;
+    $pg2tei =~ s|<div type="chapter">(\n\n<head>(Section )?\d+</head>)|<div type="section">$1|g;
   }
   
   
