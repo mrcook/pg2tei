@@ -30,7 +30,7 @@ use POSIX qw(locale_h);
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
 use utf8;
-#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 
@@ -715,7 +715,10 @@ sub output_header () {
   if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
     $encoding = 'iso-8859-1';
   }
-  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
+  ## Changed my mind. Convert all source files to utf-8 before processing.
+  ## But markup the TEI encoding as the source file indicates.
+  ## 2010-02-01 ---- TEST FIRST
+  #$encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
 
   ####--------------------------------------------------####
   #### Let's find out who created and updated this book ####
@@ -1220,7 +1223,6 @@ sub pre_process {
   #### Needs to be here otherwise all <tags> will be broken!
   $c =~ s|<|&lt;|g;
   $c =~ s|>|&gt;|g;
-
 
   ###----------------------------------------------------------------------###
   ### If English open quotes ‘ don't exist replace apostrophes with Entity ###
