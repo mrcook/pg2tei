@@ -30,9 +30,8 @@ use POSIX qw(locale_h);
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
 use utf8;
-use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
-
 
 ################################################################################
 ####                       Set some specific parameters                      ###
@@ -58,9 +57,9 @@ my  $help               = 0;
 my  $current_date_iso   = strftime ("%Y-%m-%d", localtime ());
 my  $current_date       = strftime ("%d %B %Y", localtime ());
 
-my  $locale = "en";
-setlocale (LC_CTYPE, $locale);
-$locale = setlocale (LC_CTYPE);
+#my  $locale = "en";
+#setlocale (LC_CTYPE, $locale);
+#$locale = setlocale (LC_CTYPE);
 
 my $uuid =  uuid_gen(); # Create a UUID
 
@@ -149,7 +148,7 @@ GetOptions (
   "head=i"      => \$cnt_head_sep,
   "paragraph=i" => \$cnt_paragraph_sep,
   "verse!"      => \$is_verse,
-  "locale=s"    => \$locale,
+#  "locale=s"    => \$locale,
   "help|h|?!"   => \$help,
 );
 
@@ -182,7 +181,6 @@ my $paragraph1 = qr/$tmp/s;
 #my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
 
 undef $/;  # slurp it all, mem is cheap
-
 
 ################################################################################
 ####                           THE CORE PARSING                             ####
@@ -712,13 +710,10 @@ sub output_header () {
   $language_code = encode_lang($language);
 
   # Check for encoding variations and assign the default 'is-8859-1'
-  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
-    $encoding = 'iso-8859-1';
-  }
-  ## Changed my mind. Convert all source files to utf-8 before processing.
-  ## But markup the TEI encoding as the source file indicates.
-  ## 2010-02-01 ---- TEST FIRST
-  #$encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
+#  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+#    $encoding = 'iso-8859-1';
+#  }
+#  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
 
   ####--------------------------------------------------####
   #### Let's find out who created and updated this book ####
@@ -941,7 +936,7 @@ sub output_header () {
   #### Time to print the <teiHeader> ####
   ####-------------------------------####
   print <<HERE;
-<?xml version="1.0" encoding="$encoding"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <TEI>
 <teiHeader>
@@ -1089,6 +1084,14 @@ print <<HERE;
   <revisionDesc>
     <change when="$current_date_iso" who="Cook, Michael">
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
+HERE
+if ($encoding ne 'utf-8') {
+  my $enc_tmp = uc($encoding);
+  print <<HERE;
+      Source file was encoded as $enc_tmp but has been encoded out to UTF-8
+HERE
+}
+print <<HERE;
     </change>
 HERE
 foreach (@file_updates_list) {
@@ -2050,11 +2053,10 @@ usage: gut2tei.pl [options] pgtextfile > teifile
 --paragraph=n      empty lines before paragraph      (default: $cnt_paragraph_sep)
 --drama            text is drama   (default: prose)
 --verse            text is verse   (default: prose)
---locale           use this locale (default: $locale)
 --help             display this screen
 
 HERE
-
+# --locale           use this locale (default: $locale)
 }
 
 # Local Variables:
