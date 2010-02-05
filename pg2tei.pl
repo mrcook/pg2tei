@@ -1088,7 +1088,8 @@ HERE
 if ($encoding ne 'utf-8') {
   my $enc_tmp = uc($encoding);
   print <<HERE;
-      Source file was encoded as $enc_tmp but has been encoded out to UTF-8
+      Source file encoding: $enc_tmp.
+      TEI encoded as UTF-8.
 HERE
 }
 print <<HERE;
@@ -1483,6 +1484,8 @@ sub post_process {
 
   $c =~ s|</figure></q></q>|</figure>|g;  # quotes after </figure>
   $c =~ s/([NMQ])dash/$1dash/g;           # Fix &#8211; caps
+
+  $c =~ s|&c\.|&amp;c.|g;                 # Some old books use "&c." mark-up "&amp;" (this means "etc.")
 
   # Change 'Named Entity' characters to 'Numbered Entity' codes.
   # For use with TEI DTD and XSLT.
