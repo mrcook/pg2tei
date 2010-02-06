@@ -1821,7 +1821,7 @@ sub study_paragraph {
 
   my @lines = split (/\n/, shift);
   my $o = { };
-  
+
   my $cnt_lines  = scalar (@lines);
   my $min_len    = 10000; # Not sure why Marcello included this variable
   my $max_len    = 0;     # Not sure why Marcello included this variable
@@ -1861,7 +1861,7 @@ sub study_paragraph {
     $sum_indent += $len;
 
     # count lines beginning with capital; ignoring punctuations and spaces.
-    $cnt_caps++ if (m/^([^a-zA-Z])*[[:upper:]]/);
+    $cnt_caps++ if (m/^([^a-zA-Z]*)[A-Z]/);
 
     # count lines shorter than xx% (set above) max text line length
     $cnt_short++ if ($len < $threshhold);
@@ -1939,7 +1939,7 @@ sub is_para_verse {
   }
 
   # are all lines shorter than average ?
-  return 0 if $o->{'cnt_long'} > 0;
+  return 0 if $o->{'cnt_long'} > 0 && $o->{'max_indent'} == 0;
 
   # all tests passed, this is verse
   return 1;
