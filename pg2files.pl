@@ -90,34 +90,38 @@ sub eachTEI {
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
 
-  # In rare cases, a <note place="foot"> is given where it should be three stars; * * *
-  $pg2tei =~ s|(<note place="foot">\n\n\[PLACE FOOTNOTE HERE\] -- \*\n\n</note> ){3}|* * * |g;
+  # Can we somehow move these checks into the main loop above?
+  $pg2tei =~ s|<p><quote>|<quote>|g;
+  $pg2tei =~ s|</quote>\s*</p>|</quote>|g;
 
-  
+
+  # In rare cases, a <note place="foot"> is given where it should be three stars; * * *
+  $pg2tei =~ s|(<note place="foot">\n\n\[PLACE FOOTNOTE HERE\] -- \*\n\n</note> ){3,}|* * * |g;
+
   ##-------------------------------------------------------------##
   ## PROCESS FOOTNOTES -- MUST HAVE A CLOSING SQUARE BRACKET "]" ##
   ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##
   ##-------------------------------------------------------------##
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
   if ($process_footnotes) {
-    my %footnotes;
+    my %footnotes; my $tmp_footnote_count = 0;
     while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+):(?:<\/p>)?\s*(.*?)(?:<p>)?\]<\/p>\n\n//s) {
       push @{ $footnotes{$1} }, "$2";
+      $tmp_footnote_count++;
     }
     my $note_content = '';
-    for $note ( keys %footnotes) {
+    for $note ( keys %footnote) {
       $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
     }
 
     # Now we've processed most footnotes let's check for "inline" footnotes.
     while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+(.*?)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
   }
-  # Can we somehow move these checks into the main loop above?
-  $pg2tei =~ s|<p><quote>|<quote>|g;
-  $pg2tei =~ s|</quote>\s*</p>|</quote>|g;
 
 
-  ### Try to fix the CHAPTER/SECTION issues.
+  ### -------------------------------------- ###
+  ### Try to fix the CHAPTER/SECTION issues. ###
+  ### -------------------------------------- ###
   my $normal_chapter_exists = 0;
   if ($pg2tei =~ m|<div type="chapter">\n\n<head>(?:.*?)CHAPTER(?:.*?)</head>|is) {
     $normal_chapter_exists = 1;
