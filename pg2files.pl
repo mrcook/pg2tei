@@ -104,15 +104,21 @@ sub eachTEI {
   ##-------------------------------------------------------------##
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
   if ($process_footnotes) {
-    my %footnotes; my $tmp_footnote_count = 0;
+    my %footnotes;
+    my @test_array;
     while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+):(?:<\/p>)?\s*(.*?)(?:<p>)?\]<\/p>\n\n//s) {
-      push @{ $footnotes{$1} }, "$2";
-      $tmp_footnote_count++;
+      #push @{ $footnotes{$1} }, "$2";
+      push @test_array, [$1, $2];
     }
-    my $note_content = '';
-    for $note ( keys %footnote) {
-      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
-    }
+#use Data::Dumper; print Dumper \@test_array;
+#    my $note_content = '';
+#    for $note ( keys %footnotes) {
+#      #print $note[1] . "\n";
+#      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $note|<p>@{ $footnotes{$note} }</p>|;
+#    }
+    foreach $test_array (@test_array) {
+      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $test_array->[0]|<p>$test_array->[1]</p>|;
+    } 
 
     # Now we've processed most footnotes let's check for "inline" footnotes.
     while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+(.*?)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
