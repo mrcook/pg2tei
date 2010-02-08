@@ -811,9 +811,9 @@ sub output_header () {
     $transcriber_notes .= $1;
   }
   if ($transcriber_notes) {
-    $transcriber_notes .= "\n";
     $transcriber_notes =~ s|\n|\n        |gis;  # Indent the text
-    $transcriber_notes =~ s|\n\s+\n|\n\n|gis;   # Clear empty lines
+    $transcriber_notes =~ s|\n *\n|\n\n|gis;    # Clear empty lines
+    $transcriber_notes .= "\n      ";
   }
 
   # ILLUSTRATED BY ...
