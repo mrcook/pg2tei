@@ -103,20 +103,20 @@ sub eachTEI {
   ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##
   ##-------------------------------------------------------------##
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
-  $place_foot_count = 1; $note_foot_count = 1;
+  $place_foot_count = 0; $note_foot_count = 0;
   while ($pg2tei =~ /\[PLACE FOOTNOTE HERE\]/g) { $place_foot_count++; }
-  while ($pg2tei =~ /<note place="foot">/g)     { $note_foot_count++;  }
+  while ($pg2tei =~ /\[Footnote (?:\d+|[A-Z])/g)     { $note_foot_count++;  }
   print "\nFOOTNOTE COUNT: [$place_foot_count] | <$note_foot_count>\n";
   if ($place_foot_count != $note_foot_count) {
     $process_footnotes = 0;
   }
   if ($process_footnotes) {
     my @footnotes;
-    while ($pg2tei =~ s/<p>\[Footnote ([A-Z]|\d+):(?:<\/p>)?\s*(.*?)(?:<p>)?\]<\/p>\n\n//s) {
+    while ($pg2tei =~ s/<p>\[Footnote (\d+|[A-Z]):\s*(?:<\/p>)?\s*(.*?)(?:<p>)?\](<\/p>|<\/quote>)\n\n//s) {
       push @footnotes, [$1, $2];
     }
     foreach $footnotes (@footnotes) {
-      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- $footnotes->[0]|<p>$footnotes->[1]</p>|;
+      $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- \d+\s|<p>$footnotes->[1]</p>\n|;
     } 
 
     # Now we've processed most footnotes let's check for "inline" footnotes.
