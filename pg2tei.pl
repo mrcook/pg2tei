@@ -23,7 +23,7 @@ use Getopt::Long;
 use locale;
 use POSIX qw(strftime);
 use POSIX qw(locale_h);
-# use Text::Wrap;                                               # Only needed when re-wrapping text. Delete?
+use Text::Wrap;            # Only needed when re-wrapping text in <epigraph>
 
 
 ################################################################################
@@ -38,6 +38,8 @@ binmode STDOUT, ':utf8';
 ################################################################################
 
 my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
+
+my  $process_epigraph   = 1;    # Disable if book is mostly Poems
 
 my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
 my  $cnt_head_sep       = "2";
@@ -122,6 +124,7 @@ use vars '@illustrators';
 use vars '$single_open_quotes_exist';
 use vars '$is_heading';
 use vars '$is_subheading';
+use vars '$is_first_para';
 
 my  @translators        = ();
 my  @editors            = ();
@@ -178,7 +181,7 @@ $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
 # Removed for the moment -- not sure if I want to capture these
-#my $epigraph1  = qr/^(.*?)\n\n\s*--([^\n]*?)\n\n+/s; # match epigraph and citation
+my $epigraph1  = qr/^(.*?)\n\s*&#8212;([^\n]*?)\n\n+/s; # match epigraph and citation
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -292,6 +295,8 @@ sub output_para {
   my $p = shift;
   $p .= "\n";
 
+  #print "IS FIRST: $is_first_para\n";
+
   # We need to check for "[Footnote" entries to stop them being caught as a <lg>
   my $is_foonote_entry = '';
   if ($p =~ /^[\n|\s]+\[Footnote/) {
@@ -303,13 +308,21 @@ sub output_para {
   if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
     # $p = process_quotes_1 ($p); # Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     # Not sure if this should be enabled...probably not.
-    print "<quote>\n <lg>\n";
+    if ($is_first_para == 0) {
+      print "<quote>\n <lg>\n";
+    } else {
+      print "<epigraph>\n <lg>\n";
+    }
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
         output_line ($1, $o->{'min_indent'});
       }
     }
+    if ($is_first_para == 0) {
     print " </lg>\n</quote>\n\n";
+    } else {
+    print " </lg>\n</epigraph>\n\n\n";
+    }
   } else { # paragraph is prose
     # join end-of-line hyphenated words
     $p =~ s/([^- ])- ?\n([^ ]+) /$1-$2\n/g;
@@ -321,9 +334,12 @@ sub output_para {
     $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
     $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
-    if ($p =~ m/^(<(figure|milestone|div|pb))/) {
+    if ($p =~ m/^<(figure|milestone|div|pb)/) {
+    } elsif ($p =~ m/^\[Footnote/) {
+      $p = "<p$rend>$p</p>";
     } else {
       $p = "<p$rend>$p</p>";
+      $is_first_para = 0; # Now that we've confirmed the opening para is not an epigraph...
     }
 
     # print wrap ('', '', $p); # We are not going to perform any re-wrapping
@@ -331,6 +347,7 @@ sub output_para {
 
     print "\n\n";
   }
+
   return '';
 }
 
@@ -459,25 +476,27 @@ sub output_epigraph {
   my $epigraph = shift;
   my $citation = shift;
 
-  print "<epigraph>\n\n";
+  print "<epigraph>\n";
 
   $epigraph = process_quotes_1 ($epigraph);
+  $citation = process_quotes_1 ($citation);
   $citation = process_quotes_1 ($citation);
   $epigraph = post_process ($epigraph);
   $citation = post_process ($citation);
 
   $epigraph =~ s|\s+| |g;
-  $epigraph = "<p>$epigraph</p>";
+  $epigraph = "  <p>$epigraph</p>";
 
-  # print wrap ('', '', $epigraph);
-  print $epigraph;  # No WRAP
-  print "\n\n";
+  print wrap ('', '     ', $epigraph);
+  #print $epigraph;  # No WRAP
+  print "\n";
 
   $citation =~ s|&#160;&#8212;|&#8213;|g;
 
-  print "<p rend=\"text-align(right)\">$citation</p>\n\n";
+  print "  <p rend=\"text-align(right)\">$citation</p>\n";
 
   print "</epigraph>\n\n\n";
+
   return '';
 }
 
@@ -485,6 +504,8 @@ sub output_epigraph {
 sub output_chapter {
   my $chapter = shift;
   my $part_number;
+  $is_first_para = $process_epigraph;
+  
   $chapter .= "\n" x 10;
 
   if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I([^\d:upper:I:upper:V:upper:X])?|(THE )?FIRST)/i) {
@@ -509,9 +530,15 @@ sub output_chapter {
   }
   $chapter =~ s/$head1/output_head ($1)/es;
 
-  # while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
+  # Marcello's Original
+  #while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
+  $chapter =~ s/$epigraph1/output_epigraph($1, $2)/es;
 
-  if ($chapter =~ s/$paragraph1/output_para ($1)/egs) {
+  if (not $chapter =~ m/\n\w/g) { # If all lines are indented this chapter must only be a poem (I hope!!)
+    $is_first_para = 0;
+  }
+
+  if ($chapter =~ s/$paragraph1/output_para($1)/egs) {
     $is_heading = 0;
   }
 
@@ -728,7 +755,7 @@ sub output_header () {
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s|\n\*+.+Prepared By Thousands of Volunteers\!\*+\n||i; #Remove this stupid thing.
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.+)\.?\n(.*?)(\.| at)?\n/i) {
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +([^\n.]+)(.*?)(\.| at)?\n/i) {
     $created_by = $5;
     if ($6) {
       $created_by = $created_by . " " . $6;
@@ -1179,11 +1206,6 @@ HERE
 
 
 sub output_footer {
-  print <<HERE;
-</div>
-
-HERE
-
   if ($is_book == 1) {
     print <<HERE;
 </div>

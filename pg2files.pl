@@ -64,7 +64,7 @@ sub eachTEI {
   my $tmp_count = 0; # setup our default counter
   
   # Remove those extra quote tags
-  $pg2tei =~ s|</quote>\n\n<quote>||g;
+  $pg2tei =~ s/<\/(?:quote|epigraph)>\n\n<(?:quote|epigraph)>//g;
 
   ### Add <lg rend="font-style(italic)"> where needed.
   while ($pg2tei =~ s|<lg>\n  <l>_(.*?)</l>\n((  <l>[^_]+</l>\n)*)  <l>(.*?)_</l>\n </lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}
@@ -118,10 +118,9 @@ sub eachTEI {
     foreach $footnotes (@footnotes) {
       $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- \d+\s|<p>$footnotes->[1]</p>\n|;
     } 
-
-    # Now we've processed most footnotes let's check for "inline" footnotes.
-    while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+(.*?)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
   }
+  # Now we've processed most footnotes let's check for "inline" footnotes.
+  while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
 
 
   ### -------------------------------------- ###
