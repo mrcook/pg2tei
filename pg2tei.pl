@@ -56,8 +56,12 @@ my  $override_quotes    = '';
 
 my  $help               = 0;
 
-my  $current_date_iso   = strftime ("%Y-%m-%d", localtime ());
-my  $current_date       = strftime ("%d %B %Y", localtime ());
+# All date arrays hold;
+#    [0] = date found in TXT (March 23, 2001)
+#    [1] = date formatted as YYYY-MM-DD
+my  @current_date;
+$current_date[1]   = strftime ("%Y-%m-%d", localtime ());
+$current_date[0]   = strftime ("%d %B %Y", localtime ());
 
 #my  $locale = "en";
 #setlocale (LC_CTYPE, $locale);
@@ -77,7 +81,6 @@ my  $translators        = '';
 my  $translated_by_tag  = '';
 my  $published_place    = '';
 my  $publisher          = '';
-my  $published_date     = '';
 my  $dates_sorted       = '';
 
 my  $language           = '';
@@ -87,17 +90,13 @@ my  $encoding           = 'iso-8859-1';
 my  $series_title       = '****';
 my  $series_volume      = '**';
 
-my  $posted_date        = '';
-my  $release_date       = '';
-my  $last_updated       = '';
-my  $posted_date_iso    = '';
-my  $release_date_iso   = '';
-my  $last_updated_iso   = '';
-my  $revision_last_updated = ''; # Needed for <revisionDesc>
-my  $first_updated      = '';
-my  $first_updated_iso  = '';
-my  $first_posted       = '';
-my  $first_posted_iso   = '';
+my  @release_date;
+my  @posted_date;
+my  @last_updated;
+my  @first_updated;
+my  @first_posted;
+my  @published_date     = '';
+my  $revision_last_updated = 0; # Needed for <revisionDesc>
 
 my  $filename           = '';
 my  $gutenberg_num      = '';
@@ -601,7 +600,7 @@ sub output_header () {
   if ($h =~ /\nIllustrat(ors?|ions( by)?): *(.+)\n/i) { $illustrators = change_case($3); }
   if ($h =~ /\nTranslat(ors?|ion( by)?): *(.+)\n/i)   { $translators  = change_case($3); }
   if ($h =~ /\nEdition: *(\d+)\n/i)               { $edition = $1; }
-  if ($h =~ /\nPublished: *(\d+)\n/i)             { $published_date = $1; }
+  if ($h =~ /\nPublished: *(\d+)\n/i)             { $published_date[0] = $1; }
   if ($h =~ /\nLanguage: *(.+)\n/i)               { $language = $1; }
   if ($h =~ /\nCharacter set encoding: *(.+)\n/i) { $encoding = lc($1); }
 
@@ -642,23 +641,23 @@ sub output_header () {
 
   # OFFICIAL RELEASE DATE (Sometimes includes the EBook No.)
   if ($h =~ /\n(Official|Original)? ?Release Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
-    $release_date = $2;
-    $release_date_iso = process_dates($release_date);
+    $release_date[0] = $2;
+    $release_date[1] = process_dates($2);
   }
   # FIRST POSTED
   if ($h =~ /\nFirst Posted: *(.+)\n/i)           {
-    $first_posted = $1;
-    $first_posted_iso = process_dates($first_posted);
+    $first_posted[0] = $1;
+    $first_posted[1] = process_dates($1);
   }
   # POSTING DATE (Usually includes the EBook No.)
   if ($h =~ /\nPosting Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
-    $posted_date  = $1;
-    $posted_date_iso  = process_dates($posted_date);
+    $posted_date[0]  = $1;
+    $posted_date[1]  = process_dates($1);
   }
   # LAST UPDATED
   if ($h =~ /\nLast Updated?: *(.+)\n/i)          {
-    $last_updated = $1;
-    $last_updated_iso = process_dates($last_updated);
+    $last_updated[0] = $1;
+    $last_updated[1] = process_dates($1);
   }
 
   ####------------------------------------------------------------------####
@@ -692,17 +691,17 @@ sub output_header () {
   }
 
   # If no POSTING DATE
-  if (!$posted_date) {
+  if (!$posted_date[0]) {
     if ($h =~ /\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i) {
-      $posted_date  = $4;
-      $posted_date_iso = process_dates($posted_date);
+      $posted_date[0] = $4;
+      $posted_date[1] = process_dates($4);
     }
   }    
   # If no LAST UPDATED
-  if (!$last_updated) {
+  if (!$last_updated[0]) {
     if ($h =~ /\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i) {
-      $last_updated = $4;
-      $last_updated_iso = process_dates($last_updated);
+      $last_updated[0] = $4;
+      $last_updated[1] = process_dates($4);
     }
   }
   
@@ -790,18 +789,24 @@ sub output_header () {
   # Very useful if this 'Transcribed' line exists.
   if ($h =~ /[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by(.+)\n\n/is) {
     $publisher = $4;
-    if (!$published_date) { $published_date = $1; }
+    if (!$published_date[0]) { $published_date[0] = $1; }
   }
   # If still no PUBLISHED DATE
-  if (!$published_date) {
+  if (!$published_date[0]) {
     if ($h =~ /\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
-      $published_date = $2;
+      $published_date[0] = $2;
     } elsif ($h =~ /\n *([0-9]{4})\n/i) {
-      $published_date = $1;
+      $published_date[0] = $1;
     } elsif ($h =~ /[\[\(]([0-9]{4})[\]\)]/i) {
-      $published_date = $1;
+      $published_date[0] = $1;
     }
   }
+  if ($published_date[0]) {
+    $published_date[1] = process_dates ($published_date[0]);
+  } else {
+    $published_date[1] = '';
+  }
+
   # If still no PUBLISHER
   if (!$publisher) {
     if ($h =~ /\s+_?(.*?)(Publisher|Press|Company|Co\.)(.*?)_?\s+/i) {
@@ -870,20 +875,20 @@ sub output_header () {
   ####--------------------------------------------------------------####
   my @book_dates   = ();
   my @dates_sorted = ();
-  if ($release_date) { push(@book_dates, [$release_date_iso, $release_date]); }
-  if ($first_posted) { push(@book_dates, [$first_posted_iso, $first_posted]); }
-  if ($posted_date)  { push(@book_dates, [$posted_date_iso,  $posted_date]);  }
-  if ($last_updated) { push(@book_dates, [$last_updated_iso, $last_updated]); }
+  if ($release_date[0]) { push(@book_dates, [$release_date[1], $release_date[0]]); }
+  if ($first_posted[0]) { push(@book_dates, [$first_posted[1], $first_posted[0]]); }
+  if ($posted_date[0])  { push(@book_dates, [$posted_date[1],  $posted_date[0]]);  }
+  if ($last_updated[0]) { push(@book_dates, [$last_updated[1], $last_updated[0]]); }
 
   # Sort into Date ASC order
   @dates_sorted = sort {$a->[0] cmp $b->[0]} @book_dates;
 
   # Set the real RELEASE DATE
-  $release_date     = $dates_sorted[0]->[1];
-  $release_date_iso = $dates_sorted[0]->[0];
+  $release_date[0] = $dates_sorted[0]->[1];
+  $release_date[1] = $dates_sorted[0]->[0];
   # Set the real LAST UPDATED
-  $last_updated     = $dates_sorted[$#dates_sorted]->[1];
-  $last_updated_iso = $dates_sorted[$#dates_sorted]->[0];
+  $last_updated[0] = $dates_sorted[$#dates_sorted]->[1];
+  $last_updated[1] = $dates_sorted[$#dates_sorted]->[0];
 
   # if there's more than one date entry then there is a last updated.
   if ($#dates_sorted > 0) { $revision_last_updated = 1; }
@@ -991,7 +996,7 @@ foreach (@editors_list) {
 print <<HERE;
     </titleStmt>
     <editionStmt>
-      <edition n="$edition">Edition $edition, <date when="$last_updated_iso">$last_updated</date></edition>
+      <edition n="$edition">Edition $edition, <date when="$last_updated[1]">$last_updated[0]</date></edition>
       <respStmt>
         <resp>Original e-Text edition prepared by</resp>
         <name>$created_by</name>
@@ -1006,7 +1011,7 @@ print <<HERE;
         <addrLine>UT 84116</addrLine>
         <addrLine>United States</addrLine>
       </address>
-      <date when="$release_date_iso">$release_date</date>
+      <date when="$release_date[1]">$release_date[0]</date>
       <idno type="gutenberg-no">$gutenberg_num</idno>
       <idno type="UUID">$uuid</idno>
       <availability>
@@ -1051,7 +1056,7 @@ print <<HERE;
           <imprint>
             <pubPlace>$published_place</pubPlace>
             <publisher>$publisher</publisher>
-            <date>$published_date</date>
+            <date when="$published_date[1]">$published_date[0]</date>
           </imprint>
         </monogr>
       </biblStruct>
@@ -1094,7 +1099,7 @@ print <<HERE;
   </encodingDesc>
   <profileDesc>
     <creation>
-      <date when="$current_date_iso">$current_date</date>
+      <date when="$current_date[1]">$current_date[0]</date>
     </creation>
       <langUsage>
         <language id="$language_code">$language</language>
@@ -1109,7 +1114,7 @@ print <<HERE;
     </textClass>
   </profileDesc>
   <revisionDesc>
-    <change when="$current_date_iso" who="Cook, Michael">
+    <change when="$current_date[1]" who="Cook, Michael">
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
 HERE
 if ($encoding ne 'utf-8') {
@@ -1176,7 +1181,7 @@ print <<HERE;
     <docImprint>
       <pubPlace>$published_place</pubPlace>
       <publisher>$publisher</publisher>
-      <docDate>$published_date</docDate>
+      <docDate>$published_date[0]</docDate>
     </docImprint>
   </titlePage>
 
@@ -1542,6 +1547,8 @@ sub process_dates {
   my $tmp_month = 0;
   my $wdate = shift;
 
+  return if $wdate eq '';
+  
   # Look for: 1990-12-23
   if ($wdate =~ m|^(\d{4})-([01]?[0-9])-([0123]?[0-9])$|) {
     ($year, $month, $day) = ($1, $2, $3);
