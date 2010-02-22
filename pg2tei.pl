@@ -531,7 +531,9 @@ sub output_chapter {
 
   # Marcello's Original
   #while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
-  $chapter =~ s/$epigraph1/output_epigraph($1, $2)/es;
+  if ($is_first_para == 1) {
+    $chapter =~ s/$epigraph1/output_epigraph($1, $2)/es;
+  }
 
   if (not $chapter =~ m/\n\w/g) { # If all lines are indented this chapter must only be a poem (I hope!!)
     $is_first_para = 0;
@@ -706,9 +708,9 @@ sub output_header () {
   }
   
   # If no TRANSLATORS
-  if (!$translators) {
-    if ($h =~ /[\n ]*(Translated (from.*)?by)\s+(.+)\.?/i) {
-      $translated_by_tag = $1;
+  if ($h =~ /[\n ]*(Translated (from.*)??by)\s+(.+)\.?/i) {
+    $translated_by_tag = $1;
+    if (!$translators) {
       $translators = change_case($3);
     }
   }
@@ -754,11 +756,10 @@ sub output_header () {
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s|\n\*+.+Prepared By Thousands of Volunteers\!\*+\n||i; #Remove this stupid thing.
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +([^\n.]+)(.*?)(\.| at)?\n/i) {
+  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n\n/is) {
     $created_by = $5;
-    if ($6) {
-      $created_by = $created_by . " " . $6;
-    }
+    $created_by =~ s/\n/ /g;
+    $created_by =~ s/(\.| at)$//;
   }
   # Who UPDATED this version?
   if ($h =~ /[\n ]+(This )?updated ([e-]*Text|edition) (was )?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n/i) {
@@ -1047,7 +1048,7 @@ foreach (@illustrators_list) {
   print "          " . $_;      # <editor role="illustrator"><name reg=""></name></editor>
 }
 foreach (@translators_list) {
-  print "      " . $_;          # <editor role="translator"><name reg=""></name></editor>
+  print "          " . $_;          # <editor role="translator"><name reg=""></name></editor>
 }
 foreach (@editors_list) {
   print "          " . $_;      # <editor role="editor"><name reg=""></name></editor>
