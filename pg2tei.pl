@@ -611,8 +611,8 @@ sub output_header () {
 
   # The Series information is sometimes added manually by myself.
   # Better to do this in the source than in the manual post-processing.
-  if ($h =~ /\nSeries Name: *(.+)\n/i)                 { $series_title  = $1; }
-  if ($h =~ /\nSeries Volume: *(\d+)\n/i)         { $series_volume = $1; }
+  if ($h =~ /\nSeries Name: +(.+)\n/i)                 { $series_title  = $1; }
+  if ($h =~ /\nSeries Volume: +(\d+)\n/i)         { $series_volume = $1; }
 
 
   # There are four different dates possible in any PG text;
