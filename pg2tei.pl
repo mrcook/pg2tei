@@ -180,7 +180,8 @@ $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
 # Removed for the moment -- not sure if I want to capture these
-my $epigraph1  = qr/^(.*?)\n\s*&#8212;([^\n]*?)\n\n+/s; # match epigraph and citation
+#my $epigraph1  = qr/^(?&#8212;)(.*?)\n\s*&#8212;(.+)\n\n+/s; # match epigraph and citation
+my $epigraph1  = qr/^(?=\n\s*&#8212;)(.*?)\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-02-28)
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -507,7 +508,7 @@ sub output_chapter {
   
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I([^\d:upper:I:upper:V:upper:X])?|(THE )?FIRST)/i) {
+  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I(?:[^\d:upper:I:upper:V:upper:X])|(THE )?FIRST)/i) {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
@@ -1274,7 +1275,7 @@ sub pre_process {
   # Add <b> tags; changing = and <b> to <hi>
   $c =~ s|<b>|<hi>|g;
   $c =~ s|</b>|</hi>|g;
-  $c =~ s|=(.*?)=|<hi>$1</hi>|gis;
+  #$c =~ s|=([^=]+)=|<hi>$1</hi>|gis;
 
 
   ###################################
