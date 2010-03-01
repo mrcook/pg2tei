@@ -63,8 +63,9 @@ sub eachTEI {
   #######################################
   my $tmp_count = 0; # setup our default counter
   
-  # Remove those extra quote tags
-  $pg2tei =~ s/<\/(?:quote|epigraph)>\n\n<(?:quote|epigraph)>//g;
+  # Remove extra quote or epigraph tags
+  $pg2tei =~ s/<\/(?:quote|epigraph)>\s+<(?:quote|epigraph)>//g;
+
 
   ### Add <lg rend="font-style(italic)"> where needed.
   while ($pg2tei =~ s|<lg>\n  <l>_(.*?)</l>\n((  <l>[^_]+</l>\n)*)  <l>(.*?)_</l>\n </lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}

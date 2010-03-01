@@ -723,7 +723,7 @@ sub output_header () {
   if (!$edition) {
     $filename = "$ARGV"; # Perhaps the filename has it (not many PG books still use the old filename system)
     if ($filename =~ /^(\w{4,5})((10|11|12)\w?)\..+$/i) {
-      $edition  = $2;
+      $edition  = $3;
     } else { 
       $edition = '1'; # Still no EDITION so default to 1
     }
@@ -756,7 +756,7 @@ sub output_header () {
     $scanned_by = $2;
   }
   # Who first PRODUCED this text for Project Gutenberg?
-  $h =~ s|\n\*+.+Prepared By Thousands of Volunteers\!\*+\n||i; #Remove this stupid thing.
+  $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
   if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n\n/is) {
     $created_by = $5;
     $created_by =~ s/\n/ /g;
@@ -811,7 +811,7 @@ sub output_header () {
 
   # If still no PUBLISHER
   if (!$publisher) {
-    if ($h =~ /\s+_?(.*?)(Publisher|Press|Company|Co\.)(.*?)_?\s+/i) {
+    if ($h =~ /\s+_?(.*?)\b(Publisher|Press|Company|Co\.)\b(.*?)_?\s+/i) {
       $publisher = change_case($1 . $2 . $3);
     }
   }
@@ -1109,7 +1109,7 @@ print <<HERE;
     <textClass>
       <keywords scheme="lc">
         <list>
-          <item><!-- keywords for search --></item>
+          <item></item>
         </list>
       </keywords>
       <classCode scheme="lc"><!-- LoC Class (PR, PQ, ...) --></classCode>
