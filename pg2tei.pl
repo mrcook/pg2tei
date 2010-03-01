@@ -181,7 +181,8 @@ my $paragraph1 = qr/$tmp/s;
 
 # Removed for the moment -- not sure if I want to capture these
 #my $epigraph1  = qr/^(?&#8212;)(.*?)\n\s*&#8212;(.+)\n\n+/s; # match epigraph and citation
-my $epigraph1  = qr/^(?=\n\s*&#8212;)(.*?)\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-02-28)
+#my $epigraph1  = qr/^(?=\n\s*&#8212;)(.*?)\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-02-28)
+my $epigraph1  = qr/^(.*?)(\s*(?:&#160;)?&#8212;([^\n]+))\n\n+/; # match epigraph and citation - Keep on eye onthis (2010-03-01)
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -476,24 +477,29 @@ sub output_epigraph {
   my $epigraph = shift;
   my $citation = shift;
 
-  print "<epigraph>\n";
+  $epigraph =~ s|\s+| |g;
+  $epigraph =~ s|\s+$||g;
+  $citation =~ s|^\n +|\n|g; # Keep opening "newline" but remove the spaces.
+  $citation =~ s|&#160;&#8212;|&#8213;|g;
 
   $epigraph = process_quotes_1 ($epigraph);
-  $citation = process_quotes_1 ($citation);
   $citation = process_quotes_1 ($citation);
   $epigraph = post_process ($epigraph);
   $citation = post_process ($citation);
 
-  $epigraph =~ s|\s+| |g;
-  $epigraph = "  <p>$epigraph</p>";
+  $epigraph = wrap ('', '', $epigraph);
+  $epigraph =~ s|\n|\n    |g;
 
-  print wrap ('', '     ', $epigraph);
-  #print $epigraph;  # No WRAP
-  print "\n";
 
-  $citation =~ s|&#160;&#8212;|&#8213;|g;
+  print "<epigraph>\n";
 
-  print "  <p rend=\"text-align(right)\">$citation</p>\n";
+  if ($citation =~ s|^\n||) {
+    print "  <p>$epigraph</p>\n";
+    print "  <p rend=\"text-align(right)\">$citation</p>\n";
+  } else {
+    $epigraph = "$epigraph$citation";
+    print "  <p>$epigraph</p>\n";
+  }
 
   print "</epigraph>\n\n\n";
 
