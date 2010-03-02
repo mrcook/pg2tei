@@ -280,11 +280,6 @@ sub output_line {     # Output <l>'s.
     # $line = process_quotes_1 ($line);
     # $line = fix_unbalanced_quotes_line ($line);
 
-    # Fix some double <q> tags
-    # $line =~ s|</q></q>|</q>|g;
-    # $line =~ s|<q></q>|</q>|g;
-    # $line =~ s|<q><q>|<q>|g;
-
     $line = post_process ($line);
     print "  <l$line_indent>$line</l>\n";
   }
@@ -387,8 +382,8 @@ sub output_head {
   while ($head =~ s/$paragraph1//) {
     my $subhead = post_process ($1);
 
-    $subhead =~ s|^\"(.*?)\"$|<q>$1</q>|; # Rough fix of Quotes
-    $subhead =~ s|^\s||gm;                # Strip out leading whitespace
+    $subhead =~ s|^"(.*?)"$|<q>$1</q>|; # Rough fix of Quotes
+    $subhead =~ s|^\s+||g;                # Strip out leading whitespace
 
     if ($subhead =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
       print $subhead . "\n\n";
@@ -419,13 +414,20 @@ sub process_quotes_1 {
 
   if ($c =~ m/$quotes1/g) {
     while ($c =~ s|$quotes1|"<q>" . process_quotes_2 ($1) . "</q>"|es) {};
-    }
+  }
+  # The "word boundary" in the quote detection misses quotes marked with _ (<emph>)
+  # Keep an eye on this!!! (2010-03-02)
+  $c =~ s|_"\b|_<q>|g;
+  $c =~ s|\b"_|</q>_|g;
+  $c =~ s|[!.;,]"_|</q>_|g;
+  $c =~ s|"_$|</q>_|g;
+  
   if ($c =~ m/$quotes1pre/g) {
     while ($c =~ s|$quotes1pre|"<qpre>" . process_quotes_2 ($1) . "</q>"|es) {};
   }
 
   # attract user's attention to these remaining quotes
-  # $c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
+  #$c =~ s|([\"«»\x84])|<fixme>$1</fixme>|g;
   #### @Mike - just convert to <q> and deal with it in XSLT ####
   $c =~ s|(["«»\x84])|<q>|g;
 
@@ -1427,8 +1429,7 @@ sub post_process {
   # Add <emph> tags; changing _ and <i> to <emph>
   $c =~ s|<i>|<emph>|g;
   $c =~ s|</i>|</emph>|g;
-  $c =~ s|_(.*?)_|<emph>$1</emph>|gis;
-  $c =~ s|<emph></emph>|__|g;           # empty tags - perhaps these are meant to be underscores?
+  $c =~ s|_([^_]+)_|<emph>$1</emph>|gs;
 
   ####-----------------------####
   #### Typografical Entities ####
@@ -1438,9 +1439,9 @@ sub post_process {
   $c =~ s|-|&#8211;|g;
 
   # move dashes
-  $c =~ s|&#8212; </q>([^ ])|&#8212;</q> $1|g;
-  $c =~ s|&#8212; </q>|&#8212;</q>|g;
-  $c =~ s|([^ ])<q> &#8212;|$1 <q>&#8212;|g;
+  # Let's leave these "as is" for now (2010-03-02)
+  #$c =~ s|&#8212; </q>|&#8212;</q>|g;
+  #$c =~ s|<q> &#8212;|<q>&#8212;|g;
 
   # SUPERSCRIPT
   $c =~ s|(\^)([^ ]+)|<sup>$2</sup>|g;
@@ -1478,8 +1479,8 @@ sub post_process {
   $c =~ s|^ +||;
 
   # Don't worry about Marcellos stuff here
-  # $c =~ s|<qpre>|<q rend=\"post: none\">|g;
-  # $c =~ s|<qpost>|<q rend=\"pre: none\">|g;
+  #$c =~ s|<qpre>|<q rend=\"post: none\">|g;
+  #$c =~ s|<qpost>|<q rend=\"pre: none\">|g;
   $c =~ s|<qpre>|<q>|g;
   $c =~ s|<qpost>|<q>|g;
 
@@ -1498,9 +1499,10 @@ sub post_process {
   }
   $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration</figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
 
-  $c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
-  $c =~ s|<head>\"|<head><q>|g;     # apply more quotes
-  $c =~ s|\"</head>|</q></head>|g;  # apply more quotes
+  # Are these still needed? (2010-03-02)
+  #$c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
+  #$c =~ s|<head>\"|<head><q>|g;     # apply more quotes
+  #$c =~ s|\"</head>|</q></head>|g;  # apply more quotes
 
   # substitute <pb n=179> to include the "quotes"; <pb n="179" />
   $c =~ s|<pb n=(\d+)>|<pb n="$1" />|g;
@@ -1796,7 +1798,7 @@ sub guess_quoting_convention {
     $openquote2  = substr ($override_quotes, 1, 1);
     $closequote2 = substr ($override_quotes, 2, 1);
     $closequote1 = substr ($override_quotes, 3, 1);
-    } else {
+  } else {
     my $body = shift;
     $body = $$body;
 
@@ -1844,9 +1846,9 @@ sub guess_quoting_convention {
   # \B matches non-(word boundary), ^ and $ are considered non-words
 
   # Marcello only checked quote when followed by limited characters :alpha: _ $ etc.
-  # $quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
-  # $quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
-  # $quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
+  #$quotes1    = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$closequote1\B/s;
+  #$quotes1pre = qr/\B$openquote1(?=[[:alpha:]_\$$openquote2])(.*?)$/s;
+  #$quotes2    = qr/\B$openquote2(?=[[:alpha:]])(.*?)$closequote2\B/s;
   $quotes1    = qr/\B$openquote1(.*?)$closequote1\B/s;
   $quotes1pre = qr/\B$openquote1(.*?)$/s;
   $quotes2    = qr/\B$openquote2(.*?)$closequote2\B/s;
