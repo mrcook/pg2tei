@@ -179,10 +179,7 @@ my $head1      = qr/$tmp/s;
 $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
-# Removed for the moment -- not sure if I want to capture these
-#my $epigraph1  = qr/^(?&#8212;)(.*?)\n\s*&#8212;(.+)\n\n+/s; # match epigraph and citation
-#my $epigraph1  = qr/^(?=\n\s*&#8212;)(.*?)\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-02-28)
-my $epigraph1  = qr/^(.*?)(\s*(?:&#160;)?&#8212;([^\n]+))\n\n+/; # match epigraph and citation - Keep on eye onthis (2010-03-01)
+my $epigraph1  = qr/^\s+(.*?)(\s*(?:&#160;)?&#8212;([^\n]+))\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-03-03)
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -1380,7 +1377,7 @@ sub pre_process {
 sub post_process {
   my $c = shift;
   
-  #UNICODE Quote Replacement: Smart DOUBLE Quotes.
+  # UNICODE Quote Replacement: Smart DOUBLE Quotes.
   # x84 = „ | x93 = “ | x94 = ”
   # x201C = “ (English Open)
   # x201D = ” (English Closed)
@@ -1394,10 +1391,15 @@ sub post_process {
   #  $c =~ s|\x{2033}|</q>|g;
   #  $c =~ s|\x{2036}|<q>|g;
 
-  #UNICODE Quote Replacement: APOSTROPHE.
+  # UNICODE Quote Replacement: APOSTROPHE.
   $c =~ s|\b[\x{2019}\x{92}\x{27}]\b|&#8217;|g;
 
-  #UNICODE Apostrophe Replacement: SINGLE HIGH-REVERSED-9
+  # UNICODE Quote Replacement: PLURALISATION APOSTROPHE.
+  # Some pluralised words can easily be caught because of terminating punctuation.
+  # This could cause some problems to keep check (2010-03-02)
+  $c =~ s|\b[\x{2019}\x{92}\x{27}]!|&#8217;!|g;
+
+  # UNICODE Apostrophe Replacement: SINGLE HIGH-REVERSED-9
   # x201B = ‛
   #     U+201B (HTML: &#8219;) – single high-reversed-9, or single reversed comma, quotation mark.
   #     This is sometimes used to show dropped characters at the end of words, 
@@ -1405,7 +1407,7 @@ sub post_process {
   $c =~ s|\x{201B}|&#8219;|g;
   # Perhaps create a sub() with a word list for changing these dropped characters?
   
-  #UNICODE Quote Replacement: Smart SINGLE Quotes.
+  # UNICODE Quote Replacement: Smart SINGLE Quotes.
   # x60 = ` | x91 = ‘ | x92 = ’
   # x2018 = ‘
   # x2019 = ’

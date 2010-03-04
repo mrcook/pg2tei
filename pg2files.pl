@@ -64,7 +64,8 @@ sub eachTEI {
   my $tmp_count = 0; # setup our default counter
   
   # Remove extra quote or epigraph tags
-  $pg2tei =~ s/<\/(?:quote|epigraph)>\s+<(?:quote|epigraph)>//g;
+  $pg2tei =~ s/<\/(?:quote)>\s+<(?:quote)>//g;
+  $pg2tei =~ s/<\/(?:epigraph)>\s+<(?:epigraph)>//g;
 
 
   ### Add <lg rend="font-style(italic)"> where needed.
