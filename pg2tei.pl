@@ -105,6 +105,7 @@ my  $pg_edition         = '';
 
 my  $scanned_by         = '';
 my  $created_by         = '';
+my  $proofed_by         = '';
 my  $updated_by         = '';
 
 my  $transcriber_notes  = '';
@@ -749,54 +750,19 @@ sub output_header () {
 #  }
 #  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
 
-  ####--------------------------------------------------####
-  #### Let's find out who created and updated this book ####
-  ####--------------------------------------------------####
-  # Who SCANNED/PROOFED the original text?
-  if ($h =~ /[\n ]+([e-]*text Scanned|Scanned and proof(ed| ?read)) by:? +(.+)\n/i) {
-    $scanned_by = $3;
-  } elsif ($h =~ /[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.+)( edition)? by:? +(.+)\n\n/is) {
-    $scanned_by = $6;
-  } elsif ($h =~ /proof(ed| ?read) by:? +(.+)[,. ]*\n/i) {
-    $scanned_by = $2;
-  }
-  # Who first PRODUCED this text for Project Gutenberg?
-  $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
-  if ($h =~ /[\n ]+(This [e-]*Text (was )?(first ))?(Produced|Prepared|Created) by +(.*?)\n\n/is) {
-    $created_by = $5;
-    $created_by =~ s/\n/ /g;
-    $created_by =~ s/(\.| at)$//;
-  }
-  # Who UPDATED this version?
-  if ($h =~ /[\n ]+(This )?updated ([e-]*Text|edition) (was )?(Produced|Prepared|Created) by +(.*?)\n(.*?)\n/i) {
-    $updated_by = $5;
-    if ($6) {
-      $updated_by = $updated_by . " " . $6;
-    }
-  }
-  # If no creator is found let's see what we can do about it.
-  # We need at least either scanned_by or created_by
-  if (!$created_by) {
-    if (!$scanned_by) {
-      $created_by = "Project Gutenberg";
-    }
-  }
-  # Let's remove any http://www.pgdp.net from the producers
-  $scanned_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
-  $created_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
-  # We don't need to know who made the HTML version in this file.
-  $scanned_by =~ s|\.? +HTML version by .*?\.? *$||i;
-  $created_by =~ s|\.? +HTML version by .*?\.? *$||i;
-
-
   ####-----------------------------------------------####
   #### Getting the PUBLISHER, PUBLISHED DATE and the ####
   #### PUBLISHED PLACE is not always very accurate.  ####
   ####-----------------------------------------------####
   # Very useful if this 'Transcribed' line exists.
-  if ($h =~ /[\n ]+Transcribed from the (\d\d\d\d)( edition( of)?)? (.*?)( edition)? by(.+)\n\n/is) {
-    $publisher = $4;
+  if ($h =~ /\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+)(?:\s+edition)?\s+by(.+)\n\n/is) {
+    $publisher = $2;
+    $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
+  } elsif ($h =~ /\s+Transcribed by (.+)\s+from\s+the\s+(\d\d\d\d)\s+(.+) edition\./is) {
+    $publisher = $3;
+    $created_by = $1;
+    if (!$published_date[0]) { $published_date[0] = $2; }
   }
   # If still no PUBLISHED DATE
   if (!$published_date[0]) {
@@ -824,6 +790,50 @@ sub output_header () {
   if ($h =~ /\n *((New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
     $published_place = change_case($1);
   }
+
+  ####--------------------------------------------------####
+  #### Let's find out who created and updated this book ####
+  ####--------------------------------------------------####
+  # Who SCANNED/PROOFED the original text?
+  if ($h =~ /\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
+    $scanned_by = $1;
+  }
+  if ($h =~ /\s+[e-]*text Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
+    $scanned_by = $1;
+    $proofed_by = $1;
+  }
+  # Who first PRODUCED this text for Project Gutenberg?
+  $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
+  if (!$created_by) {
+    if ($h =~ /\s+(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
+      $created_by = $1;
+    }
+  }
+  if (!$proofed_by) {
+    if ($h =~ /Proof(?:ed| ?read) by:?\s+(.*?)\.?\n\n/is) {
+      $proofed_by = $1;
+      $proofed_by =~ s/\n/ /g;
+    }
+  }
+  $created_by =~ s/\n/ /g;
+  $created_by =~ s/(\.| at|, email(.*?))$//;
+  $scanned_by =~ s/\n/ /g;
+  # Who UPDATED this version?
+  if ($h =~ /\s+(?:This )?updated (?:[e-]*Text|edition) (?:was )?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
+    $updated_by = $1;
+  }
+  # If no creator is found let's see what we can do about it.
+  # We need at least either scanned_by or created_by
+  if (!$created_by) {
+    $created_by = "Project Gutenberg";
+  }
+  # Let's remove any http://www.pgdp.net from the producers
+  $scanned_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
+  $created_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
+  # We don't need to know who made the HTML version in this file.
+  $scanned_by =~ s|HTML version by .*?\.? *$||i;
+  $created_by =~ s|HTML version by .*?\.? *$||i;
+
 
   # REDACTOR'S NOTES
   if ($h =~ / *\[Redactor'?s? Note[s:\n ]*(.*?)\]/is) {
@@ -1005,8 +1015,24 @@ print <<HERE;
     <editionStmt>
       <edition n="$edition">Edition $edition, <date when="$last_updated[1]">$last_updated[0]</date></edition>
       <respStmt>
-        <resp>Original e-Text edition prepared by</resp>
-        <name>$created_by</name>
+        <resp>Project Gutenberg e-Text prepared by</resp>
+          <name>$created_by</name>
+HERE
+if ($scanned_by) {
+print <<HERE;
+        <resp>Scanned by</resp>
+          <name>$scanned_by</name>
+HERE
+}
+if ($proofed_by) {
+print <<HERE;
+        <resp>Proofread by</resp>
+          <name>$proofed_by</name>
+HERE
+}
+foreach (@editors_list) {
+}
+print <<HERE;
       </respStmt>
     </editionStmt>
     <publicationStmt>
