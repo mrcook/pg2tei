@@ -1513,9 +1513,11 @@ sub post_process {
   $c =~ s|<qpost>|<q>|g;
 
   # [BLANK PAGE]
-  $c =~ s|\[Blank Page\]|<div type="blankpage"></div>|g;
+  $c =~ s|\s+\[Blank Page\]|\n\n<pb type="blankpage" />|gi;
+  $c =~ s|\s+\[page intentionally blank\]|\n\n<pb type="blankpage" />|gi;
 
   # ILLUSTRATIONS ...
+  $c =~ s|\[illustration omitted\]|[Illustration]|gi; # Fix-up the odd PG text.
   # Original formula....keep!
   # $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
   if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
@@ -1526,6 +1528,7 @@ sub post_process {
     $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
   }
   $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration</figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
+
 
   # Are these still needed? (2010-03-02)
   #$c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
