@@ -218,13 +218,13 @@ while (<>) {
   ####--------------------------------------####
   
   # First check for PREFACE, INTRODUCTION, etc.
-  if (s/^(.*?)(?=\n\n\n[_ ]*(PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
+  if (s/^(.*?)(?=\n\n\n[_ ]*(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
     print "Found PREFACE/INTRO/etc. start.\n\n";
   # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(CHAPTER|PART|BOOK|VOLUME|SECTION) (1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)]|(THE )?FIRST)(.*?)\n)/output_header($1)/egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:1[^\d]|:upper:O:upper:N:upper:E|I[^(?: ?:lower:\w)]|(?:THE )?FIRST)(?:.*?)\n)/output_header($1)/egis) {
     print "Found BOOK/CHAPTER/etc. start.\n\n";
   # No chapter name? Just look for an actual "1" or "I" or "ONE"
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(1[^\d]|:upper:O:upper:N:upper:E|I[^( ?:lower:\w)])\.?\n)(.*?)/output_header($1)/egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:1[^\d]|:upper:O:upper:N:upper:E|I[^(?: ?:lower:\w)])\.?\n)(?:.*?)/output_header($1)/egis) {
     print "Found NUMBERS ONLY start.\n\n";
     #output_header($1);
   } else {
@@ -241,7 +241,7 @@ while (<>) {
   }
 
   # Process the body
-  if (! s/^(.*?)[\* ]*((This is )?(The )?End of (Th(e|is) )?Project Gutenberg [eE](book|text)).*?\n/output_body($front_matter_block .= $1)/egis) {
+  if (! s/^(.*?)[\* ]*(?:(?:This is )?(?:The )?End of (?:Th(?:e|is) )?Project Gutenberg [eE](?:book|text)).*?\n/output_body($front_matter_block .= $1)/egis) {
     # output_body ($front_matter_block .= $_);
   }
 
@@ -787,7 +787,12 @@ sub output_header () {
     }
   }
   # Get the PUBLISHED PLACE --- Very hit 'n miss!!
-  if ($h =~ /\n *((New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
+  if ($h =~ /\n *(New York|London|Cambridge|Boston|Chicago): *(.+?)_?\n/i) {
+    $published_place = change_case($1);
+    if (!$publisher) {
+      $publisher = change_case($2);
+    }
+  } elsif ($h =~ /\n *((?:New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
     $published_place = change_case($1);
   }
 
@@ -866,7 +871,7 @@ sub output_header () {
   }
 
   # ILLUSTRATED BY ...
-  if (/\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
+  if ($h =~ /\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
     if ($1) {
       $illustrated_by_tag = $1;
       $illustrated_by_tag =~ s|_||g;
@@ -1312,14 +1317,14 @@ sub pre_process {
   ###################################
   ### PAGES NUMBERS or FOOTNOTES? ###
   ###################################
-  $c =~ s|\{(\d+)\}|<pb n=$1>|g;  # Comment out if a eText uses {curly brackets} as footnotes.  
-  
+
   ### <milestone>, <pb n=$1 /> and <footnote> are replaced with full tags in the "post_process" sub
+
+  $c =~ s|\{(\d+)\}\n|<pb n=$1>\n|g;  # Comment out if a eText uses {curly brackets} as footnotes.  
   
-  #### Replace <milestone> events
   # substitute * * * * * for <milestone> BEFORE footnotes
   # <milestone> will be replaced later, on line: ~1250
-  $c =~ s|( +\*){3,}|\n<milestone>|g;
+  $c =~ s|\n *(\* +){2,}\*\n\n|\n<milestone>\n\n|g;
 
   #### Some pre-processing for the Footnotes.
   $c =~ s|[\{\<\[]l[\}\>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
