@@ -37,9 +37,9 @@ binmode STDOUT, ':utf8';
 ####                       Set some specific parameters                      ###
 ################################################################################
 
-my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
+my  $is_verse           = 1;    # Work is a poem? Some hints as to what is being converted.
 
-my  $process_epigraph   = 1;    # Disable if book is mostly Poems
+my  $process_epigraph   = 0;    # Disable if book is mostly Poems
 
 my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
 my  $cnt_head_sep       = "2";
@@ -755,11 +755,15 @@ sub output_header () {
   #### PUBLISHED PLACE is not always very accurate.  ####
   ####-----------------------------------------------####
   # Very useful if this 'Transcribed' line exists.
-  if ($h =~ /\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+)(?:\s+edition)?\s+by(.+)\n\n/is) {
+  if ($h =~ /\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
     $publisher = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
-  } elsif ($h =~ /\s+Transcribed by (.+)\s+from\s+the\s+(\d\d\d\d)\s+(.+) edition\./is) {
+  } elsif ($h =~ /\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
+  $publisher = $2;
+    $created_by = $3;
+    if (!$published_date[0]) { $published_date[0] = $1; }
+  } elsif ($h =~ /\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher = $3;
     $created_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
@@ -782,7 +786,7 @@ sub output_header () {
 
   # If still no PUBLISHER
   if (!$publisher) {
-    if ($h =~ /\s+_?(.*?)\b(Publisher|Press|Company|Co\.)\b(.*?)_?\s+/i) {
+    if ($h =~ /\s+_?(.*?)\b(Publisher|Press|Company|Co\.)(.*?)[_,]?\s+/i) {
       $publisher = change_case($1 . $2 . $3);
     }
   }
@@ -800,12 +804,12 @@ sub output_header () {
   #### Let's find out who created and updated this book ####
   ####--------------------------------------------------####
   # Who SCANNED/PROOFED the original text?
-  if ($h =~ /\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
-    $scanned_by = $1;
-  }
   if ($h =~ /\s+[e-]*text Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
     $scanned_by = $1;
     $proofed_by = $1;
+  }
+  if ($h =~ /\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
+    $scanned_by = $1;
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
@@ -865,8 +869,8 @@ sub output_header () {
     $transcriber_notes .= $1;
   }
   if ($transcriber_notes) {
-    $transcriber_notes =~ s|\n|\n        |gis;  # Indent the text
-    $transcriber_notes =~ s|\n *\n|\n\n|gis;    # Clear empty lines
+    $transcriber_notes =~ s|\n *|\n        |gis; # Indent the text
+    $transcriber_notes =~ s|\n *\n|\n\n|gis;     # Clear empty lines
     $transcriber_notes .= "\n      ";
   }
 
@@ -1313,6 +1317,9 @@ sub pre_process {
   $c =~ s|</b>|</hi>|g;
   #$c =~ s|=([^=]+)=|<hi>$1</hi>|gis;
 
+  # Remove spaces from the start of any [Illustration] tags
+  $c =~ s|\n +\[Illustration|\n[Illustration|gi;
+  
 
   ###################################
   ### PAGES NUMBERS or FOOTNOTES? ###
@@ -1524,8 +1531,8 @@ sub post_process {
   # ILLUSTRATIONS ...
   $c =~ s|\[illustration omitted\]|[Illustration]|gi; # Fix-up the odd PG text.
   # Original formula....keep!
-  # $c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
-  if ($c =~ s| *\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
+  # $c =~ s|\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
+  if ($c =~ s|\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
     # my $tmp = change_case($1);
     my $tmp = $1;
     # $tmp =~ s|[\r\n]+| |g;
