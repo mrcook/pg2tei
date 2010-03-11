@@ -77,12 +77,13 @@ sub eachTEI {
 
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
-  while ($pg2tei =~ s|<div type="chapter">\n\n *(<head>(?:<emph>)?(?:THE )?PREFACE(.*?)</head>\n\n\n(.*?)\n\n)</div>||is) {
+  while ($pg2tei =~ s!<div type="chapter">\n\n *(<head>(?:<emph>)?(?:THE )?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
     my $tmp_preface = $1;
+    my $tmp_type = lc($2);
     $tmp_preface =~ s|</head>\n\n\n|</head>\n\n|;
     $tmp_preface =~ s|\n|\n    |g;
     $tmp_preface =~ s|\n +\n|\n\n|g;
-    $preface_text[$tmp_count] = "  <div type=\"preface\">\n    $tmp_preface<signed></signed>\n  </div>";
+    $preface_text[$tmp_count] = "  <div type=\"" . $tmp_type . "\">\n    $tmp_preface<signed></signed>\n  </div>";
     $tmp_count++;
   }
   if ($tmp_count > 0) {

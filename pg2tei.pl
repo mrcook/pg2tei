@@ -37,9 +37,9 @@ binmode STDOUT, ':utf8';
 ####                       Set some specific parameters                      ###
 ################################################################################
 
-my  $is_verse           = 1;    # Work is a poem? Some hints as to what is being converted.
+my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
 
-my  $process_epigraph   = 0;    # Disable if book is mostly Poems
+my  $process_epigraph   = 1;    # Disable if book is mostly Poems
 
 my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
 my  $cnt_head_sep       = "2";
@@ -337,8 +337,12 @@ sub output_para {
     }
 
     # print wrap ('', '', $p); # We are not going to perform any re-wrapping
-    print $p;  # No WRAP
-
+    
+    if ($o->{'min_indent'} == 0) {
+      print $p;  # No WRAP
+    } else {
+      print "<quote>\n" . $p . "\n</quote>";
+    }
     print "\n\n";
   }
 
@@ -840,8 +844,8 @@ sub output_header () {
   $scanned_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
   $created_by =~ s|( at)? ?http://www\.pgdp\.net/?||i;
   # We don't need to know who made the HTML version in this file.
-  $scanned_by =~ s|HTML version by .*?\.? *$||i;
-  $created_by =~ s|HTML version by .*?\.? *$||i;
+  $scanned_by =~ s|\.?\s+HTML version by .*?\.? *$||i;
+  $created_by =~ s|\.?\s+HTML version by .*?\.? *$||i;
 
 
   # REDACTOR'S NOTES
