@@ -1323,6 +1323,9 @@ sub pre_process {
 
   # Remove spaces from the start of any [Illustration] tags
   $c =~ s|\n +\[Illustration|\n[Illustration|gi;
+
+  # Remove spaces from the start of any [Footnote] tags
+  $c =~ s|\n +\[Footnote |\n[Footnote |gi;
   
 
   ###################################
