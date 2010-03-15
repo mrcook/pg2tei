@@ -194,7 +194,7 @@ while (<>) {
   s| +\n|\n|g;   # remove spaces at end of line
 
   # substitute & for &amp;
-  s|&(?= )|&amp;|g;
+  s|&|&amp;|g;
 
 
   ####--------------------------------------------------####
@@ -204,13 +204,15 @@ while (<>) {
   my $us_count = 0;
   my $word = '';
   foreach $word (split(/[^a-zA-Z]+/, $_)) {
-    if ($word =~ /(colour|flavour|favour|savour|honour|defence|ageing|jewellery)/i) {
+    if ($word =~ /colour|flavour|favour|savour|honour|defence|ageing|jewellery/i) {
       $uk_count++;
     }
-    if ($word =~ /(color|flavor|favor|savor|honor|defense|aging|jewelry)/i) {
+    if ($word =~ /color|flavor|favor|savor|honor|defense|aging|jewelry/i) {
       $us_count++;
     }
   }
+  #print "\n$uk_count\n";
+  #print "\n$us_count\n";
   if ($uk_count > $us_count) { $lang_gb_check = 1; } else { $lang_gb_check = 0; }
 
   ####--------------------------------------####

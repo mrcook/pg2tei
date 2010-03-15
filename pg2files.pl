@@ -38,12 +38,12 @@ sub eachTEI {
   return unless $_=~ /\.txt$/;    ## Skip non-TXT files
   $file           = $_;
   $filename       = $file;
-  $filename       =~ s|^(.*?)\.txt$|$1|;
+  $filename       =~ s|^(.+?)\.txt$|$1|;
   $orig_filename  = $filename;         # Used for the copying of the .txt file
-  $filename       =~ s|^(.*?)-[80]$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
+  $filename       =~ s|^(.+?)-[80]$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
 
   $bookspath      = $File::Find::name;
-  $bookspath      =~ s|/(.*?)/$file|/$1|;
+  $bookspath      =~ s|/(.+)+/$file|/$1|;
   $tei_path_file  = $books_folder . $filename . DS . 'tei' . DS . $filename . '.tei';
 
   ## create default folder structure (/##/tei/) for each book
@@ -64,12 +64,12 @@ sub eachTEI {
   my $tmp_count = 0; # setup our default counter
   
   # Remove extra quote or epigraph tags
-  $pg2tei =~ s/<\/(?:quote)>\s+<(?:quote)>//g;
-  $pg2tei =~ s/<\/(?:epigraph)>\s+<(?:epigraph)>//g;
+  $pg2tei =~ s|</quote>\s+<quote>||g;
+  $pg2tei =~ s|</epigraph>\s+<epigraph>||g;
 
 
   ### Add <lg rend="font-style(italic)"> where needed.
-  while ($pg2tei =~ s|<lg>\n  <l>_(.*?)</l>\n((  <l>[^_]+</l>\n)*)  <l>(.*?)_</l>\n </lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}
+  while ($pg2tei =~ s|<lg>\s+<l>_([^_]+)</l>\n((  <l>[^_]+</l>\n)*)\s+<l>([^_]+)_</l>\s+</lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}
   ### If there are any multi-line emphasis (but not every line in the <lg>)
   ### then we can now SAFELY swap out and close off the rest of the _ (underscores)
   $pg2tei =~ s|<l>_([^_]+)</l>|<l><emph>$1</emph></l>|g;
@@ -77,7 +77,7 @@ sub eachTEI {
 
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
-  while ($pg2tei =~ s!<div type="chapter">\n\n *(<head>(?:<emph>)?(?:THE )?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
+  while ($pg2tei =~ s!<div type="chapter">\s+(<head>(?:<emph>)?(?:THE )?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
     my $tmp_preface = $1;
     my $tmp_type = lc($2);
     $tmp_preface =~ s|</head>\n\n\n|</head>\n\n|;
@@ -92,7 +92,7 @@ sub eachTEI {
   }
 
   # Mark-up the "Introduction" div as <div type="introduction">
-  $pg2tei =~ s|<div type="chapter">\n\n(<head>(?:<emph>)?INTRODUCTION(.*?)</head>\n)\n+|  <div type=\"introduction\">\n\n    $1\n    |is;
+  $pg2tei =~ s|<div type="chapter">\n\n(<head>(?:<emph>)?(?:THE )?INTRODUCTION(.*?)</head>\n)\n+|  <div type=\"introduction\">\n\n    $1\n    |is;
 
   # In rare cases, a <milestone> is given where it shouldn't
   $pg2tei =~ s|(?=[^\n])<milestone unit="tb" />(?=[^\n])| * * * |g;
@@ -119,7 +119,7 @@ sub eachTEI {
   }
   if ($process_footnotes) {
     my @footnotes;
-    while ($pg2tei =~ s/<p>\[Footnote (\d+|[A-Z]):\s*(?:<\/p>)?\s*(.*?)(?:<p>)?\](<\/p>|<\/quote>)\n\n//s) {
+    while ($pg2tei =~ s!<p>\[Footnote (\d+|[A-Z]):\s*(?:</p>)?\s*(.*?)(?:<p>)?\](</p>|</quote>)\n\n!!s) {
       push @footnotes, [$1, $2];
     }
     foreach $footnotes (@footnotes) {
