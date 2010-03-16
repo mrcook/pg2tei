@@ -293,15 +293,21 @@ sub output_para {
 
   #print "IS FIRST: $is_first_para\n";
 
+  ### Refactored at start of this if-else (2010-03-16)
   # We need to check for "[Footnote" entries to stop them being caught as a <lg>
-  my $is_foonote_entry = '';
-  if ($p =~ /^[\n|\s]+\[Footnote/) {
-    $is_foonote_entry = 1;
-  }
+  #my $is_foonote_entry = '';
+  #if ($p =~ /^[\n|\s]+\[Footnote/) {
+  #  $is_foonote_entry = 1;
+  #}
 
   my $o = study_paragraph ($p);
 
-  if (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
+  if ($p =~ m/<(?:figure|milestone|div|pb)/ or $p =~ /\s*\[(?:Footnote|Illustration)/i) {
+    $p = process_quotes_1 ($p);
+    $p = post_process ($p);
+    print $p . "\n\n";
+#  } elsif (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
+  } elsif ($is_verse || is_para_verse($o)) {
     # $p = process_quotes_1 ($p); # Not sure if this should be enabled...probably not.
     # $p = post_process ($p);     # Not sure if this should be enabled...probably not.
     if ($is_first_para == 0) {
@@ -330,8 +336,10 @@ sub output_para {
     $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
     $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
-    if ($p =~ m/^<(figure|milestone|div|pb)/) {
-    } elsif ($p =~ m/^\[Footnote/) {
+    ### Refactored at start of this if-else (2010-03-16)
+    # if ($p =~ m/^<(figure|milestone|div|pb)/) {
+    # } elsif ($p =~ m/^\[Footnote/) {
+    if ($p =~ m/^\s*\[Footnote/i) {
       $p = "<p$rend>$p</p>";
     } else {
       $p = "<p$rend>$p</p>";
@@ -339,7 +347,9 @@ sub output_para {
     }
 
     # print wrap ('', '', $p); # We are not going to perform any re-wrapping
-    
+
+    ### Refactored at start of this if-else (2010-03-16)
+    # if ($o->{'min_indent'} == 0 or $p =~ m/^<(figure|milestone|div|pb)/) {
     if ($o->{'min_indent'} == 0) {
       print $p;  # No WRAP
     } else {
@@ -354,7 +364,7 @@ sub output_para {
 
 sub output_stage {
   my $stage = shift;
-  $stage =~ s/[ \t\n]+/ /g;
+  $stage =~ s/\s+/ /g;
   print "<stage>$stage</stage>\n\n";
   return '';
 }
@@ -371,7 +381,7 @@ sub output_head {
 
   $head_tmp =~ s/^\s+//; # Strip out leading whitespace
 
-  if ($head_tmp =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
+  if ($head_tmp =~ /^<(?:figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
   } else {
     $is_heading = 1; # This is going to allow us to know if we have a sub <div> (book/chapter/section).
@@ -389,7 +399,7 @@ sub output_head {
     $subhead =~ s|^"(.*?)"$|<q>$1</q>|; # Rough fix of Quotes
     $subhead =~ s|^\s+||g;                # Strip out leading whitespace
 
-    if ($subhead =~ /^<(figure|milestone)/) { # stop <figure> and others getting caught
+    if ($subhead =~ /^<(?:figure|milestone)/) { # stop <figure> and others getting caught
       print $subhead . "\n\n";
     } else {
      print "<head type=\"sub\">$subhead</head>\n\n";
@@ -1324,10 +1334,10 @@ sub pre_process {
   #$c =~ s|=([^=]+)=|<hi>$1</hi>|gis;
 
   # Remove spaces from the start of any [Illustration] tags
-  $c =~ s|\n +\[Illustration|\n[Illustration|gi;
+  $c =~ s|\n *\[Illustration|\n[Illustration|gi;
 
   # Remove spaces from the start of any [Footnote] tags
-  $c =~ s|\n +\[Footnote |\n[Footnote |gi;
+  $c =~ s|\n *\[Footnote |\n[Footnote |gi;
   
 
   ###################################
@@ -1544,9 +1554,8 @@ sub post_process {
   if ($c =~ s|\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
     # my $tmp = change_case($1);
     my $tmp = $1;
-    # $tmp =~ s|[\r\n]+| |g;
     $tmp =~ s|\n+| |g;
-    $c =~ s|(.*?)<figDesc>(.*?)</figDesc>(.*?)|$1<figDesc>$tmp</figDesc>$3|s;
+    $c =~ s|<figDesc>(.*?)</figDesc>|<figDesc>$tmp</figDesc>|s;
   }
   $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration</figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
 
