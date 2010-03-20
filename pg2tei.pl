@@ -223,10 +223,10 @@ while (<>) {
   if (s/^(.*?)(?=\n\n\n[_ ]*(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
     print "Found PREFACE/INTRO/etc. start.\n\n";
   # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:1[^\d]|:upper:O:upper:N:upper:E|I[^(?: ?:lower:\w)]|(?:THE )?FIRST)(?:.*?)\n)/output_header($1)/egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:1[^\d]|\uO\uN\uE|I[^a-z]|(?:THE )?FIRST)(?:.*?)\n)/output_header($1)/egis) {
     print "Found BOOK/CHAPTER/etc. start.\n\n";
   # No chapter name? Just look for an actual "1" or "I" or "ONE"
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:1[^\d]|:upper:O:upper:N:upper:E|I[^(?: ?:lower:\w)])\.?\n)(?:.*?)/output_header($1)/egis) {
+  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:1[^\d]|\uO\uN\uE|I[^a-z])\.?\n)(?:.*?)/output_header($1)/egis) {
     print "Found NUMBERS ONLY start.\n\n";
     #output_header($1);
   } else {
@@ -387,7 +387,7 @@ sub output_head {
     $is_heading = 1; # This is going to allow us to know if we have a sub <div> (book/chapter/section).
 
     # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
-    $head_tmp =~ s/^((CHAPTER|PART|BOOK|VOLUME|SECTION) (.*?)\.) *(.+(\n.+)*)$/$1<\/head>\n\n<head type="sub">$4/is;
+    $head_tmp =~ s/^((?:CHAPTER|PART|BOOK|VOLUME|SECTION) +(?:\w+)\b)[:.]\s+(.+(?:\n.+)*)$/$1<\/head>\n\n<head type="sub">$2/is;
     # If a chapter/book has a 'dash' then it's probably not meant to be split into heading/subheading.
     $head_tmp =~ s/<\/head>\n\n<head type="sub">&#8212;/&#8212;/is; # There must be a better way to do this!
     print "<head>" . $head_tmp . "</head>\n\n";
@@ -1559,12 +1559,6 @@ sub post_process {
   }
   $c =~ s|(.*?)<figDesc></figDesc>(.*?)|$1<figDesc>Illustration</figDesc>$2|; # Replace empty <figDesc>'s with an Illustration description
 
-
-  # Are these still needed? (2010-03-02)
-  #$c =~ s|<head> ?(.*?) ?</head>|<head>$1</head>|g; # Strip the leading white space - Find a better way!!
-  #$c =~ s|<head>\"|<head><q>|g;     # apply more quotes
-  #$c =~ s|\"</head>|</q></head>|g;  # apply more quotes
-
   # substitute <pb n=179> to include the "quotes"; <pb n="179" />
   $c =~ s|<pb n=(\d+)>|<pb n="$1" />|g;
 
@@ -1817,12 +1811,13 @@ sub process_names {
       ## Some authors use initials, so assign proper name also
       if ($lastname eq 'Baum'       and $firstname =~ /L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ /F\. ?Scott/)  { $firstname = 'Francis Scott'; }
+      if ($lastname eq 'Forster'    and $firstname =~ /E\. ?M\./)    { $firstname = 'Edward Morgan'; }
       if ($lastname eq 'Montgomery' and $firstname =~ /L\. ?M./)     { $firstname = 'Lucy Maud'; }
       if ($lastname eq 'Nesbit'     and $firstname =~ /E\./)         { $firstname = 'Edith'; }
       if ($lastname eq 'Smith'      and $firstname =~ /E\. ?E./)     { $firstname = 'Edward Elmer'; }
       if ($lastname eq 'Smith'      and $firstname =~ /["']Doc["']/) { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Wells'      and $firstname =~ /H\. ?G./)     { $firstname = 'Herbert George'; }
-      if ($lastname eq 'Wodehouse'  and $firstname =~ /P\. ?G./)     { $firstname = 'Pelham Grenville'; }
+      if ($lastname eq 'Wells'      and $firstname =~ /H\. ?G\./)    { $firstname = 'Herbert George'; }
+      if ($lastname eq 'Wodehouse'  and $firstname =~ /P\. ?G\./)    { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } elsif ($name =~ m/^Anon/i) {
       $names[$count] = (['Anonymous']);    
@@ -2105,10 +2100,11 @@ sub change_case {
   $case =~ s|\bAnd\b|and|g;
   $case =~ s|\bOf\b|of|g;
   $case =~ s|\bBy\b|by|g;
-  $case =~ s|<(/)?(.*?)>|<$1\l$2>|g;
+  $case =~ s|<(/)?(.+)>|<$1\l$2>|g;
   $case =~ s|([NMQ])dash|$1dash|g;      # Fix &#8211; caps
   $case =~ s|&Amp;|&amp;|g;             # &Amp;
-  $case =~ s|(.*?)\'S|$1's|g;           # change 'S to 's
+  $case =~ s|\b\'S|$1's|g;              # change 'S to 's
+  $case =~ s|\bMc([a-z])|Mc\u$1|g;        # Check for "Mc" namnes (McMaster)
 
   return $case;
 }
