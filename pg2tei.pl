@@ -223,9 +223,12 @@ while (<>) {
   if (s/^(.*?)(?=\n\n\n[_ ]*(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
     print "Found PREFACE/INTRO/etc. start.\n\n";
   # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:1[^\d]|\uO\uN\uE|I[^a-z]|(?:THE )?FIRST)(?:.*?)\n)/output_header($1)/egis) {
+  } elsif (s/^(.*?)(?=\n\n\n\s*_?(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:I[^a-z]|1[^\d]|\uO\uN\uE|(?:THE )?FIRST) \.+\n)/output_header($1)/egis) {
     print "Found BOOK/CHAPTER/etc. start.\n\n";
-  # No chapter name? Just look for an actual "1" or "I" or "ONE"
+  # No chapter name? Just look for an actual "1" or "I" or "ONE" followed by chapter title
+  } elsif (s/^(.+?)(?=\n\n\n+\s*_?(?:1[^\d]|\uO\uN\uE|I[^a-z])[^\n]+)\n/output_header($1)/egis) {
+    print "Found NUMBERS ONLY start.\n\n";
+    #output_header($1);
   } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:1[^\d]|\uO\uN\uE|I[^a-z])\.?\n)(?:.*?)/output_header($1)/egis) {
     print "Found NUMBERS ONLY start.\n\n";
     #output_header($1);
@@ -861,15 +864,15 @@ sub output_header () {
 
 
   # REDACTOR'S NOTES
-  if ($h =~ / *\[Redactor'?s? Note[s:\n ]*(.*?)\]/is) {
-    $redactors_notes = $1;
-  } elsif ($h =~ /Redactor\'s Note[s:\n ]*(.*?)\n\n\n/is) {
-    $redactors_notes = $1;
+  if ($h =~ / *\[Redactor'?s? Notes?:?\s*([^\]]+)\]/is) {
+    $redactors_notes = "\n" . $1;
+  } elsif ($h =~ /Redactor'?s? Notes?:?\s*(.+?)\n\n\n/is) {
+    $redactors_notes = "\n" . $1;
   }
   if ($redactors_notes) {
-    $redactors_notes .= "\n";  
-    $redactors_notes =~ s|\n|\n        |gis;   # Indent the text
-    $redactors_notes =~ s|\n\s+\n|\n\n|gis;    # Clear empty lines
+    $redactors_notes =~ s|\n *|\n        |gis; # Indent the text
+    $redactors_notes =~ s|\n *\n|\n\n|gis;     # Clear empty lines
+    $redactors_notes .= "\n      ";
   }
 
   # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
