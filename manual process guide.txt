@@ -33,13 +33,19 @@ LoC Class
             USEFUL SNIPPETS
 ---------------------------------------
 
-Footnotes
+FOOTNOTES
 
 <note place="foot">
 
 [PLACE FOOTNOTE HERE]
 
 </note>
+
+
+  <div type="footnotes">
+    <head>Footnotes</head>
+    <divGen type="footnotes"/>
+  </div>
 
 --
 
@@ -113,10 +119,6 @@ Footnotes
   <item></item>
 </list>
 
-  <div type="footnotes">
-    <head>Footnotes</head>
-    <divGen type="footnotes"/>
-  </div>
 --
 
 Grab the LoC Class from the PG website.

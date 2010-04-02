@@ -69,7 +69,8 @@ sub eachTEI {
 
 
   ### Add <lg rend="font-style(italic)"> where needed.
-  while ($pg2tei =~ s|<lg>\s+<l>_([^_]+)</l>\n((  <l>[^_]+</l>\n)*)\s+<l>([^_]+)_</l>\s+</lg>|<lg rend="font-style(italic)">\n  <l>$1</l>\n$2  <l>$4</l>\n </lg>|) {}
+  while ($pg2tei =~ s|<lg>\s+<l([^>]+)?>_([^_]+)</l>\n((  <l>[^_]+</l>\n)*)\s+<l([^>]+)?>([^_]+)_</l>\s+</lg>|<lg rend="font-style(italic)">\n  <l$1>$2</l>\n$3  <l$5>$6</l>\n </lg>|) {}
+
   ### If there are any multi-line emphasis (but not every line in the <lg>)
   ### then we can now SAFELY swap out and close off the rest of the _ (underscores)
   $pg2tei =~ s|<l>_([^_]+)</l>|<l><emph>$1</emph></l>|g;
@@ -112,7 +113,7 @@ sub eachTEI {
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
   $place_foot_count = 0; $note_foot_count = 0;
   while ($pg2tei =~ /\[PLACE FOOTNOTE HERE\]/g) { $place_foot_count++; }
-  while ($pg2tei =~ /\[Footnote (?:\d+|[A-Z])/g)     { $note_foot_count++;  }
+  while ($pg2tei =~ /\[Footnote (?:\d+|[A-Z])/g)     { $note_foot_count++; }
   print "\nFOOTNOTE COUNT: [$place_foot_count] | <$note_foot_count>\n";
   if ($place_foot_count != $note_foot_count) {
     $process_footnotes = 0;
@@ -129,6 +130,12 @@ sub eachTEI {
   # Now we've processed most footnotes let's check for "inline" footnotes.
   while ($pg2tei =~ s|\[Footnote(?: \d+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
 
+  
+  # MUST BE DONE HERE -- After Footnote Stuff
+  # In some footnotes we still have a <p><quote> which needs removing
+  while ($pg2tei =~ s!<p><(?:quote|epigraph)>!<quote>!s) {}
+  while ($pg2tei =~ s!</(?:quote|epigraph)>\n\n+</p>!</quote>!s) {}
+  
 
   ### -------------------------------------- ###
   ### Try to fix the CHAPTER/SECTION issues. ###

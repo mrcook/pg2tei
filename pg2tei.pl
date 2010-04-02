@@ -218,20 +218,14 @@ while (<>) {
   ####--------------------------------------####
   #### Grab PG header and output TEI header ####
   ####--------------------------------------####
-  
-  # First check for PREFACE, INTRODUCTION, etc.
-  if (s/^(.*?)(?=\n\n\n[_ ]*(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD).*?\n)/output_header($1)/egis) {
+
+  # Look for PREFACE, INTRODUCTION, etc. and if not found then look for the CHAPTERS
+  if (s/^(.+?)(?=\n\n\n\s*_?(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD|PROLOGUE).*?\n)/output_header($1)/egis) {
     print "Found PREFACE/INTRO/etc. start.\n\n";
-  # Now check for CHAPTERS, VOLUMES, etc.
-  } elsif (s/^(.*?)(?=\n\n\n\s*_?(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:I[^a-z]|1[^\d]|\uO\uN\uE|(?:THE )?FIRST) \.+\n)/output_header($1)/egis) {
+  } elsif (s/^(.+?)(?=\n\n\n\s*_?(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:I(?![a-z])|1(?![0-9])|\uO\uN\uE|(?:THE )?FIRST)\.?.+\n)/output_header($1)/egis) {
     print "Found BOOK/CHAPTER/etc. start.\n\n";
-  # No chapter name? Just look for an actual "1" or "I" or "ONE" followed by chapter title
-  } elsif (s/^(.+?)(?=\n\n\n+\s*_?(?:1[^\d]|\uO\uN\uE|I[^a-z])[^\n]+)\n/output_header($1)/egis) {
+  } elsif (s/^(.+?)(?=\n\n\n\s*_?(?:I(?![a-z])|1(?![0-9])|\uO\uN\uE)[^\n]+)\n/output_header($1)/egis) {
     print "Found NUMBERS ONLY start.\n\n";
-    #output_header($1);
-  } elsif (s/^(.*?)(?=\n\n\n[_ ]*(?:1[^\d]|\uO\uN\uE|I[^a-z])\.?\n)(?:.*?)/output_header($1)/egis) {
-    print "Found NUMBERS ONLY start.\n\n";
-    #output_header($1);
   } else {
     print "**************************************\n";
     print "**** ERROR! No FRONT MATTER Found ****\n";
@@ -305,14 +299,18 @@ sub output_para {
 
   my $o = study_paragraph ($p);
 
-  if ($p =~ m/<(?:figure|milestone|div|pb)/ or $p =~ /\s*\[(?:Footnote|Illustration)/i) {
+  $rend = ''; # $rend must be reset each time.
+  $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
+  $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
+
+  if ($p =~ m/<(?:figure|milestone|div|pb)/ or $p =~ m/\s*\[(?:Footnote|Illustration)/i) {
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
+    $p = "<p$rend>$p</p>";
     print $p . "\n\n";
 #  } elsif (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
   } elsif ($is_verse || is_para_verse($o)) {
     # $p = process_quotes_1 ($p); # Not sure if this should be enabled...probably not.
-    # $p = post_process ($p);     # Not sure if this should be enabled...probably not.
     if ($is_first_para == 0) {
       print "<quote>\n <lg>\n";
     } else {
@@ -324,9 +322,9 @@ sub output_para {
       }
     }
     if ($is_first_para == 0) {
-    print " </lg>\n</quote>\n\n";
+      print " </lg>\n</quote>\n\n";
     } else {
-    print " </lg>\n</epigraph>\n\n\n";
+      print " </lg>\n</epigraph>\n\n\n";
     }
   } else { # paragraph is prose
     # join end-of-line hyphenated words
@@ -335,13 +333,6 @@ sub output_para {
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
 
-    $rend = ''; # $rend must be reset each time.
-    $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
-    $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
-
-    ### Refactored at start of this if-else (2010-03-16)
-    # if ($p =~ m/^<(figure|milestone|div|pb)/) {
-    # } elsif ($p =~ m/^\[Footnote/) {
     if ($p =~ m/^\s*\[Footnote/i) {
       $p = "<p$rend>$p</p>";
     } else {
@@ -779,12 +770,16 @@ sub output_header () {
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
   } elsif ($h =~ /\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
-  $publisher = $2;
+    $publisher = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
   } elsif ($h =~ /\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher = $3;
     $created_by = $1;
+    if (!$published_date[0]) { $published_date[0] = $2; }
+  } elsif ($h =~ /\s+Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
+    $publisher = $3;
+    $scanned_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
   }
   # If still no PUBLISHED DATE
@@ -1340,7 +1335,7 @@ sub pre_process {
   $c =~ s|\n *\[Illustration|\n[Illustration|gi;
 
   # Remove spaces from the start of any [Footnote] tags
-  $c =~ s|\n *\[Footnote |\n[Footnote |gi;
+  $c =~ s| +\[Footnote |[Footnote |gi;
   
 
   ###################################
@@ -1385,13 +1380,13 @@ sub pre_process {
   $c =~ s|(?=[^\[])(\*+)(?=[^\]])|[$1]|g; # Change * footnotes to [*]
 
   ## Check for * footnotes and fix up
-  $c =~ s|(\n\s+)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|(\n\s+)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|(\n\s+)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
+  $c =~ s|(\n\s*)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s|(\n\s*)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s|(\n\s*)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
 
   ## Check for [1], [1a] style footnotes and fix up
-  $c =~ s|(\n\s+)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
-  $c =~ s|(\n\s+)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
+  $c =~ s|(\n\s*)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
+  $c =~ s|(\n\s*)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
   # FOOTNOTES: Semi-auto process on footnotes.    
   if ($c =~ s/\[(\d+|\*+|\w)\]/<footnote=$1>/g) {
