@@ -1797,19 +1797,19 @@ sub process_names {
   my @names = ();
 
   # Tidy things up
-  $names_string =~ s/\(/[/;                 # Change () brackets to [] brackets
-  $names_string =~ s/\)/]/;                 # Change () brackets to [] brackets
-  $names_string =~ s/ +(&amp;|and|&) +/+/;  # Replace '&amp;' to '+' for the split
-  $names_string =~ s/^ *(.*?) *$/$1/;       # Strip any end spaces
+  $names_string =~ s!\s*(&amp;|and|&)\s*!+!gi; # Replace any form of "and" to '+' for the split
+  $names_string =~ s|, *|+|g;                  # Replace any commas '+' for the split
+  $names_string =~ s|^\s+||;                   # Strip end whitespace
+  $names_string =~ s|\s+$||;                   # Strip end whitespace
 
   my @names_list = split(/\+/, $names_string);
 
   my $count = 0;
   foreach my $name (@names_list) {
-    if ($name =~ /^(.*?) +([-\w]+)$/i) {
+    if ($name =~ /^(.+) +([-.\w]+)( \(.+\))?$/i) {
       my $orig_firstname = $1; # Keep the original first name for <front> data
       my $firstname = $1;
-      my $lastname = $2;
+      my $lastname = $2 . $3;
       ## Some authors use initials, so assign proper name also
       if ($lastname eq 'Baum'       and $firstname =~ /L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ /F\. ?Scott/)  { $firstname = 'Francis Scott'; }
