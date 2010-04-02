@@ -303,14 +303,18 @@ sub output_para {
   $rend = ' rend="text-align(center)"' if (is_para_centered ($o));
   $rend = ' rend="text-align(right)"'  if (is_para_right ($o));
 
-  if ($p =~ m/<(?:figure|milestone|div|pb)/ or $p =~ m/\s*\[(?:Footnote|Illustration)/i) {
+  if ($p =~ m/<(?:figure|milestone|div|pb)/ or $p =~ m/\s*\[Illustration/i) {
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
-    $p = "<p$rend>$p</p>";
     print $p . "\n\n";
-#  } elsif (($is_verse || is_para_verse($o)) && $p ne "<milestone>\n" && !$is_foonote_entry) {
+
+### Should not be need as will get caught below -- CHECK!! (2010-04-02)
+#  } elsif ($p =~ m/\s*\[Footnote/i) {
+#    $p = process_quotes_1 ($p);
+#    $p = post_process ($p);
+#    $p = "<p$rend>$p</p>";
+#    print $p . "\n\n";
   } elsif ($is_verse || is_para_verse($o)) {
-    # $p = process_quotes_1 ($p); # Not sure if this should be enabled...probably not.
     if ($is_first_para == 0) {
       print "<quote>\n <lg>\n";
     } else {
