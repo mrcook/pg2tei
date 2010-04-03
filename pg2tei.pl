@@ -822,12 +822,12 @@ sub output_header () {
   #### Let's find out who created and updated this book ####
   ####--------------------------------------------------####
   # Who SCANNED/PROOFED the original text?
-  if ($h =~ /\s+[e-]*text Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
+  if ($h =~ /\s+(?:[e-]*text +)?Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
     $scanned_by = $1;
     $proofed_by = $1;
   }
   if ($h =~ /\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
-    $scanned_by = $1;
+    if (!$scanned_by) { $scanned_by = $1; }
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
@@ -1809,7 +1809,9 @@ sub process_names {
     if ($name =~ /^(.+) +([-.\w]+)( \(.+\))?$/i) {
       my $orig_firstname = $1; # Keep the original first name for <front> data
       my $firstname = $1;
-      my $lastname = $2 . $3;
+      my $lastname = $2;
+      if ($3)  { $lastname .= $3; }
+
       ## Some authors use initials, so assign proper name also
       if ($lastname eq 'Baum'       and $firstname =~ /L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ /F\. ?Scott/)  { $firstname = 'Francis Scott'; }
