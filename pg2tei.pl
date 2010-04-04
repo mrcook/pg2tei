@@ -180,7 +180,7 @@ my $head1      = qr/$tmp/s;
 $tmp = "(.*?)\n{$cnt_paragraph_sep}\n+";
 my $paragraph1 = qr/$tmp/s;
 
-my $epigraph1  = qr/^\s+(.*?)(\s*(?:&#160;)?&#8212;([^\n]+))\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-03-03)
+my $epigraph1  = qr/^(\s+.*?)(\s*(?:&#160;)?&#8212;([^\n]+))\n\n+/s; # match epigraph and citation - Keep on eye onthis (2010-03-03)
 
 undef $/;  # slurp it all, mem is cheap
 
@@ -287,15 +287,7 @@ sub output_line {     # Output <l>'s.
 sub output_para {
   my $p = shift;
   $p .= "\n";
-
   #print "IS FIRST: $is_first_para\n";
-
-  ### Refactored at start of this if-else (2010-03-16)
-  # We need to check for "[Footnote" entries to stop them being caught as a <lg>
-  #my $is_foonote_entry = '';
-  #if ($p =~ /^[\n|\s]+\[Footnote/) {
-  #  $is_foonote_entry = 1;
-  #}
 
   my $o = study_paragraph ($p);
 
@@ -307,13 +299,6 @@ sub output_para {
     $p = process_quotes_1 ($p);
     $p = post_process ($p);
     print $p . "\n\n";
-
-### Should not be need as will get caught below -- CHECK!! (2010-04-02)
-#  } elsif ($p =~ m/\s*\[Footnote/i) {
-#    $p = process_quotes_1 ($p);
-#    $p = post_process ($p);
-#    $p = "<p$rend>$p</p>";
-#    print $p . "\n\n";
   } elsif ($is_verse || is_para_verse($o)) {
     if ($is_first_para == 0) {
       print "<quote>\n <lg>\n";
@@ -490,31 +475,42 @@ sub do_fixes {
 sub output_epigraph {
   my $epigraph = shift;
   my $citation = shift;
+  my $eo = study_paragraph ($epigraph);
 
-  #$epigraph =~ s|\s+| |g;
-  $epigraph =~ s|\s+$||g;
-  $epigraph =~ s|\n\n *|</p>\n\n<p>|g;
-  #$epigraph =~ s|\n *|</p>\n<p>|g;
-  $citation =~ s|^\n +|\n|g; # Keep opening "newline" but remove the spaces.
+  $citation =~ s|^\n\s*|\n|g; # Keep opening "newline" but remove the spaces.
   $citation =~ s|&#160;&#8212;|&#8213;|g;
 
-  $epigraph = process_quotes_1 ($epigraph);
-  $citation = process_quotes_1 ($citation);
+  if (!is_para_verse($eo)) {
+    $epigraph = process_quotes_1 ($epigraph);
+    $citation = process_quotes_1 ($citation);
+  }
   $epigraph = post_process ($epigraph);
   $citation = post_process ($citation);
 
-  $epigraph = wrap ('', '', $epigraph);
-  $epigraph =~ s|\n|\n    |g;
-
-
   print "<epigraph>\n";
 
-  if ($citation =~ s|^\n\s*||) {
-    print "  <p>$epigraph</p>\n";
-    print "  <p rend=\"text-align(right)\">$citation</p>\n";
+  if (is_para_verse($eo)) {
+    print " <lg>\n";
+    my $line = '';
+    foreach $line (split(/\n/, $epigraph)) {
+      output_line ($line, $eo->{'min_indent'});
+    }
+    if ($citation) {
+      $citation =~ s|^\n+||;
+      print "  <l rend=\"text-align(right)\">$citation</l>\n";
+    }
+    print " </lg>\n";
   } else {
-    $epigraph = "$epigraph$citation";
-    print "  <p>$epigraph</p>\n";
+    $epigraph =~ s|\n\n *|</p>\n<p>|g;
+    $epigraph =~ s|\n *|\n     |g;
+    $epigraph =~ s| +<p>|  <p>|g;
+    if ($citation =~ s|^\n+||) {
+      print "  <p>$epigraph</p>\n";
+      print "  <p rend=\"text-align(right)\">$citation</p>\n";
+    } else {
+      $epigraph = "$epigraph$citation";
+      print "  <p>$epigraph</p>\n";
+    }
   }
 
   print "</epigraph>\n\n\n";
