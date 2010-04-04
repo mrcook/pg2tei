@@ -491,8 +491,10 @@ sub output_epigraph {
   my $epigraph = shift;
   my $citation = shift;
 
-  $epigraph =~ s|\s+| |g;
+  #$epigraph =~ s|\s+| |g;
   $epigraph =~ s|\s+$||g;
+  $epigraph =~ s|\n\n *|</p>\n\n<p>|g;
+  #$epigraph =~ s|\n *|</p>\n<p>|g;
   $citation =~ s|^\n +|\n|g; # Keep opening "newline" but remove the spaces.
   $citation =~ s|&#160;&#8212;|&#8213;|g;
 
@@ -507,7 +509,7 @@ sub output_epigraph {
 
   print "<epigraph>\n";
 
-  if ($citation =~ s|^\n||) {
+  if ($citation =~ s|^\n\s*||) {
     print "  <p>$epigraph</p>\n";
     print "  <p rend=\"text-align(right)\">$citation</p>\n";
   } else {
@@ -1336,10 +1338,10 @@ sub pre_process {
   #$c =~ s|=([^=]+)=|<hi>$1</hi>|gis;
 
   # Remove spaces from the start of any [Illustration] tags
-  $c =~ s|\n *\[Illustration|\n[Illustration|gi;
+  $c =~ s|\s+\[Illustration|\n\n[Illustration|gi;
 
   # Remove spaces from the start of any [Footnote] tags
-  $c =~ s| +\[Footnote |[Footnote |gi;
+  $c =~ s|\s+\[Footnote |\n\n[Footnote |gi;
   
 
   ###################################
