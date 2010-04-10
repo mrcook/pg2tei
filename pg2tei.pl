@@ -551,12 +551,12 @@ sub output_chapter {
   # Marcello's Original
   #while ($chapter =~ s/$epigraph1/output_epigraph ($1, $2)/es) {};
   if ($is_first_para == 1) {
-    $chapter =~ s/$epigraph1/output_epigraph($1, $2)/es;
+    $chapter =~ s/$epigraph1\n/output_epigraph($1, $2)/es;
   }
 
-  if (not $chapter =~ m/\n\w/g) { # If all lines are indented this chapter must only be a poem (I hope!!)
-    $is_first_para = 0;
-  }
+#  if (not $chapter =~ m/\n\w/g) { # If all lines are indented this chapter must only be a poem (I hope!!)
+#    $is_first_para = 0;
+#  }
 
   if ($chapter =~ s/$paragraph1/output_para($1)/egs) {
     $is_heading = 0;
