@@ -85,6 +85,8 @@ FOOTNOTES
  rend="margin-left(6)"
  rend="margin-right(10%)"
 
+ rend="margin-right(6)"
+
  rend="text-align(center)"
  rend="text-align(right)"
  rend="text-align(right) margin-right(10%)"

@@ -816,6 +816,10 @@ sub output_header () {
     $published_place = change_case($1);
   }
 
+  # Publisher/Place is still a bit dodgy so do a length check
+  if (length ($publisher) > 50) { $publisher = ''; }
+  if (length ($published_place) > 50) { $published_place = ''; }
+
   ####--------------------------------------------------####
   #### Let's find out who created and updated this book ####
   ####--------------------------------------------------####
@@ -894,6 +898,8 @@ sub output_header () {
   if ($h =~ /\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
     if ($1) {
       $illustrated_by_tag = $1;
+      $illustrated_by_tag =~ s|^\s+||g;
+      $illustrated_by_tag =~ s|\s+$||g;
       $illustrated_by_tag =~ s|_||g;
       $illustrated_by_tag =~ s|\n| |g;
       $illustrated_by_tag = change_case($illustrated_by_tag);
