@@ -370,7 +370,7 @@ sub output_head {
     $is_heading = 1; # This is going to allow us to know if we have a sub <div> (book/chapter/section).
 
     # Split up any "Chapter I. Some title." headings with sub-headings. Keep an eye on this.(2009-12-29)
-    $head_tmp =~ s/^((?:CHAPTER|PART|BOOK|VOLUME|SECTION) +(?:\w+)\b)[:.]\s+(.+(?:\n.+)*)$/$1<\/head>\n\n<head type="sub">$2/is;
+    $head_tmp =~ s/^((?:CHAPTER|PART|BOOK|VOLUME|SECTION) +(?:\w+)\b)(?:&#8212;|[.:\s]+)(.+(?:\n.+)*)$/$1<\/head>\n\n<head type="sub">$2/is;
     # If a chapter/book has a 'dash' then it's probably not meant to be split into heading/subheading.
     $head_tmp =~ s/<\/head>\n\n<head type="sub">&#8212;/&#8212;/is; # There must be a better way to do this!
     print "<head>" . $head_tmp . "</head>\n\n";
@@ -1801,7 +1801,7 @@ sub process_names {
   my @names = ();
 
   # Tidy things up
-  $names_string =~ s!\s*(&amp;|and|&)\s*!+!gi; # Replace any form of "and" to '+' for the split
+  $names_string =~ s!\s*(&amp;|\band\b|&)\s*!+!gi; # Replace any form of "and" to '+' for the split
   $names_string =~ s|, *|+|g;                  # Replace any commas '+' for the split
   $names_string =~ s|^\s+||;                   # Strip end whitespace
   $names_string =~ s|\s+$||;                   # Strip end whitespace
