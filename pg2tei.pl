@@ -204,10 +204,10 @@ while (<>) {
   my $us_count = 0;
   my $word = '';
   foreach $word (split(/[^a-zA-Z]+/, $_)) {
-    if ($word =~ /colour|flavour|favour|savour|honour|defence|ageing|jewellery/i) {
+    if ($word =~ m/colour|flavour|favour|savour|honour|defence|ageing|jewellery/i) {
       $uk_count++;
     }
-    if ($word =~ /color|flavor|favor|savor|honor|defense|aging|jewelry/i) {
+    if ($word =~ m/color|flavor|favor|savor|honor|defense|aging|jewelry/i) {
       $us_count++;
     }
   }
@@ -364,7 +364,7 @@ sub output_head {
 
   $head_tmp =~ s/^\s+//; # Strip out leading whitespace
 
-  if ($head_tmp =~ /^<(?:figure|milestone)/) { # stop <figure> and others getting caught
+  if ($head_tmp =~ m/^<(?:figure|milestone)/) { # stop <figure> and others getting caught
     print $head_tmp . "\n\n";
   } else {
     $is_heading = 1; # This is going to allow us to know if we have a sub <div> (book/chapter/section).
@@ -382,7 +382,7 @@ sub output_head {
     $subhead =~ s|^"(.*?)"$|<q>$1</q>|; # Rough fix of Quotes
     $subhead =~ s|^\s+||g;                # Strip out leading whitespace
 
-    if ($subhead =~ /^<(?:figure|milestone)/) { # stop <figure> and others getting caught
+    if ($subhead =~ m/^<(?:figure|milestone)/) { # stop <figure> and others getting caught
       print $subhead . "\n\n";
     } else {
      print "<head type=\"sub\">$subhead</head>\n\n";
@@ -526,11 +526,11 @@ sub output_chapter {
   
   $chapter .= "\n" x 10;
 
-  if ($chapter =~ /^ *(BOOK|PART|VOLUME) (ONE|1|I(?:[^\d:upper:I:upper:V:upper:X])|(THE )?FIRST)/i) {
+  if ($chapter =~ m/^ *(BOOK|PART|VOLUME) (ONE|1|I(?:[^\d:upper:I:upper:V:upper:X])|(THE )?FIRST)/i) {
     print "\n\n" . '<div type="' . lc($1) . '" n="1">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
-  } elsif ($chapter =~ /^ *(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|[:\.\s]+)(.*?)\n/i) {
+  } elsif ($chapter =~ m/^ *(BOOK|PART|VOLUME) +(THE )?(.*?)(&#821[123];|[:\.\s]+)(.*?)\n/i) {
     print "</div>\n\n";
     if (!$is_heading) { print "\n"; }
 
@@ -602,11 +602,11 @@ sub output_header () {
   my $h = shift;
 
   # Grab the front matter from this header for printing to output .tei
-  if ($h =~ /\n\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/is) {
+  if ($h =~ m/\n\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/is) {
     $front_matter_block = $2 . "\n\n";
-  } elsif ($h =~ /\n\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/is) {
+  } elsif ($h =~ m/\n\*END[\* ]+THE SMALL PRINT.*?\n(.*?)$/is) {
     $front_matter_block = $1 . "\n\n";
-  } elsif ($h =~ /\n[* ]+The Project Gutenberg [eE](book|text) of .+[* ]+\n(.*?)$/is) {
+  } elsif ($h =~ m/\n[* ]+The Project Gutenberg [eE](book|text) of .+[* ]+\n(.*?)$/is) {
     $front_matter_block = $2 . "\n\n";
   }
 
@@ -614,24 +614,24 @@ sub output_header () {
   #### Grab easy data when it is assigned with a tag  ####
   #### (most PG texts now have some/all of this info) ####
   ####------------------------------------------------####
-  if ($h =~ /\nTitle: *(.+)\n/i)                  { $title = $1; }
-  if ($h =~ /\nTitle:.+\n  +(.+)\n/i)             { $sub_title = $1; } else { $sub_title = ''; }
-  if ($h =~ /\nAuthors?: *(.+)\n/i)               { $authors = $1; }
-  if ($h =~ /\nEditors?: *(.+)\n/i)               { $editor = $1; }
-  if ($h =~ /\nIllustrat(?:ors?|ions(?: by)?): *(.+)\n/i) { $illustrators = $1; }
-  if ($h =~ /\nTranslat(ors?|ion(?: by)?): *(.+)\n/i)     { $translators  = $1; }
-  if ($h =~ /\nEdition: *(\d+)\n/i)               { $edition = $1; }
-  if ($h =~ /\nPublished: *(\d+)\n/i)             { $published_date[0] = $1; }
-  if ($h =~ /\nLanguage: *(.+)\n/i)               { $language = $1; }
-  if ($h =~ /\nCharacter set encoding: *(.+)\n/i) { $encoding = lc($1); }
+  if ($h =~ m/\nTitle: *(.+)\n/i)                  { $title = $1; }
+  if ($h =~ m/\nTitle:.+\n  +(.+)\n/i)             { $sub_title = $1; } else { $sub_title = ''; }
+  if ($h =~ m/\nAuthors?: *(.+)\n/i)               { $authors = $1; }
+  if ($h =~ m/\nEditors?: *(.+)\n/i)               { $editor = $1; }
+  if ($h =~ m/\nIllustrat(?:ors?|ions(?: by)?): *(.+)\n/i) { $illustrators = $1; }
+  if ($h =~ m/\nTranslat(ors?|ion(?: by)?): *(.+)\n/i)     { $translators  = $1; }
+  if ($h =~ m/\nEdition: *(\d+)\n/i)               { $edition = $1; }
+  if ($h =~ m/\nPublished: *(\d+)\n/i)             { $published_date[0] = $1; }
+  if ($h =~ m/\nLanguage: *(.+)\n/i)               { $language = $1; }
+  if ($h =~ m/\nCharacter set encoding: *(.+)\n/i) { $encoding = lc($1); }
 
   # PG eBook number
-  if ($h =~ /\[E(Book|Text) #(\d+)\]\s+/i)        { $gutenberg_num = $2; }
+  if ($h =~ m/\[E(Book|Text) #(\d+)\]\s+/i)        { $gutenberg_num = $2; }
 
   # The Series information is sometimes added manually by myself.
   # Better to do this in the source than in the manual post-processing.
-  if ($h =~ /\nSeries Name: +(.+)\n/i)                 { $series_title  = $1; }
-  if ($h =~ /\nSeries Volume: +(\d+)\n/i)         { $series_volume = $1; }
+  if ($h =~ m/\nSeries Name: +(.+)\n/i)                 { $series_title  = $1; }
+  if ($h =~ m/\nSeries Volume: +(\d+)\n/i)         { $series_volume = $1; }
 
 
   # There are four different dates possible in any PG text;
@@ -661,22 +661,22 @@ sub output_header () {
   # Welcome to the world of PG!
 
   # OFFICIAL RELEASE DATE (Sometimes includes the EBook No.)
-  if ($h =~ /\n(Official|Original)? ?Release Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
+  if ($h =~ m/\n(Official|Original)? ?Release Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
     $release_date[0] = $2;
     $release_date[1] = process_dates($2);
   }
   # FIRST POSTED
-  if ($h =~ /\nFirst Posted: *(.+)\n/i)           {
+  if ($h =~ m/\nFirst Posted: *(.+)\n/i)           {
     $first_posted[0] = $1;
     $first_posted[1] = process_dates($1);
   }
   # POSTING DATE (Usually includes the EBook No.)
-  if ($h =~ /\nPosting Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
+  if ($h =~ m/\nPosting Date: *(.*?)( +\[E(Book|Text) +#(\d+)\])?\n/i) {
     $posted_date[0]  = $1;
     $posted_date[1]  = process_dates($1);
   }
   # LAST UPDATED
-  if ($h =~ /\nLast Updated?: *(.+)\n/i)          {
+  if ($h =~ m/\nLast Updated?: *(.+)\n/i)          {
     $last_updated[0] = $1;
     $last_updated[1] = process_dates($1);
   }
@@ -692,18 +692,18 @@ sub output_header () {
   # Find both TITLE and AUTHOR from the file header tag.
   # I HAVE REMOVED the \n from the start of these two strings -- Keep an eye on this (2009-11-xx).
   if (!$title or !$authors) {
-   if ($h =~ /^\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
+   if ($h =~ m/^\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
       if (!$authors) { $authors = $2; }
-    } elsif ($h =~ /^\** *The Project Gutenberg Etext of (.*?)\** *\n/) {
+    } elsif ($h =~ m/^\** *The Project Gutenberg Etext of (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
     }
   }
   # If still no AUTHOR found -- these are a bit random but can often work
   if (!$authors && $title) {
-    if ($h =~ /\n$title\n+by (.*?)\n/i) { $authors = $1; }
+    if ($h =~ m/\n$title\n+by (.*?)\n/i) { $authors = $1; }
   } elsif (!$authors) {
-    if ($h =~ /\n *by (.*?)\n/i) { $authors = $1; }
+    if ($h =~ m/\n *by (.*?)\n/i) { $authors = $1; }
   }
   @authors = process_names($authors);
 
@@ -714,21 +714,21 @@ sub output_header () {
 
   # If no POSTING DATE
   if (!$posted_date[0]) {
-    if ($h =~ /\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i) {
+    if ($h =~ m/\[(The actual date )?This file (was )?first posted (on|=) (.+)\]\n/i) {
       $posted_date[0] = $4;
       $posted_date[1] = process_dates($4);
     }
   }    
   # If no LAST UPDATED
   if (!$last_updated[0]) {
-    if ($h =~ /\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i) {
+    if ($h =~ m/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i) {
       $last_updated[0] = $4;
       $last_updated[1] = process_dates($4);
     }
   }
   
   # If no TRANSLATORS
-  if ($h =~ /[\n ]*(Translated (from.*)??by)\s+(.+)\.?/i) {
+  if ($h =~ m/[\n ]*(Translated (from.*)??by)\s+(.+)\.?/i) {
     $translated_by_tag = $1;
     if (!$translators) {
       $translators = $3;
@@ -741,7 +741,7 @@ sub output_header () {
   # If no EDITION (We do an additional check against releases further down.)
   if (!$edition) {
     $filename = "$ARGV"; # Perhaps the filename has it (not many PG books still use the old filename system)
-    if ($filename =~ /^(\w{4,5})((10|11|12)\w?)\..+$/i) {
+    if ($filename =~ m/^(\w{4,5})((10|11|12)\w?)\..+$/i) {
       $edition  = $3;
     } else { 
       $edition = '1'; # Still no EDITION so default to 1
@@ -750,7 +750,7 @@ sub output_header () {
   # PG EDITION is used in the <revisionDesc> section.
   $pg_edition = $edition;
   # Change EDITION when 10, 11 or 12 to equal 1, 2 or 3
-  if ($edition =~ /^1\d$/) { $edition = $edition - 9; }
+  if ($edition =~ m/^1\d$/) { $edition = $edition - 9; }
 
   # Assign English as a default and check for UK or US English.
   if (!$language) { $language = 'English'; }
@@ -758,7 +758,7 @@ sub output_header () {
   $language_code = encode_lang($language);
 
   # Check for encoding variations and assign the default 'is-8859-1'
-#  if ($encoding =~ /ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
+#  if ($encoding =~ m/ascii|(iso ?)?latin-1|iso-646-us( \(us-ascii\))?|iso 8859_1|us-ascii/) {
 #    $encoding = 'iso-8859-1';
 #  }
 #  $encoding = 'utf-8';  # We're going to force UTF-8 on all documents #
@@ -768,19 +768,19 @@ sub output_header () {
   #### PUBLISHED PLACE is not always very accurate.  ####
   ####-----------------------------------------------####
   # Very useful if this 'Transcribed' line exists.
-  if ($h =~ /\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
+  if ($h =~ m/\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
     $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
-  } elsif ($h =~ /\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
+  } elsif ($h =~ m/\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
     $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
-  } elsif ($h =~ /\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
+  } elsif ($h =~ m/\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher  = $3;
     $created_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
-  } elsif ($h =~ /\s+Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
+  } elsif ($h =~ m/\s+Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher  = $3;
     $scanned_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
@@ -788,11 +788,11 @@ sub output_header () {
 
   # If still no PUBLISHED DATE
   if (!$published_date[0]) {
-    if ($h =~ /\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
+    if ($h =~ m/\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
       $published_date[0] = $1;
-    } elsif ($h =~ /\n\s*([0-9]{4})\n/i) {
+    } elsif ($h =~ m/\n\s*([0-9]{4})\n/i) {
       $published_date[0] = $1;
-    } elsif ($h =~ /[\[\(]([0-9]{4})[\]\)]/i) {
+    } elsif ($h =~ m/[\[\(]([0-9]{4})[\]\)]/i) {
       $published_date[0] = $1;
     }
   }
@@ -804,17 +804,17 @@ sub output_header () {
 
   # If still no PUBLISHER
   if (!$publisher) {
-    if ($h =~ /\s+_?(?:Published by )?(.*?)\b(Publisher|Press|Company|Co\.)(.*?)[_,]?\s+/i) {
+    if ($h =~ m/\s+_?(?:Published by )?(.*?)\b(Publisher|Press|Company|Co\.)(.*?)[_,]?\s+/i) {
       $publisher = change_case($1 . $2 . $3);
     }
   }
   # Get the PUBLISHED PLACE --- Very hit 'n miss!!
-  if ($h =~ /\n *(New York|London|Cambridge|Boston|Chicago): *(.+?)_?\n/i) {
+  if ($h =~ m/\n *(New York|London|Cambridge|Boston|Chicago): *(.+?)_?\n/i) {
     $published_place = change_case($1);
     if (!$publisher) {
       $publisher = change_case($2);
     }
-  } elsif ($h =~ /\n *((?:New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
+  } elsif ($h =~ m/\n *((?:New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
     $published_place = change_case($1);
   }
 
@@ -826,22 +826,22 @@ sub output_header () {
   #### Let's find out who created and updated this book ####
   ####--------------------------------------------------####
   # Who SCANNED/PROOFED the original text?
-  if ($h =~ /\s+(?:[e-]*text +)?Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
+  if ($h =~ m/\s+(?:[e-]*text +)?Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
     $scanned_by = $1;
     $proofed_by = $1;
   }
-  if ($h =~ /\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
+  if ($h =~ m/\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
     if (!$scanned_by) { $scanned_by = $1; }
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
   if (!$created_by) {
-    if ($h =~ /\s+(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
+    if ($h =~ m/\s+(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
       $created_by = $1;
     }
   }
   if (!$proofed_by) {
-    if ($h =~ /Proof(?:ed| ?read) by:?\s+(.*?)\.?\n\n/is) {
+    if ($h =~ m/Proof(?:ed| ?read) by:?\s+(.*?)\.?\n\n/is) {
       $proofed_by = $1;
       $proofed_by =~ s/\n/ /g;
     }
@@ -850,7 +850,7 @@ sub output_header () {
   $created_by =~ s/(\.| at|, email(.*?))$//;
   $scanned_by =~ s/\n/ /g;
   # Who UPDATED this version?
-  if ($h =~ /\s+(?:This )?updated (?:[e-]*Text|edition) (?:was )?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
+  if ($h =~ m/\s+(?:This )?updated (?:[e-]*Text|edition) (?:was )?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
     $updated_by = $1;
   }
   # If no creator is found let's see what we can do about it.
@@ -867,9 +867,9 @@ sub output_header () {
 
 
   # REDACTOR'S NOTES
-  if ($h =~ / *\[Redactor'?s? Notes?:?\s*([^\]]+)\]/is) {
+  if ($h =~ m/ *\[Redactor'?s? Notes?:?\s*([^\]]+)\]/is) {
     $redactors_notes = "\n" . $1;
-  } elsif ($h =~ /Redactor'?s? Notes?:?\s*(.+?)\n\n\n/is) {
+  } elsif ($h =~ m/Redactor'?s? Notes?:?\s*(.+?)\n\n\n/is) {
     $redactors_notes = "\n" . $1;
   }
   if ($redactors_notes) {
@@ -879,15 +879,15 @@ sub output_header () {
   }
 
   # TRANSCRIBERS NOTES -- If not then check Footer_Block AND Body_Block
-  if ($h =~ / *\[Transcriber'?s? Note[s:\n ]+(.*?)\]/is) {
+  if ($h =~ m/ *\[Transcriber'?s? Note[s:\n ]+(.*?)\]/is) {
     $transcriber_notes = "\n" . $1;
-  } elsif ($h =~ /Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n/is) {
+  } elsif ($h =~ m/Transcriber\'?s? Note[s:\n ]+(.*?)\n\n\n/is) {
     $transcriber_notes = "\n" . $1;
   }
   # Note: Few but there are some, possibly Errata stuff so add to $transcribers_errata
-  if ($h =~ /^ *\[Notes?: (.*?)\]/is) {
+  if ($h =~ m/^ *\[Notes?: (.*?)\]/is) {
     $transcriber_notes .= $1;
-  } elsif ($h =~ /^Notes?: (.*?)\n\n\n/is) {
+  } elsif ($h =~ m/^Notes?: (.*?)\n\n\n/is) {
     $transcriber_notes .= $1;
   }
   if ($transcriber_notes) {
@@ -897,7 +897,7 @@ sub output_header () {
   }
 
   # ILLUSTRATED BY ...
-  if ($h =~ /\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
+  if ($h =~ m/\n\n(((.*?)\n)?(.*?)(Illustrat(ions?|ed|er))( in colou?r)? by)\s*(.*?)\n\n/i) {
     if ($1) {
       $illustrated_by_tag = $1;
       $illustrated_by_tag =~ s|^\s+||g;
@@ -1327,7 +1327,7 @@ sub pre_process {
   ###----------------------------------------------------------------------###
   # x60 = ` | x91 = ‘ | x2018 = ‘ | x201A = ‚
   # Check for any opening quotes; including ' for full saftey
-  if ($c =~ /[\x{2018}\x{201A}\x{60}\x{91}\x{27}]/) {
+  if ($c =~ m/[\x{2018}\x{201A}\x{60}\x{91}\x{27}]/) {
     $single_open_quotes_exist = 1;
   }
   # If not open quotes replace all single closing quotes with Entity
@@ -1343,12 +1343,6 @@ sub pre_process {
 
   # Remove spaces from the start of any [Illustration] tags
   $c =~ s|\s+\[Illustration|\n\n[Illustration|gi;
-
-  # Remove spaces from the start of any [Footnote] tags
-  $c =~ s|\s+\[Footnote |\n\n[Footnote |gi;
-
-  # Remove spaces before footnotes and and square brackets
-  # $c =~ s|\n\s*\*(.*?)\n\n|\n\n[Footnote *: $1]|gs;
   
 
   ###################################
@@ -1363,50 +1357,64 @@ sub pre_process {
   # <milestone> will be replaced later, on line: ~1250
   $c =~ s|\n *(\* +){2,}\*\n\n|\n<milestone>\n\n|g;
 
-  #### Some pre-processing for the Footnotes.
-  $c =~ s|[\{\<\[]l[\}\>\]]|[1]|g;            # fix stupid [l] mistake. Number 1 not letter l.
 
-  ## Some footnotes are marked up with <>, {} or () so change to []
+  #### -------------------------------------- ####
+  #### Some pre-processing for the Footnotes. ####
+  #### -------------------------------------- ####
+
+  ### Make sure all footnote references are using [square] brackets - Change any <>, {} or () ###
+
+  # First things to do; remove spaces from the start of any footnoe entries (*, [*...] or [Footnote...])
+  # These will make any other RegEx much, much, easier!
+  $c =~ s/\n\n+\s+\[(Footnote|[+*])/\n\n[$1/gi;
+  $c =~ s/\n\n+\s+([+*])/\n\n$1/gi;
+
+  # Any "*" or "+" footnotes that use <>, {}, () are safe to just be changed.
+  $c =~ s|<[+*]+>|[$1]|g;
+  $c =~ s|{[+*]+}|[$1]|g;
+  $c =~ s|\([+*]+\)|[$1]|g;
+
+  $c =~ s|(?<=[^\n*+])(?=[^\[])([+*]++)(?=[^\]])|[$1]|g; # Change * footnote references to [*]
+
   my $note_exists = 0;
-  if ( $c =~ m/\[(\d+|\*+|\w)\]/ ) { $note_exists = 1; }
+  if ( $c =~ m/\[([\d+*]+|\d+\w|\w)\]/ ) {
+    $note_exists = 1;
+    $c =~ s|\[l\]|[1]|g;  # fix stupid [l] (lowercase "L") mistake. Should be number 1.
+  }
   ## If footnotes are detected with the above, then we don't need to process these do we.
   if ($note_exists == 0) {
-    ################### i should not need to escape these character class entries \* \+ ########################
-    if ( $c =~ s|\<([\d\*\+]+)\>|[$1]|g ) {
+    if ($c =~ s/<(\d+|\d+\w)>/[$1]/g) {
       $note_exists = 1;
-    } elsif ( $c =~ s|\{([\d\*\+]+)\}|[$1]|g ) {
+    } elsif ($c =~ s/{(\d+|\d+\w)}/[$1]/g) {
       $note_exists = 1;
+    } else {
+      # Often (1), (2), etc are NOT used as footnotes so only uncomment if needed.
+      # $c =~ s/\(\d+)\)/[$1]/g;
+      # $note_exists = 1;
     }
-   # In some rare cases there are mixed letter/number notes using {1a} styling
-    if ($note_exists == 0) {
-      $c =~ s|\{(\d+[a-z]+)\}|[$1]|g;
-    }
-    
-   ### Often (1), (2), etc are NOT used as footnotes. Uncomment if needed.
-   # Change (1) only if other brackets NOT detected -- extra bit of safety in case (1) is used for another reason.
-#    if ($note_exists == 0) {
-#      $c =~ s/\((\d\d?|\*+|\++)\)/[$1]/g;
-#    }
   }
 
-  $c =~ s|(\((\*+)\))|[$2]|g;             # Change (*) footnotes to *
-  $c =~ s|(?=[^\[])(\*+)(?=[^\]])|[$1]|g; # Change * footnotes to [*]
+  ### Now let's fix up the actual footnote entries ###
+
+  ######--- Be Careful, trying to enclose with brackets might  ---######
+  ######--- break on multi-paragraph footnotes. (2010-04-18)   ---######
 
   ## Check for * footnotes and fix up
-  $c =~ s|(\n\s*)\[\*\*\*\] |$1\[Footnote 3: |g;         # If a footnote uses [* ...] then replace (footnote 3)
-  $c =~ s|(\n\s*)\[(\*\*\|\+)\] |$1\[Footnote 2: |g;     # If a footnote uses [* ...] then replace (footnote 2)
-  $c =~ s|(\n\s*)\[\*\] |$1\[Footnote 1: |g;             # If a footnote uses [* ...] then replace (footnote 1)
+  $c =~ s/\n\[?([*+]{3})\]? *(.*?)\n\n+/\n[Footnote $1: $2]\n\n/gs; # If a footnote uses [* ...] then replace (footnote 3)
+  $c =~ s/\n\[?([*+]{2})\]? *(.*?)\n\n+/\n[Footnote $1: $2]\n\n/gs; # If a footnote uses [* ...] then replace (footnote 2)
+  $c =~ s/\n\[?([*+]{1})\]? *(.*?)\n\n+/\n[Footnote $1: $2]\n\n/gs; # If a footnote uses [* ...] then replace (footnote 1)
 
   ## Check for [1], [1a] style footnotes and fix up
-  $c =~ s|(\n\s*)\[(\d+)\] |$1\[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
-  $c =~ s|(\n\s*)\[(\d+[a-z]+)\] |$1\[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
+  $c =~ s|\n\[(\d+)\] |\n[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
+  $c =~ s|\n\[(\d+[a-z]+)\] |\n[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
   # FOOTNOTES: Semi-auto process on footnotes.    
-  if ($c =~ s/\[(\d+|\*+|\w)\]/<footnote=$1>/g) {
+  if ($c =~ s/\[([\d*+]+|\w)\]/<footnote=$1>/g) {
     $footnote_exists = 1;
   }  elsif ($c =~ s/\[(\d+[a-z]+)\]/<footnote=$1>/g) {
     $footnote_exists = 1;
   }
+
 
   ####------------------------------------####
   #### Do some other basic pre-processing ####
@@ -1816,22 +1824,22 @@ sub process_names {
 
   my $count = 0;
   foreach my $name (@names_list) {
-    if ($name =~ /^(.+) +([-.\w]+)( \(.+\))?$/i) {
+    if ($name =~ m/^(.+) +([-.\w]+)( \(.+\))?$/i) {
       my $orig_firstname = $1; # Keep the original first name for <front> data
       my $firstname = $1;
       my $lastname = $2;
       if ($3)  { $lastname .= $3; }
 
       ## Some authors use initials, so assign proper name also
-      if ($lastname eq 'Baum'       and $firstname =~ /L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
-      if ($lastname eq 'Fitzgerald' and $firstname =~ /F\. ?Scott/)  { $firstname = 'Francis Scott'; }
-      if ($lastname eq 'Forster'    and $firstname =~ /E\. ?M\./)    { $firstname = 'Edward Morgan'; }
-      if ($lastname eq 'Montgomery' and $firstname =~ /L\. ?M./)     { $firstname = 'Lucy Maud'; }
-      if ($lastname eq 'Nesbit'     and $firstname =~ /E\./)         { $firstname = 'Edith'; }
-      if ($lastname eq 'Smith'      and $firstname =~ /E\. ?E./)     { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Smith'      and $firstname =~ /["']Doc["']/) { $firstname = 'Edward Elmer'; }
-      if ($lastname eq 'Wells'      and $firstname =~ /H\. ?G\./)    { $firstname = 'Herbert George'; }
-      if ($lastname eq 'Wodehouse'  and $firstname =~ /P\. ?G\./)    { $firstname = 'Pelham Grenville'; }
+      if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)  { $firstname = 'Lyman Frank'; }
+      if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)  { $firstname = 'Francis Scott'; }
+      if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)    { $firstname = 'Edward Morgan'; }
+      if ($lastname eq 'Montgomery' and $firstname =~ m/L\. ?M./)     { $firstname = 'Lucy Maud'; }
+      if ($lastname eq 'Nesbit'     and $firstname =~ m/E\./)         { $firstname = 'Edith'; }
+      if ($lastname eq 'Smith'      and $firstname =~ m/E\. ?E./)     { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Smith'      and $firstname =~ m/["']Doc["']/) { $firstname = 'Edward Elmer'; }
+      if ($lastname eq 'Wells'      and $firstname =~ m/H\. ?G\./)    { $firstname = 'Herbert George'; }
+      if ($lastname eq 'Wodehouse'  and $firstname =~ m/P\. ?G\./)    { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } elsif ($name =~ m/^Anon/i) {
       $names[$count] = (['Anonymous']);    
