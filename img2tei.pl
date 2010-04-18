@@ -20,7 +20,7 @@ use constant DS => '/';   ## Default Directory Separator
 ## Get correct DRIVES and PATHS ##
 ##################################
 $current_dir   = File::Spec->curdir();
-$current_dir   = File::Spec->rel2abs unless ( File::Spec->file_name_is_absolute($current_dir) );
+$current_dir   = File::Spec->rel2abs($current_dir) unless ( File::Spec->file_name_is_absolute($current_dir) );
 $current_drive = (File::Spec->splitpath($current_dir))[0];
 
 ## DRIVE & PATH to .epub files.
