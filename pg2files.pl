@@ -78,7 +78,7 @@ sub eachTEI {
 
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
-  while ($pg2tei =~ s!<div type="chapter">\s+(<head>(?:<emph>)?(?:THE )?(?:EDITOR&#8217;S)?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
+  while ($pg2tei =~ s!<div type="chapter">\s+(<head>(?:<emph>)?(?:THE )?(?:EDITOR&#8217;S )?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
     my $tmp_preface = $1;
     my $tmp_type = lc($2);
     $tmp_preface =~ s|</head>\n\n\n|</head>\n\n|;
@@ -143,12 +143,8 @@ sub eachTEI {
   ### -------------------------------------- ###
   my $normal_chapter_exists = 0;
   if ($pg2tei =~ m|<div type="chapter">\n\n<head>(?:.*?)CHAPTER(?:.*?)</head>|is) {
-    $normal_chapter_exists = 1;
-  }
-  if ($normal_chapter_exists) {
     $pg2tei =~ s|<div type="chapter">(\n\n<head>(Section )?\d+</head>)|<div type="section">$1|g;
-  }
-  
+  }  
   
   #############################
   ## Write out to a TEI file ##
