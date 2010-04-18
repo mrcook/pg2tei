@@ -19,15 +19,15 @@ use vars '$line';
 ##################################
 ## Get correct DRIVES and PATHS ##
 ##################################
-$current_dir        = File::Spec->curdir();
-$current_dir        = File::Spec->rel2abs unless ( File::Spec->file_name_is_absolute($current_dir) );
-$current_drive      = (File::Spec->splitpath($current_dir))[0];
+$current_dir   = File::Spec->curdir();
+$current_dir   = File::Spec->rel2abs($current_dir) unless ( File::Spec->file_name_is_absolute($current_dir) );
+$current_drive = (File::Spec->splitpath($current_dir))[0];
 
 # PATH to the TEI book files
-$books_folder    = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
+$books_folder  = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script
-$pg2tei_script  = $current_drive . DS . 'epbProject' . DS . 'epb-pg2tei' . DS . 'pg2tei.pl';
+$pg2tei_script = $current_drive . DS . 'epbProject' . DS . 'epb-pg2tei' . DS . 'pg2tei.pl';
 
 ######################################
 ## Search and execute all TXT files ##
@@ -78,7 +78,7 @@ sub eachTEI {
 
   # Move the PREFACE to the front matter.
   my @preface_text; $tmp_count = 0;
-  while ($pg2tei =~ s!<div type="chapter">\s+(<head>(?:<emph>)?(?:THE )?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
+  while ($pg2tei =~ s!<div type="chapter">\s+(<head>(?:<emph>)?(?:THE )?(?:EDITOR&#8217;S)?(PREFACE|PROLOGUE)(.*?)</head>\n\n\n(.*?)\n\n)</div>!!is) {
     my $tmp_preface = $1;
     my $tmp_type = lc($2);
     $tmp_preface =~ s|</head>\n\n\n|</head>\n\n|;

@@ -220,7 +220,7 @@ while (<>) {
   ####--------------------------------------####
 
   # Look for PREFACE, INTRODUCTION, etc. and if not found then look for the CHAPTERS
-  if (s/^(.+?)(?=\n\n\n\s*_?(?:THE )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD|PROLOGUE).*?\n)/output_header($1)/egis) {
+  if (s/^(.+?)(?=\n\n\n\s*_?(?:THE )?(?:EDITOR'S )?(?:PREFACE|INTRODUCTION|AUTHOR'S NOTE|BIOGRAPHY|FOREWORD|PROLOGUE).*?\n)/output_header($1)/egis) {
     print "Found PREFACE/INTRO/etc. start.\n\n";
   } elsif (s/^(.+?)(?=\n\n\n\s*_?(?:CHAPTER|PART|BOOK|VOLUME|SECTION) (?:I(?![a-z])|1(?![0-9])|\uO\uN\uE|(?:THE )?FIRST)\.?.+\n)/output_header($1)/egis) {
     print "Found BOOK/CHAPTER/etc. start.\n\n";
@@ -618,8 +618,8 @@ sub output_header () {
   if ($h =~ /\nTitle:.+\n  +(.+)\n/i)             { $sub_title = $1; } else { $sub_title = ''; }
   if ($h =~ /\nAuthors?: *(.+)\n/i)               { $authors = $1; }
   if ($h =~ /\nEditors?: *(.+)\n/i)               { $editor = $1; }
-  if ($h =~ /\nIllustrat(ors?|ions( by)?): *(.+)\n/i) { $illustrators = change_case($3); }
-  if ($h =~ /\nTranslat(ors?|ion( by)?): *(.+)\n/i)   { $translators  = change_case($3); }
+  if ($h =~ /\nIllustrat(?:ors?|ions(?: by)?): *(.+)\n/i) { $illustrators = $1; }
+  if ($h =~ /\nTranslat(ors?|ion(?: by)?): *(.+)\n/i)     { $translators  = $1; }
   if ($h =~ /\nEdition: *(\d+)\n/i)               { $edition = $1; }
   if ($h =~ /\nPublished: *(\d+)\n/i)             { $published_date[0] = $1; }
   if ($h =~ /\nLanguage: *(.+)\n/i)               { $language = $1; }
@@ -694,20 +694,21 @@ sub output_header () {
   if (!$title or !$authors) {
    if ($h =~ /^\** *The Project Gutenberg Etext of (.*?),? by (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
-      if (!$authors) { $authors = change_case($2); }
+      if (!$authors) { $authors = $2; }
     } elsif ($h =~ /^\** *The Project Gutenberg Etext of (.*?)\** *\n/) {
       if (!$title)  { $title = $1;  }
     }
   }
   # If still no AUTHOR found -- these are a bit random but can often work
   if (!$authors && $title) {
-    if ($h =~ /\n$title\n+by (.*?)\n/i) { $authors = change_case($1); }
+    if ($h =~ /\n$title\n+by (.*?)\n/i) { $authors = $1; }
   } elsif (!$authors) {
-    if ($h =~ /\n *by (.*?)\n/i) { $authors = change_case($1); }
+    if ($h =~ /\n *by (.*?)\n/i) { $authors = $1; }
   }
   @authors = process_names($authors);
 
   if ($editor) {
+    $editor = change_case($editor);
     @editors = process_names($editor);
   }
 
@@ -730,7 +731,7 @@ sub output_header () {
   if ($h =~ /[\n ]*(Translated (from.*)??by)\s+(.+)\.?/i) {
     $translated_by_tag = $1;
     if (!$translators) {
-      $translators = change_case($3);
+      $translators = $3;
     }
   }
   if ($translators) {
@@ -768,27 +769,28 @@ sub output_header () {
   ####-----------------------------------------------####
   # Very useful if this 'Transcribed' line exists.
   if ($h =~ /\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
-    $publisher = $2;
+    $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
   } elsif ($h =~ /\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
-    $publisher = $2;
+    $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
   } elsif ($h =~ /\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
-    $publisher = $3;
+    $publisher  = $3;
     $created_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
   } elsif ($h =~ /\s+Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
-    $publisher = $3;
+    $publisher  = $3;
     $scanned_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
   }
+
   # If still no PUBLISHED DATE
   if (!$published_date[0]) {
-    if ($h =~ /\n[\s_]*Copyright(ed)?[,\s]*(\d\d\d\d)/i) {
-      $published_date[0] = $2;
-    } elsif ($h =~ /\n *([0-9]{4})\n/i) {
+    if ($h =~ /\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
+      $published_date[0] = $1;
+    } elsif ($h =~ /\n\s*([0-9]{4})\n/i) {
       $published_date[0] = $1;
     } elsif ($h =~ /[\[\(]([0-9]{4})[\]\)]/i) {
       $published_date[0] = $1;
@@ -802,7 +804,7 @@ sub output_header () {
 
   # If still no PUBLISHER
   if (!$publisher) {
-    if ($h =~ /\s+_?(.*?)\b(Publisher|Press|Company|Co\.)(.*?)[_,]?\s+/i) {
+    if ($h =~ /\s+_?(?:Published by )?(.*?)\b(Publisher|Press|Company|Co\.)(.*?)[_,]?\s+/i) {
       $publisher = change_case($1 . $2 . $3);
     }
   }
@@ -905,7 +907,7 @@ sub output_header () {
       $illustrated_by_tag = change_case($illustrated_by_tag);
     }
     if (!$illustrators) {
-      $illustrators = change_case($8);
+      $illustrators = $8;
       $illustrators =~ s/_//;
     }
   }
@@ -1344,6 +1346,9 @@ sub pre_process {
 
   # Remove spaces from the start of any [Footnote] tags
   $c =~ s|\s+\[Footnote |\n\n[Footnote |gi;
+
+  # Remove spaces before footnotes and and square brackets
+  # $c =~ s|\n\s*\*(.*?)\n\n|\n\n[Footnote *: $1]|gs;
   
 
   ###################################
@@ -1558,7 +1563,6 @@ sub post_process {
   # Original formula....keep!
   # $c =~ s|\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n <head>$1</head>\n <figDesc>Illustration</figDesc>\n</figure>|gi;
   if ($c =~ s|\[Illustration:? ?([^\]\\]*)(\\.[^\]\\]*)*\]|<figure url="images/">\n   <figDesc>$1</figDesc>\n</figure>|gi) {
-    # my $tmp = change_case($1);
     my $tmp = $1;
     $tmp =~ s|\n+| |g;
     $c =~ s|<figDesc>(.*?)</figDesc>|<figDesc>$tmp</figDesc>|s;
@@ -1800,6 +1804,8 @@ sub process_names {
   my $names_string = shift;
   my @names = ();
 
+  $names_string = change_case($names_string);
+  
   # Tidy things up
   $names_string =~ s!\s*(&amp;|\band\b|&)\s*!+!gi; # Replace any form of "and" to '+' for the split
   $names_string =~ s|, *|+|g;                  # Replace any commas '+' for the split
