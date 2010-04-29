@@ -620,7 +620,7 @@ sub output_header () {
   if ($h =~ m/\nAuthors?: *(.+)\n/i)               { $authors = $1; }
   if ($h =~ m/\nEditors?: *(.+)\n/i)               { $editor = $1; }
   if ($h =~ m/\nIllustrat(?:ors?|ions(?: by)?): *(.+)\n/i) { $illustrators = $1; }
-  if ($h =~ m/\nTranslat(ors?|ion(?: by)?): *(.+)\n/i)     { $translators  = $1; }
+  if ($h =~ m/\nTranslat(?:ors?|ion(?: by)?): *(.+)\n/i)   { $translators  = $1; }
   if ($h =~ m/\nEdition: *(\d+)\n/i)               { $edition = $1; }
   if ($h =~ m/\nPublished: *(\d+)\n/i)             { $published_date[0] = $1; }
   if ($h =~ m/\nLanguage: *(.+)\n/i)               { $language = $1; }
@@ -791,7 +791,7 @@ sub output_header () {
   if (!$published_date[0]) {
     if ($h =~ m/\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
       $published_date[0] = $1;
-    } elsif ($h =~ m/\n\s*([0-9]{4})\n/i) {
+    } elsif ($h =~ m/\n\s*([0-9]{4})\.?\n/i) {
       $published_date[0] = $1;
     } elsif ($h =~ m/[\[\(]([0-9]{4})[\]\)]/i) {
       $published_date[0] = $1;
@@ -810,12 +810,13 @@ sub output_header () {
     }
   }
   # Get the PUBLISHED PLACE --- Very hit 'n miss!!
-  if ($h =~ m/\n *(New York|London|Cambridge|Boston|Chicago): *(.+?)_?\n/i) {
+  my $cities = "New York|London|Cambridge|Boston|Chicago";
+  if ($h =~ m/\n\s*_?($cities):? +(.+?)_?\n/i) {
     $published_place = change_case($1);
     if (!$publisher) {
       $publisher = change_case($2);
     }
-  } elsif ($h =~ m/\n *((?:New York|London|Cambridge|Boston|Chicago).*?)_?\n/i) {
+  } elsif ($h =~ m/\n\s*_?($cities).*?\n/i) {
     $published_place = change_case($1);
   }
 
@@ -837,9 +838,11 @@ sub output_header () {
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
   if (!$created_by) {
-    if ($h =~ m/\s+(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
-      $created_by = $1;
+    if ($h =~ m/\n\s*(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.+?)\n\n/is) {
+    } else {
+      $h =~ m/\n\s*(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.+)/i;
     }
+    $created_by = $1;
   }
   if (!$proofed_by) {
     if ($h =~ m/Proof(?:ed| ?read) by:?\s+(.*?)\.?\n\n/is) {
