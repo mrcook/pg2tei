@@ -850,9 +850,12 @@ sub output_header () {
       $proofed_by =~ s/\n/ /g;
     }
   }
-  $created_by =~ s/\n/ /g;
-  $created_by =~ s/(\.| at|, email(.*?))$//;
+  if ($created_by) {
+    $created_by =~ s/\n/ /g;
+    $created_by =~ s/(\.| at|, email(.*?))$//;
+  }
   $scanned_by =~ s/\n/ /g;
+
   # Who UPDATED this version?
   if ($h =~ m/\s+(?:This )?updated (?:[e-]*Text|edition) (?:was )?(?:Produced|Prepared|Created) by +(.*?)\n\n/is) {
     $updated_by = $1;
