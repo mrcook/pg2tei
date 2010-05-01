@@ -601,6 +601,7 @@ sub output_body {
 ####-------------------------------------------------####
 sub output_header () {
   my $h = shift;
+  $h .= "\n\n";
 
   # Grab the front matter from this header for printing to output .tei
   if ($h =~ m/\n\*\*\* ?START OF TH(E|IS) PROJECT.*?\n(.*?)$/is) {
@@ -769,19 +770,19 @@ sub output_header () {
   #### PUBLISHED PLACE is not always very accurate.  ####
   ####-----------------------------------------------####
   # Very useful if this 'Transcribed' line exists.
-  if ($h =~ m/\s+Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
+  if ($h =~ m/\n\s*Transcribed from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
     $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
-  } elsif ($h =~ m/\s+This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
+  } elsif ($h =~ m/\n\s*This e(?:Text|Book) was (?:prepared|produced) from the (\d\d\d\d)(?:\s+edition(?:\s+of)?)?\s+(.+?)(?:\s+edition)\s+by\s+(.+?)\n\n/is) {
     $publisher  = $2;
     $created_by = $3;
     if (!$published_date[0]) { $published_date[0] = $1; }
-  } elsif ($h =~ m/\s+Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
+  } elsif ($h =~ m/\n\s*Transcribed by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher  = $3;
     $created_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
-  } elsif ($h =~ m/\s+Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
+  } elsif ($h =~ m/\n\s*Scanned by (.+?)\s+from\s+the\s+(\d\d\d\d)\s+(.+?) edition\./is) {
     $publisher  = $3;
     $scanned_by = $1;
     if (!$published_date[0]) { $published_date[0] = $2; }
@@ -789,11 +790,11 @@ sub output_header () {
 
   # If still no PUBLISHED DATE
   if (!$published_date[0]) {
-    if ($h =~ m/\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
+    if ($h =~ m/\n\s*([0-9][0-9][0-9][0-9])\.?\n/) {
       $published_date[0] = $1;
-    } elsif ($h =~ m/\n\s*([0-9]{4})\.?\n/i) {
+    } elsif ($h =~ m/\n\s*_?Copyright(?:ed)?.*?(\d\d\d\d)/i) {
       $published_date[0] = $1;
-    } elsif ($h =~ m/[\[\(]([0-9]{4})[\]\)]/i) {
+    } elsif ($h =~ m/[\[\(]([0-9][0-9][0-9][0-9])[\]\)]/i) {
       $published_date[0] = $1;
     }
   }
@@ -828,19 +829,19 @@ sub output_header () {
   #### Let's find out who created and updated this book ####
   ####--------------------------------------------------####
   # Who SCANNED/PROOFED the original text?
-  if ($h =~ m/\s+(?:[e-]*text +)?Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
+  if ($h =~ m/\n(?:.*?)Scanned and proof(?:ed| ?read) by:? +([^\n]+)\n/i) {
     $scanned_by = $1;
     $proofed_by = $1;
   }
-  if ($h =~ m/\s+[e-]*text Scanned by:? +([^\n]+)\n/i) {
+  if ($h =~ m/\n[e-]*text Scanned by:? +([^\n]+)\n/i) {
     if (!$scanned_by) { $scanned_by = $1; }
   }
   # Who first PRODUCED this text for Project Gutenberg?
   $h =~ s/\n\*+.+Prepared By (?:Hundreds|Thousands) of Volunteers(?:!| and Donations)?\*+\n//i; #Remove this stupid thing.
   if (!$created_by) {
-    if ($h =~ m/\n\s*(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.+?)\n\n/is) {
+    if ($h =~ m/\n(?-s:.*?)(?:Produced|Prepared|Created) by (.+?)\n\n/is) {
     } else {
-      $h =~ m/\n\s*(?:This [e-]*Text (?:was )?(?:first ))?(?:Produced|Prepared|Created) by +(.+)/i;
+      $h =~ m/\n(?:.*?)(?:Produced|Prepared|Created) by (.+)/i;
     }
     $created_by = $1;
   }

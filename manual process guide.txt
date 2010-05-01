@@ -1,7 +1,3 @@
-[UPDATE]
-Need to update the .XSL and perhaps even .PL to markup <list> items.
-
-
 THINGS TO CHECK
 ---------------
 
@@ -9,23 +5,16 @@ THINGS TO CHECK
 <head> - Check that head's, div's, etc, are correct
          if not then it may be worth adjusting the origianl txt
          to fix any CHAPTER spacings. Best is 3 / 2.
-
 2.
 <figure - CHECK all figures and correct the path/filename
-
 3.
 <note       - Search and check Footnotes
-
-
 4.
 Check for "*", "[", "]" and "_" and mark up appropriately - usually footnotes
-
 5.
 Fix up the Front matter section and make sure all is Tagged correctly.
-
 6.
 LoC Class
-
 7.
 ^[sp]   - CHECK Indents on Original TXT file.
 

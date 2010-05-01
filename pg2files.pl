@@ -119,6 +119,7 @@ sub eachTEI {
   if ($place_foot_count != $note_foot_count) {
     $process_footnotes = 0;
   }
+
   if ($process_footnotes) {
     my @footnotes;
     while ($pg2tei =~ s!<p>\[Footnote ([\d\w*+]+):\s*(?:</p>)?\s*(.*?)(?:<p>)?\](</p>|</quote>)\n\n!!s) {
