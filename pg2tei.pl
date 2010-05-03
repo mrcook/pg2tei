@@ -37,9 +37,9 @@ binmode STDOUT, ':utf8';
 ####                       Set some specific parameters                      ###
 ################################################################################
 
-my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
+my  $is_verse           = 1;    # Work is a poem? Some hints as to what is being converted.
 
-my  $process_epigraph   = 1;    # Disable if book is mostly Poems
+my  $process_epigraph   = 0;    # Disable if book is mostly Poems
 
 my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
 my  $cnt_head_sep       = "2";
@@ -300,20 +300,28 @@ sub output_para {
     $p = post_process ($p);
     print $p . "\n\n";
   } elsif ($is_verse || is_para_verse($o)) {
-    if ($is_first_para == 0) {
-      print "<quote>\n <lg>\n";
+    if ($is_verse == 1) {
+        print " <lg>\n";
     } else {
-      print "<epigraph>\n <lg>\n";
+      if ($is_first_para == 0) {
+        print "<quote>\n <lg>\n";
+      } else {
+        print "<epigraph>\n <lg>\n";
+      }
     }
     while (length ($p)) {
       if ($p =~ s/^(.*?)\s*\n//o) {
         output_line ($1, $o->{'min_indent'});
       }
     }
-    if ($is_first_para == 0) {
-      print " </lg>\n</quote>\n\n";
+    if ($is_verse == 1) {
+        print " </lg>\n\n";
     } else {
-      print " </lg>\n</epigraph>\n\n\n";
+      if ($is_first_para == 0) {
+        print " </lg>\n</quote>\n\n";
+      } else {
+        print " </lg>\n</epigraph>\n\n\n";
+      }
     }
   } else { # paragraph is prose
     # join end-of-line hyphenated words

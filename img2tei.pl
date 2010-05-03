@@ -37,11 +37,11 @@ sub eachTEI {
   ## Let's reset some variables
   ($bookspath, $filename, $filenoext, $bookspath, $fullpath, $line, $data, $tei_path_file) = '';
 
-  if ($_ =~ m/\.htm/) { $html_file = $_; }
+  if ($_ =~ m/\.html?/) { $html_file = $_; }
 
-  return unless $_=~ m|\.tei|;    ## Skip non-TEI files
+  return unless $_ =~ m|\.tei|;    ## Skip non-TEI files
 
-  return if $_=~ m|-new\.tei|;       ## Skip the XXX-new.tei file.
+  return if $_ =~ m|-new\.tei|;    ## Skip the XXX-new.tei file.
 
   $filename  = $_;
   $filenoext = $filename;
@@ -68,8 +68,11 @@ sub eachTEI {
 
   my @images;
   my $tmp_count = 0;
-  while ($data =~ s|<img\s+src="images/(.*?)"(.*?)alt="(.*?)"(.*?)/>||s) {
-    push @{ $images[$tmp_count] }, "$1", "$3";
+  while ($data =~ s!<img +alt="([^"]+|)" +src="images/([^"]+)"!!s) {
+    $alt = $1;
+    $src = $2;
+    if ($alt =~ /$src/) { $alt = ''; }
+    push @{ $images[$tmp_count] }, "$src", "$alt";
     $tmp_count++;
   }
   undef $data;
