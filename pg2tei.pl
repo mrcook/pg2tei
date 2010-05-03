@@ -1847,6 +1847,7 @@ sub process_names {
       if ($3)  { $lastname .= $3; }
 
       ## Some authors use initials, so assign proper name also
+      if ($lastname eq 'Ballantyne' and $firstname =~ m/R\. ?M\./)        { $firstname = 'Robert Michael'; }
       if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)      { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)      { $firstname = 'Francis Scott'; }
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
