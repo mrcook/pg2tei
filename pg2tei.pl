@@ -37,9 +37,9 @@ binmode STDOUT, ':utf8';
 ####                       Set some specific parameters                      ###
 ################################################################################
 
-my  $is_verse           = 1;    # Work is a poem? Some hints as to what is being converted.
+my  $is_verse           = 0;    # Work is a poem? Some hints as to what is being converted.
 
-my  $process_epigraph   = 0;    # Disable if book is mostly Poems
+my  $process_epigraph   = 1;    # Disable if book is mostly Poems
 
 my  $cnt_chapter_sep    = "3,"; # chapters are separated by 3 empty lines
 my  $cnt_head_sep       = "2";
