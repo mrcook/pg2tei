@@ -87,6 +87,10 @@ FOOTNOTES
   </div>
 
   <figure url="images/">
+    <figDesc>Illustration</figDesc>
+  </figure>
+
+  <figure url="images/">
     <head></head>
     <figDesc>Illustration</figDesc>
   </figure>
