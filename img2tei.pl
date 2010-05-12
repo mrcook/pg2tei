@@ -68,12 +68,22 @@ sub eachTEI {
 
   my @images;
   my $tmp_count = 0;
-  while ($data =~ s!<img +alt="([^"]+|)" +src="images/([^"]+)"!!s) {
-    $alt = $1;
-    $src = $2;
-    if ($alt =~ /$src/) { $alt = ''; }
-    push @{ $images[$tmp_count] }, "$src", "$alt";
-    $tmp_count++;
+  if ($data =~ m/<img +alt="([^"]+|)" +src="images\/([^"]+)"/) {
+    while ($data =~ s!<img +alt="([^"]+|)" +src="images/([^"]+)"!!s) {
+      $alt = $1;
+      $src = $2;
+      if ($alt =~ /$src/) { $alt = ''; }
+      push @{ $images[$tmp_count] }, "$src", "$alt";
+      $tmp_count++;
+    }
+  } elsif ($data =~ m/<img +src="images\/([^"]+)" +(?:.*?) +alt="([^"]+|)"/) {
+    while ($data =~ s!<img +src="images/([^"]+)" +(?:.*?) +alt="([^"]+|)"!!s) {
+      $src = $1;
+      $alt = $2;
+      if ($alt =~ /$src/) { $alt = ''; }
+      push @{ $images[$tmp_count] }, "$src", "$alt";
+      $tmp_count++;
+    }  
   }
   undef $data;
 

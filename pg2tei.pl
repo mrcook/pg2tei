@@ -30,7 +30,7 @@ use Text::Wrap;            # Only needed when re-wrapping text in <epigraph>
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
 use utf8;
-#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 ################################################################################
@@ -1421,8 +1421,8 @@ sub pre_process {
   $c =~ s/\n\[?([*+]{1})\]? *(.*?)\n\n+/\n[Footnote $1: $2]\n\n/gs; # If a footnote uses [* ...] then replace (footnote 1)
 
   ## Check for [1], [1a] style footnotes and fix up
-  $c =~ s|\n\[(\d+)\] |\n[Footnote $2: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
-  $c =~ s|\n\[(\d+[a-z]+)\] |\n[Footnote $2: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
+  $c =~ s|\n\[(\d+)\] |\n[Footnote $1: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
+  $c =~ s|\n\[(\d+[a-z]+)\] |\n[Footnote $1: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
   # FOOTNOTES: Semi-auto process on footnotes.    
   if ($c =~ s/\[([\d*+]+|\w)\]/<footnote=$1>/g) {
@@ -1851,9 +1851,12 @@ sub process_names {
       if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)      { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)      { $firstname = 'Francis Scott'; }
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
+      if ($lastname eq 'Henty'      and $firstname =~ m/G\. ?A\./)        { $firstname = 'George Alfred'; }
+      if ($lastname eq 'Mason'      and $firstname =~ m/A\. ?E\. ?W\./)   { $firstname = 'Alfred Edward Woodley'; }
       if ($lastname eq 'Maugham'    and $firstname =~ m/(W\. )?Somerset/) { $firstname = 'William Somerset'; }
       if ($lastname eq 'Montgomery' and $firstname =~ m/L\. ?M./)         { $firstname = 'Lucy Maud'; }
       if ($lastname eq 'Nesbit'     and $firstname =~ m/E\./)             { $firstname = 'Edith'; }
+      if ($lastname eq 'Nietzsche'  and $firstname =~ m/F\.( ?W\.)?/)     { $firstname = 'Friedrich Wilhelm'; }
       if ($lastname eq 'Norton'     and $firstname =~ m/Andre( A\.)?/)    { $firstname = 'Andre Alice'; }
       if ($lastname eq 'Smith'      and $firstname =~ m/E\. ?E./)         { $firstname = 'Edward Elmer'; }
       if ($lastname eq 'Smith'      and $firstname =~ m/["']Doc["']/)     { $firstname = 'Edward Elmer'; }

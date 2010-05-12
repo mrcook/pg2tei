@@ -130,7 +130,7 @@ sub eachTEI {
     } 
   }
   # Now we've processed most footnotes let's check for "inline" footnotes.
-  while ($pg2tei =~ s|(?:[^\n])\[Footnote(?: [\d\w*+]+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
+  while ($pg2tei =~ s|[^\n]+\[Footnote(?: [\d\w*+]+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
 
   
   # MUST BE DONE HERE -- After Footnote Stuff
