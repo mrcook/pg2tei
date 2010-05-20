@@ -30,7 +30,7 @@ use Text::Wrap;            # Only needed when re-wrapping text in <epigraph>
 ####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
 ################################################################################
 use utf8;
-use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
+#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
 binmode STDOUT, ':utf8';
 
 ################################################################################
