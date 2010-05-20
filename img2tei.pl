@@ -89,7 +89,7 @@ sub eachTEI {
 
 
   # OPEN the TEI for working with
-  open(TEI, $fullpath . DS . $filename) || die("Could not open file!");
+  open(TEI, "<:utf8", $fullpath . DS . $filename) || die("Could not open file!");
     @raw_data = <TEI>;
   close(TEI);
   foreach $line (@raw_data) {
@@ -115,7 +115,7 @@ sub eachTEI {
   if (unlink($tei_path_file) == 1) {
     print "\n\n--- Old file has been deleted ---\n\n";
   }
-  open (OUT,  ">", $tei_path_file) or die "Could not open file\n";
+  open (OUT,  ">:utf8", $tei_path_file) or die "Could not open file\n";
     print OUT $data;
   close(OUT);
 
