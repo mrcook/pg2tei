@@ -1373,6 +1373,11 @@ sub pre_process {
   # <milestone> will be replaced later, on line: ~1250
   $c =~ s|\n *(\* +){2,}\*\n\n|\n<milestone>\n\n|g;
 
+  $c =~ s|(?<!\[)\* \* \* \* \*(?!\])|<stars=5>|g;
+  $c =~ s|(?<!\[)\* \* \* \*(?!\])|<stars=4>|g;
+  $c =~ s|(?<!\[)\* \* \*(?!\])|<stars=3>|g;
+  $c =~ s|(?<!\[)\* \*(?!\])|<stars=2>|g;
+  
 
   #### -------------------------------------- ####
   #### Some pre-processing for the Footnotes. ####
@@ -1621,6 +1626,16 @@ sub post_process {
   #  $c =~ s|&qdash;|&#8213;|g;
   #  $c =~ s|&hellip;|&#8230;|g;
   #  $c =~ s|&deg;|&#176;|g;
+
+  # Stars "*", held within a line of text--usually to hide a persons name--are 
+  # replaced with <stars=2> in the pre-process. Now to convert back to * *
+  $c =~ s|<stars=(\d+)>|multistars($1)|eg;
+  sub  multistars {
+    my $num = shift;
+    my $stars = "* " x $num;
+    $stars =~ s| +$||;
+    return $stars;
+  }
 
   return $c;
 }
