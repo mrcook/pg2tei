@@ -1873,6 +1873,7 @@ sub process_names {
       if ($lastname eq 'Nesbit'     and $firstname =~ m/E\./)             { $firstname = 'Edith'; }
       if ($lastname eq 'Nietzsche'  and $firstname =~ m/F\.( ?W\.)?/)     { $firstname = 'Friedrich Wilhelm'; }
       if ($lastname eq 'Norton'     and $firstname =~ m/Andre( A\.)?/)    { $firstname = 'Andre Alice'; }
+      if ($lastname =~ m/(Le)?Fanu/i and $firstname =~ m/(J\.|Joseph)( Thomas)?( Sheridan)?( Le)?/i) { $lastname = 'Le Fanu'; $firstname = 'Joseph Thomas Sheridan'; }
       if ($lastname eq 'Smith'      and $firstname =~ m/E\. ?E./)         { $firstname = 'Edward Elmer'; }
       if ($lastname eq 'Smith'      and $firstname =~ m/["']Doc["']/)     { $firstname = 'Edward Elmer'; }
       if ($lastname eq 'Wells'      and $firstname =~ m/H\. ?G\./)        { $firstname = 'Herbert George'; }
