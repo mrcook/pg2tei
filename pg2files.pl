@@ -54,9 +54,26 @@ sub eachTEI {
   ## Make a backup copy of the .txt file in "pg-orig".
   copy($file, $books_folder . $filename . DS . 'pg-orig' . DS . $orig_filename . '.txt') or die "Failed to copy file: $!\n";
 
-  ## Now run the pg2tei.pl script using `backticks` to get file into variable.
-  $pg2tei = `perl -w $pg2tei_script $books_folder $file`;
 
+  # Check that the file will open correctly as UTF-8
+  my $utf_check = 0;
+  open(UTFCHECK, "<", $file) || die('Could not open file!');
+    @raw_data = <UTFCHECK>;
+  close(UTFCHECK);
+  foreach $line (@raw_data) {
+    if ($line =~ s/Character set encoding: (.*?)\s*/$1/i) {
+      if ($line =~ m/u(tf-?8|nicode)/i) {
+        $utf_check = 1;
+      }
+      last;
+    }
+  }
+  ## Now run the pg2tei.pl script using `backticks` to get file into variable.
+  if ($utf_check == 0) {
+    $pg2tei = `perl -w $pg2tei_script $books_folder $file`;
+  } else {
+    $pg2tei = `perl -w $pg2tei_script $books_folder $file -utf`;
+  }
 
   #######################################
   ## Now let's do some post-processing ##

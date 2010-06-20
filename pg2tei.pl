@@ -25,13 +25,8 @@ use POSIX qw(strftime);
 use POSIX qw(locale_h);
 use Text::Wrap;            # Only needed when re-wrapping text in <epigraph>
 
+use utf8; # This .pl document is endoed as utf-8 so state it here. Does not affect input/output files!
 
-################################################################################
-####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
-################################################################################
-use utf8;
-#use open IN => ':encoding(utf8)';         # NEEDED for UTF-8 Source documents.
-binmode STDOUT, ':utf8';
 
 ################################################################################
 ####                       Set some specific parameters                      ###
@@ -53,8 +48,8 @@ my  $max_line_length    = 0;
 my  ($quotes1, $quotes1pre, $quotes2);
 
 my  $override_quotes    = '';
-
 my  $help               = 0;
+my  $is_utf             = 0;
 
 # All date arrays hold;
 #    [0] = date found in TXT (March 23, 2001)
@@ -146,14 +141,25 @@ my %languages = (
 );
 
 GetOptions (
+  "utf!"        => \$is_utf,
   "quotes=s"    => \$override_quotes,
   "chapter=i"   => \$cnt_chapter_sep,
   "head=i"      => \$cnt_head_sep,
   "paragraph=i" => \$cnt_paragraph_sep,
   "verse!"      => \$is_verse,
-#  "locale=s"    => \$locale,
+  #  "locale=s"    => \$locale,
   "help|h|?!"   => \$help,
 );
+
+################################################################################
+####                  CHECK FOR UTF-8 SOURCE AND SET OUTPUT                 ####
+################################################################################
+# We heck for source .TXT encoding in the pg2files.pl document.
+if ($is_utf) {
+}
+#use open IN =>  ':encoding(UTF-8)';        # NEEDED for UTF-8 Source documents.
+binmode STDOUT, ':utf8';        # All files sent to output are UTF-8 encoded.
+
 
 
 ################################################################################
