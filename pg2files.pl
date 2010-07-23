@@ -86,7 +86,7 @@ sub eachTEI {
 
 
   ### Add <lg rend="font-style(italic)"> where needed.
-  while ($pg2tei =~ s|<lg>\s+<l([^>]+)?>_([^_]+)</l>\n((  <l>[^_]+</l>\n)*)\s+<l([^>]+)?>([^_]+)_</l>\s+</lg>|<lg rend="font-style(italic)">\n  <l$1>$2</l>\n$3  <l$5>$6</l>\n </lg>|) {}
+  while ($pg2tei =~ s|<lg>\s+<l([^>]+)?>_([^_]+)</l>\s+((?:  <l>[^_]+</l>\n)*)\s+<l([^>]+)?>([^_]+)_</l>\s+</lg>|<lg rend="font-style(italic)">\n  <l$1>$2</l>\n$3  <l$4>$5</l>\n </lg>|) {}
 
   ### If there are any multi-line emphasis (but not every line in the <lg>)
   ### then we can now SAFELY swap out and close off the rest of the _ (underscores)

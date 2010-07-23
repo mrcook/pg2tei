@@ -1455,7 +1455,7 @@ sub pre_process {
   $c =~ s|&#8230; ?([\!\?])|&#8230;$1|g;  # Fix '&#8230; ! or ?'
 
   #substitute °, @ OR #o (lowercase O) for &#176;
-  $c =~ s|(°\|@)|&#176;|g;
+  $c =~ s/(°|@)/&#176;/g;
   $c =~ s|(\d{1,3})o|$1&#176;|g;
 
   # Reserved characters; these characters will give TeX trouble if left in
@@ -1872,6 +1872,7 @@ sub process_names {
       if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)      { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)      { $firstname = 'Francis Scott'; }
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
+      if ($lastname eq 'Haggard'    and $firstname =~ m/H\. ?Rider/)      { $firstname = 'Henry Rider'; }
       if ($lastname eq 'Henty'      and $firstname =~ m/G\. ?A\./)        { $firstname = 'George Alfred'; }
       if ($lastname eq 'Mason'      and $firstname =~ m/A\. ?E\. ?W\./)   { $firstname = 'Alfred Edward Woodley'; }
       if ($lastname eq 'Maugham'    and $firstname =~ m/(W\. )?Somerset/) { $firstname = 'William Somerset'; }
