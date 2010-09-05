@@ -1874,6 +1874,7 @@ sub process_names {
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
       if ($lastname eq 'Haggard'    and $firstname =~ m/H\. ?Rider/)      { $firstname = 'Henry Rider'; }
       if ($lastname eq 'Henty'      and $firstname =~ m/G\. ?A\./)        { $firstname = 'George Alfred'; }
+      if ($lastname eq 'Lawrence'   and $firstname =~ m/D\. ?H\./)        { $firstname = 'David Herbert Richards'; }
       if ($lastname eq 'Mason'      and $firstname =~ m/A\. ?E\. ?W\./)   { $firstname = 'Alfred Edward Woodley'; }
       if ($lastname eq 'Maugham'    and $firstname =~ m/(W\. )?Somerset/) { $firstname = 'William Somerset'; }
       if ($lastname eq 'Montgomery' and $firstname =~ m/L\. ?M./)         { $firstname = 'Lucy Maud'; }
