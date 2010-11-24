@@ -163,8 +163,10 @@ sub eachTEI {
   my $normal_chapter_exists = 0;
   if ($pg2tei =~ m|<div type="chapter">\n\n<head>(?:.*?)CHAPTER(?:.*?)</head>|is) {
     $pg2tei =~ s|<div type="chapter">(\n\n<head>(Section )?\d+</head>)|<div type="section">$1|g;
-  }  
+  }
+  $pg2tei =~ s|<div type="chapter">\n\n<head>§\s+(\d+)</head>|<div type="section">\n\n<head>($1)</head>|gis;
   
+
   #############################
   ## Write out to a TEI file ##
   #############################

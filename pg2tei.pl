@@ -83,7 +83,8 @@ my  $language_code      = '';
 my  $encoding           = 'iso-8859-1';
 
 my  $series_title       = '****';
-my  $series_volume      = '**';
+my  $series_number      = '**';
+my  $first_edition      = '';
 
 my  @release_date;
 my  @posted_date;
@@ -646,8 +647,11 @@ sub output_header () {
 
   # The Series information is sometimes added manually by myself.
   # Better to do this in the source than in the manual post-processing.
-  if ($h =~ m/\nSeries Name: +(.+)\n/i)                 { $series_title  = $1; }
-  if ($h =~ m/\nSeries Volume: +(\d+)\n/i)         { $series_volume = $1; }
+  if ($h =~ m/\nSeries Title: +(.+)\n/i)           { $series_title  = $1; }
+  if ($h =~ m/\nSeries Number: +(\d+)\n/i)         { $series_number = $1; }
+
+  # When was the First Edition Published?
+  if ($h =~ m/\nFirst Edition Published: +(.+)\n/i) { $first_edition = $1; }
 
 
   # There are four different dates possible in any PG text;
@@ -695,6 +699,13 @@ sub output_header () {
   if ($h =~ m/\nLast Updated?: *(.+)\n/i)          {
     $last_updated[0] = $1;
     $last_updated[1] = process_dates($1);
+  }
+
+  # If this line is found then we should reset $release_date[0]
+  # as the "Release Date" is not real.
+  if ($h =~ m/\[Yes, we are more than one year ahead of schedule\]\n/i) {
+    $release_date[0] = '';
+    $release_date[1] = '';
   }
 
   ####------------------------------------------------------------------####
@@ -1112,7 +1123,7 @@ print <<HERE;
     </publicationStmt>
     <seriesStmt>
       <title level="s">$series_title</title>
-      <idno type="vol">$series_volume</idno>
+      <idno type="vol">$series_number</idno>
     </seriesStmt>
     <notesStmt>
       <note resp="redactor">$redactors_notes</note>
@@ -1144,7 +1155,17 @@ print <<HERE;
           <imprint>
             <pubPlace>$published_place</pubPlace>
             <publisher>$publisher</publisher>
+HERE
+if (!$published_date[0]) {
+  print <<HERE;
+            <date when="$first_edition">$first_edition</date>
+HERE
+} else {
+  print <<HERE;
             <date when="$published_date[1]">$published_date[0]</date>
+HERE
+}
+print <<HERE;
           </imprint>
         </monogr>
       </biblStruct>
@@ -1870,6 +1891,7 @@ sub process_names {
       ## Some authors use initials, so assign proper name also
       if ($lastname eq 'Ballantyne' and $firstname =~ m/R\. ?M\./)        { $firstname = 'Robert Michael'; }
       if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)      { $firstname = 'Lyman Frank'; }
+      if ($lastname eq 'Chesterton' and $firstname =~ m/G\. ?K\./)        { $firstname = 'Gilbert Keith'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)      { $firstname = 'Francis Scott'; }
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
       if ($lastname eq 'Haggard'    and $firstname =~ m/H\. ?Rider/)      { $firstname = 'Henry Rider'; }

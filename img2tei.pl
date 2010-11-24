@@ -83,10 +83,9 @@ sub eachTEI {
       if ($alt =~ /$src/) { $alt = ''; }
       push @{ $images[$tmp_count] }, "$src", "$alt";
       $tmp_count++;
-    }  
+    }
   }
   undef $data;
-
 
   # OPEN the TEI for working with
   open(TEI, "<:utf8", $fullpath . DS . $filename) || die("Could not open file!");
