@@ -27,7 +27,7 @@ $current_drive = (File::Spec->splitpath($current_dir))[0];
 $books_folder  = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script
-$pg2tei_script = $current_drive . DS . 'epbProject' . DS . 'epb-pg2tei' . DS . 'pg2tei.pl';
+$pg2tei_script = $current_drive . DS . 'epbProject' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
 
 ######################################
 ## Search and execute all TXT files ##
@@ -155,7 +155,7 @@ sub eachTEI {
   # In some footnotes we still have a <p><quote> which needs removing
   while ($pg2tei =~ s!<p><(?:quote|epigraph)>!<quote>!s) {}
   while ($pg2tei =~ s!</(?:quote|epigraph)>\n\n+</p>!</quote>!s) {}
-  
+
 
   ### -------------------------------------- ###
   ### Try to fix the CHAPTER/SECTION issues. ###
@@ -164,8 +164,11 @@ sub eachTEI {
   if ($pg2tei =~ m|<div type="chapter">\n\n<head>(?:.*?)CHAPTER(?:.*?)</head>|is) {
     $pg2tei =~ s|<div type="chapter">(\n\n<head>(Section )?\d+</head>)|<div type="section">$1|g;
   }
-  $pg2tei =~ s|<div type="chapter">\n\n<head>§\s+(\d+)</head>|<div type="section">\n\n<head>($1)</head>|gis;
-  
+
+  # Mark-up sections when finding "section sign" (§)
+  # Followed by no-breaking or normal space
+  $pg2tei =~ s/<div type="chapter">\n\n<head>\x{C2}\x{A7}(?:\x{C2}\x{A0}| )(\d+)<\/head>/<div type="section">\n\n<head>$1<\/head>/g;
+
 
   #############################
   ## Write out to a TEI file ##
