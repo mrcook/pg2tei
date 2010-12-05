@@ -27,7 +27,7 @@ $current_drive = (File::Spec->splitpath($current_dir))[0];
 $books_folder  = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script
-$pg2tei_script = $current_drive . DS . 'epbProject' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
+$pg2tei_script = $current_drive . DS . 'ProjectCode' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
 
 ######################################
 ## Search and execute all TXT files ##

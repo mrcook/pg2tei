@@ -24,7 +24,7 @@ $current_dir   = File::Spec->rel2abs($current_dir) unless ( File::Spec->file_nam
 $current_drive = (File::Spec->splitpath($current_dir))[0];
 
 ## DRIVE & PATH to .epub files.
-$books_drive   = 'H:';
+$books_drive   = 'E:';
 $books_folder  = DS . 'conversions';
 
 if (-d($current_drive . $books_folder)) {
