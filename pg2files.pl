@@ -167,7 +167,7 @@ sub eachTEI {
 
   # Mark-up sections when finding "section sign" (§)
   # Followed by no-breaking or normal space
-  $pg2tei =~ s/<div type="chapter">\n\n<head>\x{C2}\x{A7}(?:\x{C2}\x{A0}| )(\d+)<\/head>/<div type="section">\n\n<head>$1<\/head>/g;
+  $pg2tei =~ s/<div type="chapter">\n\n<head>\x{C2}\x{A7}(?:\x{C2}\x{A0}| )?(\d+)\.?<\/head>/<div type="section">\n\n<head>$1<\/head>/g;
 
 
   #############################
