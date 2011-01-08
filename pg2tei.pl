@@ -1223,7 +1223,7 @@ print <<HERE;
     </textClass>
   </profileDesc>
   <revisionDesc>
-    <change when="$current_date[1]" who="Cook, Michael">
+    <change n="1.0.0" when="$current_date[1]" who="Cook, Michael">
       Conversion of TXT document to TEI P5 by <name>Michael Cook</name>.
 HERE
 if ($encoding ne 'utf-8') {
