@@ -1,0 +1,13 @@
+1.  Find a "Magic" Character.
+2.  Change CR+LF to the magic character.
+3.  Change CR to the magic character.
+4.  Change LR to the magic character.
+5.  Change all the "Magic" Characters to _your_ Newline.
+6.  Change all Space+Newline pairings to a Newline.
+     (Execute this repeatedly)
+7.  Change all Newlines to a Space+Newline pairing.
+8.  Change Space+Newline+Space+Newline to Newline+Newline.
+9.  Change all Newline+Space+Newline to Newline+Newline.
+     (Execute this repeatedly)
+10.  Change all Space+Newline+Space to Newline+Space.
+11.  Change all the Space+Newlines to a Space.

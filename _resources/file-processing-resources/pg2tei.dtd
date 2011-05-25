@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT xref (#PCDATA)>
+<!ATTLIST xref url CDATA #REQUIRED>
+<!ELEMENT titleStmt ((title+, author+, (editor+ | respStmt)?))>
+<!ELEMENT titlePart (#PCDATA | lb | q)*>
+<!ATTLIST titlePart type (sub | main) #REQUIRED>
+<!ELEMENT titlePage ((docTitle, byline+, ((figure, docEdition, docImprint) | (docEdition, docImprint, (byline | figure)?))))>
+<!ELEMENT title (#PCDATA | q)*>
+<!ATTLIST title level CDATA #FIXED "s" type CDATA #FIXED "sub">
+<!ELEMENT textClass ((keywords, classCode))>
+<!ELEMENT text ((front, body, back))>
+<!ELEMENT teiHeader ((fileDesc, encodingDesc, profileDesc, revisionDesc))>
+<!ELEMENT taxonomy ((bibl))>
+<!ATTLIST taxonomy id CDATA #FIXED "lc">
+<!ELEMENT table ((row+))>
+<!ATTLIST table cols CDATA #FIXED "7" rows CDATA #FIXED "17">
+<!ELEMENT sup (#PCDATA)>
+<!ELEMENT sub (#PCDATA)>
+<!ELEMENT stdVals ((p))>
+<!ELEMENT stage (#PCDATA | emph)*>
+<!ELEMENT sourceDesc ((biblStruct))>
+<!ELEMENT signed (#PCDATA | emph | q | name | date)*>
+<!ELEMENT seriesStmt ((title, idno))>
+<!ELEMENT samplingDecl ((p+))>
+<!ELEMENT row ((cell+))>
+<!ELEMENT revisionDesc ((change+))>
+<!ELEMENT respStmt ((name | (resp+, name?)))>
+<!ELEMENT resp (#PCDATA | name)*>
+<!ELEMENT quote ((table | (p+, ((q, p) | (lg+, p?))?) | (lg+, (p+, lg, p?)?) | (head+, p+, (head, p, head, p, head, p)?)))>
+<!ELEMENT quotation ((p))>
+<!ATTLIST quotation form CDATA #FIXED "std" marks CDATA #FIXED "all">
+<!ELEMENT q (#PCDATA | figure | p | sub | q | note | emph | lb)*>
+<!ATTLIST q rend (pre | post) #IMPLIED>
+<!ELEMENT publisher (#PCDATA)>
+<!ELEMENT publicationStmt ((publisher, pubPlace, address, date, idno+, availability))>
+<!ELEMENT pubPlace (#PCDATA | xref)*>
+<!ELEMENT profileDesc ((creation, langUsage, textClass))>
+<!ELEMENT pre (#PCDATA)>
+<!ELEMENT p (#PCDATA | figure | list | quote | sup | xref | q | stage | note | lb | emph)*>
+<!ATTLIST p rend CDATA #IMPLIED>
+<!ELEMENT notesStmt ((note+))>
+<!ELEMENT note (#PCDATA | emph | q | p | signed | milestone | quote)*>
+<!ATTLIST note place CDATA #FIXED "foot" resp CDATA #FIXED "redactor" type CDATA #FIXED "transcriber">
+<!ELEMENT normalization ((p))>
+<!ELEMENT name (#PCDATA)>
+<!ATTLIST name reg CDATA #IMPLIED>
+<!ELEMENT monogr ((editor+, author+, title+, imprint))>
+<!ELEMENT milestone EMPTY>
+<!ATTLIST milestone unit CDATA #FIXED "tb">
+<!ELEMENT list ((item+))>
+<!ATTLIST list rend CDATA #FIXED "runon" type CDATA #FIXED "ordered">
+<!ELEMENT li (#PCDATA)>
+<!ELEMENT lg ((l+ | lg+ | li))>
+<!ATTLIST lg rend CDATA #IMPLIED type (song | lament) #IMPLIED>
+<!ELEMENT lb EMPTY>
+<!ELEMENT language (#PCDATA)>
+<!ATTLIST language id (en-US | en) #REQUIRED>
+<!ELEMENT langUsage ((language))>
+<!ELEMENT l (#PCDATA | note | q | stage | emph)*>
+<!ATTLIST l rend CDATA #IMPLIED>
+<!ELEMENT keywords ((list))>
+<!ATTLIST keywords scheme CDATA #FIXED "lc">
+<!ELEMENT item (#PCDATA)>
+<!ATTLIST item n (3 | 2 | 1) #IMPLIED>
+<!ELEMENT interpretation ((p))>
+<!ELEMENT index EMPTY>
+<!ATTLIST index index (toc | pdf | fig) #REQUIRED>
+<!ELEMENT imprint ((pubPlace+, publisher+, date))>
+<!ELEMENT idno (#PCDATA)>
+<!ATTLIST idno type (vol | etext-no | etext-file) #REQUIRED>
+<!ELEMENT hyphenation ((p))>
+<!ATTLIST hyphenation eol CDATA #FIXED "none">
+<!ELEMENT head (#PCDATA | emph | lb | note | q)*>
+<!ATTLIST head type CDATA #FIXED "sub">
+<!ELEMENT front (((titlePage, div*) | (div, ((titlePage, (figure | (div+, (figure, div)?))?) | (figure+, titlePage, ((figure+, div*) | (div+, (figure, div+)?))?)))))>
+<!ELEMENT fileDesc ((titleStmt, editionStmt, publicationStmt, seriesStmt, notesStmt, sourceDesc))>
+<!ELEMENT figure ((figDesc | (index, (figDesc | (head, p?, figDesc)))))>
+<!ATTLIST figure url CDATA #REQUIRED>
+<!ELEMENT figDesc (#PCDATA | q)*>
+<!ELEMENT epigraph ((lg+, signed?))>
+<!ELEMENT encodingDesc ((samplingDecl, editorialDecl, classDecl))>
+<!ELEMENT emph (#PCDATA | lb | q)*>
+<!ELEMENT editorialDecl ((normalization, quotation, hyphenation, stdVals, interpretation))>
+<!ELEMENT editor (#PCDATA)>
+<!ATTLIST editor role (translator | techinical_adviser | illustrator | editor) #IMPLIED type CDATA #FIXED "illustrator">
+<!ELEMENT editionStmt ((edition, respStmt))>
+<!ELEMENT edition (#PCDATA | date)*>
+<!ATTLIST edition n (2 | 11 | 10 | 1) #REQUIRED>
+<!ELEMENT docTitle ((titlePart+))>
+<!ELEMENT docImprint (#PCDATA | publisher | pubPlace | docDate | date)*>
+<!ELEMENT docEdition (#PCDATA)>
+<!ELEMENT docDate (#PCDATA)>
+<!ELEMENT docAuthor (#PCDATA | name)*>
+<!ELEMENT divGen EMPTY>
+<!ATTLIST divGen type (toc | footnotes | fig | encodingDesc) #REQUIRED>
+<!ELEMENT div ((divGen | (p+, ((quote, ((p, quote) | (figure, p, figure, p, figure, p, figure, p, figure, p, figure, p, figure, p, figure, p, figure, p, figure, p, figure, p+, figure, p, figure, p, figure, p, figure, p, figure, p+, figure, p, figure, p+, figure, p+, figure, p, figure, p, figure, p+, figure, p+, figure, p, figure, p+, figure, p+))) | (index+, head+, (div+ | (p+, milestone, p+, milestone, p+, (milestone, p+, milestone, p+, milestone, p+)?))) | (figure, p+, figure, p+, figure, p+, figure+, p+, (figure, p, figure, p+, figure, p+, figure, p, figure, p+, figure+, p+, figure, p+, figure+, p, figure, p, figure, p, figure, p+, figure, p, figure, p+, figure, p+, figure, p+, figure, p+, figure, p, figure, p+, figure, p, figure, p, figure, p, figure, p+, figure+, p)?))?) | (lg, (signed | (p+, milestone))?) | (index+, head+, (div+ | divGen | (quote, (signed | (p+, (quote, p, quote, p+, quote, p+, quote, p, quote, p, milestone)?))?) | (p+, (div+ | ((list | table | (l, lg)), p+) | (signed+, (date | p)?) | (quote+, (milestone | (figure, p+) | (p+, ((quote, (signed | (p+, (quote, p+, (quote, (p+, (quote, (milestone | (p+, ((quote+, p+, quote, p+, quote, p+, (quote, p+, quote, p+, quote, p+, (quote, p+)?)?) | (figure, p+, quote, p+, quote, p+))?)))?)?)?)?))) | (milestone, p+, ((milestone, p+, milestone, p+, milestone, p+) | (figure, p+, figure))?) | (figure, (p+, (figure, (p+, quote, p+)?)?)?))?))?) | (milestone, (p+, (((quote | (pre, p+, pre)), p+) | (milestone, p+, ((milestone, (p+, (milestone, p+, ((milestone, p+, (milestone, p+, (milestone, (p+, (milestone, (p+, (milestone, p+, ((milestone, p+, (milestone, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+)?) | (figure, p+, milestone, p+))?)?)?)?)?)?)?) | (figure, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+))?)?)?) | (figure, p+, (milestone, p+, milestone, p+, (milestone, p+, (milestone, p+, milestone, p+, (milestone, p+, milestone, p+)?)?)?)?))?) | (figure+, p+, (figure | (milestone, p+, (milestone, p+, (milestone, p+, (milestone, p+)?)?)?))?))?)?) | (lg+, ((quote, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+) | (p+, ((lg | (milestone, p+, milestone, p+, milestone, p+, milestone, p+, milestone, p+, milestone)), p+)?))?) | (figure+, (p+, ((table, p+) | (quote, p+, (figure, p+, (figure, p+, figure)?)?) | (milestone, p+, (figure | (milestone, p+, (milestone, p+, (milestone, p+, (milestone, p+, (milestone, p+)?)?)?)?))?) | (figure+, (p+, ((quote, p+, (figure | (quote, p+))) | (figure, (p+, ((lg, p+, figure, p+, figure) | (figure, (p+, (figure, (p+, figure, p*)?)?)?))?)?))?)?))?)?))?) | (lg+, (p*, milestone)?) | (figure, p+, ((quote, p+, figure, p+, ((quote, p) | (figure, p+, figure, p, figure, p, figure, p+, figure, p+, figure, p+, figure, p+, figure))) | (lg, p+, figure+, p+, figure) | (figure, (p+, ((quote, p+) | (milestone, p+, figure, p+, milestone, p, figure, p, quote, p+, figure, p+, quote, p+, figure, p+, figure, p+, figure) | (figure+, ((quote+, figure, quote+, figure, quote+, figure, quote+, p+, figure, p+, milestone, p, figure, p, figure, p+, figure) | (p+, ((milestone, p+, figure) | (figure, (p+, figure, (p+, figure, p+, figure, p, quote, p, quote, p+, quote, p+, quote, p+, figure, quote, figure, p+, milestone, p+, figure, p+, milestone)?)?))))?)))?))?) | (epigraph, (div+ | (p+, (quote, p, quote, p, quote, p+)?))))?) | (head+, (lg | p+)) | (figure+, ((p+, figure, p+, figure, p, figure, p+, figure, p+, figure, p+, figure, p+, figure, p, milestone) | (index+, head+, (div+ | (p+, ((quote, p+) | (lg+, p*, figure, p+) | (figure, (p+, (figure, (p+, figure)?)?)?))?))))?)))>
+<!ATTLIST div id CDATA #FIXED "footnotes" n (8 | 7 | 6 | 5 | 4 | 3 | 2 | 1) #IMPLIED resp CDATA #FIXED "editor" type (volume | section | publisher | prologue | preface | part | notes | note | letter | introduction | footnotes | figures | epigraph | editor | dedication | contents | chapter | book | biography) #IMPLIED>
+<!ELEMENT date (#PCDATA | emph)*>
+<!ELEMENT creation ((date))>
+<!ELEMENT classDecl ((taxonomy))>
+<!ELEMENT classCode (#PCDATA)>
+<!ATTLIST classCode scheme CDATA #FIXED "lc">
+<!ELEMENT change (#PCDATA | name | date | respStmt | item)*>
+<!ELEMENT cell (#PCDATA | lb)*>
+<!ATTLIST cell rend CDATA #IMPLIED>
+<!ELEMENT byline (#PCDATA | emph | figure | name | lb | docAuthor)*>
+<!ELEMENT body (#PCDATA | emph | figure | div)*>
+<!ELEMENT biblStruct ((monogr))>
+<!ELEMENT bibl (#PCDATA)>
+<!ELEMENT back (#PCDATA | div | figure)*>
+<!ATTLIST back rend CDATA #FIXED "page-break-before: right">
+<!ELEMENT availability ((p))>
+<!ELEMENT author (#PCDATA | name)*>
+<!ELEMENT address ((addrLine+))>
+<!ELEMENT addrLine (#PCDATA)>
+<!ELEMENT TEI ((teiHeader, text))>
+<!ATTLIST TEI xml:lang (en-US | en | EN) #REQUIRED>
