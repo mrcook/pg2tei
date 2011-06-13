@@ -80,6 +80,8 @@ FOOTNOTES
  rend="text-align(right)"
  rend="text-align(right) margin-right(10%)"
 
+ 
+<byline></byline>
 
   <div type="figures">
     <head>Illustrations</head>

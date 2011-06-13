@@ -11,4 +11,4 @@ ECHO.
 :: @created    May 2007
 :: @version    $Id$
 
-\xampp\perl\bin\perl.exe -w \ProjectCode\epubbooks-pg2tei\img2tei.pl
+\xampp\perl\bin\perl.exe -w \project-code\epubbooks-pg2tei\img2tei.pl
