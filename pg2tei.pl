@@ -1893,7 +1893,7 @@ sub process_names {
       if ($lastname eq 'Barrie'     and $firstname =~ m/J\. ?M\./)        { $firstname = 'James Matthew'; }
       if ($lastname eq 'Baum'       and $firstname =~ m/L\. ?Frank/)      { $firstname = 'Lyman Frank'; }
       if ($lastname eq 'Chesterton' and $firstname =~ m/G\. ?K\./)        { $firstname = 'Gilbert Keith'; }
-      if ($lastname eq 'Dostoevsky'                                       { $lastname = 'Dostoyevsky'; }
+      if ($lastname eq 'Dostoevsky')                                      { $lastname = 'Dostoyevsky'; }
       if ($lastname =~ /Dostoy?evsky/ and $firstname eq 'Feodor')         { $firstname = 'Fyodor'; }
       if ($lastname eq 'Fitzgerald' and $firstname =~ m/F\. ?Scott/)      { $firstname = 'Francis Scott'; }
       if ($lastname eq 'Forster'    and $firstname =~ m/E\. ?M\./)        { $firstname = 'Edward Morgan'; }
