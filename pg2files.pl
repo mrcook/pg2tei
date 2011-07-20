@@ -8,6 +8,7 @@
 # @created    (pg2tei v 0.1)
 # @version    $Id$
 #
+use strict;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Find;
 use File::Spec;
@@ -19,35 +20,31 @@ use vars '$line';
 ##################################
 ## Get correct DRIVES and PATHS ##
 ##################################
-$current_dir   = File::Spec->curdir();
-$current_dir   = File::Spec->rel2abs($current_dir) unless ( File::Spec->file_name_is_absolute($current_dir) );
-$current_drive = (File::Spec->splitpath($current_dir))[0];
-
-# PATH to the TEI book files
-$books_folder  = DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
+my $current_drive = DS . 'media' . DS . 'Development';
+my $books_folder  = $current_drive . DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script
-$pg2tei_script = $current_drive . DS . 'project-code' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
+my $pg2tei_script = $current_drive . DS . 'project-code' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
 
 ######################################
 ## Search and execute all TXT files ##
 ######################################
-find (\&eachTEI, $current_drive . $books_folder);
+find (\&eachTEI, $books_folder);
 
 sub eachTEI {
   return unless $_=~ /\.txt$/;    ## Skip non-TXT files
-  $file           = $_;
-  $filename       = $file;
+  my $file           = $_;
+  my $filename       = $file;
   $filename       =~ s|^(.+?)\.txt$|$1|;
-  $orig_filename  = $filename;         # Used for the copying of the .txt file
+  my $orig_filename  = $filename;         # Used for the copying of the .txt file
   $filename       =~ s|^(.+?)-[80]$|$1|;  # Remove any UTF-8 info in the filename (3781-8.txt)
 
-  $bookspath      = $File::Find::name;
+  my $bookspath      = $File::Find::name;
   $bookspath      =~ s|/(.+)+/$file|/$1|;
-  $tei_path_file  = $books_folder . $filename . DS . 'tei' . DS . $filename . '.tei';
+  my $tei_path_file  = $books_folder . $filename . DS . 'tei' . DS . $filename . '.tei';
 
   ## create default folder structure (/##/tei/) for each book
-  mkdir($books_folder . $filename . DS,             0777)  || print "\nCan't create $filename folder: $!\n";
+  mkdir($books_folder . $filename)  || print "\nCan't create $filename folder: $!\n";
   mkdir($books_folder . $filename . DS . 'pg-orig', 0777)  || print "\nCan't create PG_ORIG folder: $!\n";
   mkdir($books_folder . $filename . DS . 'tei',     0777)  || print "\nCan't create TEI folder: $!\n";
 
@@ -58,7 +55,7 @@ sub eachTEI {
   # Check that the file will open correctly as UTF-8
   my $utf_check = 0;
   open(UTFCHECK, "<", $file) || die('Could not open file!');
-    @raw_data = <UTFCHECK>;
+    my @raw_data = <UTFCHECK>;
   close(UTFCHECK);
   foreach $line (@raw_data) {
     if ($line =~ s/Character set encoding: (.*?)\s*/$1/i) {
@@ -68,6 +65,7 @@ sub eachTEI {
       last;
     }
   }
+  my $pg2tei = '';
   ## Now run the pg2tei.pl script using `backticks` to get file into variable.
   if ($utf_check == 0) {
     $pg2tei = `perl -w $pg2tei_script $books_folder $file`;
@@ -79,7 +77,7 @@ sub eachTEI {
   ## Now let's do some post-processing ##
   #######################################
   my $tmp_count = 0; # setup our default counter
-  
+
   # Remove extra quote or epigraph tags
   $pg2tei =~ s|</quote>\s+<quote>||g;
   $pg2tei =~ s|</epigraph>\s+<epigraph>||g;
@@ -128,7 +126,7 @@ sub eachTEI {
   ## Only works with numbered/lettered (1,2,A,B,etc.) footnotes. ##
   ##-------------------------------------------------------------##
   my $process_footnotes = 1; # Careful - will not catch the "full" note unless there is a closing "]".
-  $place_foot_count = 0; $note_foot_count = 0;
+  my $place_foot_count = 0; my $note_foot_count = 0;
   while ($pg2tei =~ /\[PLACE FOOTNOTE HERE\]/g)  { $place_foot_count++; }
   while ($pg2tei =~ /\[Footnote (?:[\d\w*+]+)/g) { $note_foot_count++;  }
   print "\nFOOTNOTE COUNT: [$place_foot_count] | <$note_foot_count>\n";
@@ -142,15 +140,15 @@ sub eachTEI {
     while ($pg2tei =~ s!<p>\[Footnote ([\d\w*+]+):\s*(?:</p>)?\s*(.*?)(?:<p>)?\](</p>|</quote>)\n\n!!s) {
       push @footnotes, [$1, $2];
     }
-    foreach $footnotes (@footnotes) {
+    foreach my $footnotes (@footnotes) {
       $pg2tei =~ s|\[PLACE FOOTNOTE HERE\] -- [\d\w*+]+\s|<p>$footnotes->[1]</p>\n|;
-    } 
+    }
   }
   # Now we've processed most footnotes let's check for "inline" footnotes.
   # while ($pg2tei =~ s|[^\n]+\[Footnote(?: [\d\w*+]+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|s) {}
   $pg2tei =~ s|(?=[^\n]+)\[Footnote(?: [\d\w*+]+)?:\s+([^\]]+)\]|<note place="foot">\n\n<p>$1</p>\n\n</note>|gs;
 
-  
+
   # MUST BE DONE HERE -- After Footnote Stuff
   # In some footnotes we still have a <p><quote> which needs removing
   while ($pg2tei =~ s!<p><(?:quote|epigraph)>!<quote>!s) {}
