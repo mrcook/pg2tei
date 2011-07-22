@@ -276,7 +276,7 @@ sub output_line {     # Output <l>'s.
     $indent = 4 if $indent == 5;
     $indent = 2 if $indent == 3;
     $indent = 0 if $indent == 1;
-    
+
     my $line_indent = '';
     $line_indent = ' rend="margin-left(' . $indent . ')"' if $indent > 0;
 
@@ -434,7 +434,7 @@ sub process_quotes_1 {
   $c =~ s|\b"_|</q>_|g;
   $c =~ s|[!.;,]"_|</q>_|g;
   $c =~ s|"_$|</q>_|g;
-  
+
   if ($c =~ m/$quotes1pre/g) {
     while ($c =~ s|$quotes1pre|"<qpre>" . process_quotes_2 ($1) . "</q>"|es) {};
   }
@@ -539,7 +539,7 @@ sub output_chapter {
   my $chapter = shift;
   my $part_number;
   $is_first_para = $process_epigraph;
-  
+
   $chapter .= "\n" x 10;
 
   if ($chapter =~ m/^ *(BOOK|PART|VOLUME) (ONE|1|I(?:[^\d:upper:I:upper:V:upper:X])|(THE )?FIRST)/i) {
@@ -553,7 +553,7 @@ sub output_chapter {
     # Grab the Part/Book number
     $part_number = encode_numbers($3);
     if (!$part_number) { $part_number = "xx"; }
-      
+
     print "\n" . '<div type="' . lc($1) . '" n="' . $part_number . '">' . "\n\n";
     $is_book = 1;
     $is_book_div = 1;
@@ -589,10 +589,10 @@ sub output_chapter {
 sub output_body {
   my $body = shift;
   $body =~ s/^\s*//;
-  
+
   # Let's clean up those <milestone> and footnote[*] tags
   $body = pre_process($body);
-  
+
   guess_quoting_convention (\$body); # save mem, pass a ref
   ($avg_line_length, $max_line_length) = compute_line_length (\$body);
 
@@ -660,22 +660,22 @@ sub output_header () {
   #   * Posting Date ('Almost' always includes the EBook No.)
   #   * Last Updated
 
-  # RELEASE DATE: A strange one as in the old days PG would set themselves 
-  # an 'intended' date for release (why on earth did they do this!) However, 
+  # RELEASE DATE: A strange one as in the old days PG would set themselves
+  # an 'intended' date for release (why on earth did they do this!) However,
   # books were often released before this actual date.
-  # WARNING! On a few very early books this is also be the 'true' 
+  # WARNING! On a few very early books this is also be the 'true'
   # release date!
 
-  # FIRST POSTED: When this is given it is almost always going to be the 
-  # date the file was actually released. This is probably only when 
+  # FIRST POSTED: When this is given it is almost always going to be the
+  # date the file was actually released. This is probably only when
   # no 'Posting Date' is given - see below.
 
-  # POSTING DATE: When no 'First Posted' date is given then this is usually 
-  # the date when the book is actually released. Otherise, this could be 
-  # the 'Last Updated' date; usually a more recent date than if an actual 
+  # POSTING DATE: When no 'First Posted' date is given then this is usually
+  # the date when the book is actually released. Otherise, this could be
+  # the 'Last Updated' date; usually a more recent date than if an actual
   # 'Last Updated' date exists.
 
-  # LAST UPDATED: This is the date the book was last updated. Sometimes - maybe 
+  # LAST UPDATED: This is the date the book was last updated. Sometimes - maybe
   # always - the 'Posted Date' is a newer date than this -- Need confirming.
 
   # Welcome to the world of PG!
@@ -745,7 +745,7 @@ sub output_header () {
       $posted_date[0] = $4;
       $posted_date[1] = process_dates($4);
     }
-  }    
+  }
   # If no LAST UPDATED
   if (!$last_updated[0]) {
     if ($h =~ m/\[(Date|This file was|Most) (last|recently) updated( on|:)? (.+)\]/i) {
@@ -753,7 +753,7 @@ sub output_header () {
       $last_updated[1] = process_dates($4);
     }
   }
-  
+
   # If no TRANSLATORS
   if ($h =~ m/[\n ]*(Translated (from.*)??by)\s+(.+)\.?/i) {
     $translated_by_tag = $1;
@@ -770,7 +770,7 @@ sub output_header () {
     $filename = "$ARGV"; # Perhaps the filename has it (not many PG books still use the old filename system)
     if ($filename =~ m/^(\w{4,5})((10|11|12)\w?)\..+$/i) {
       $edition  = $3;
-    } else { 
+    } else {
       $edition = '1'; # Still no EDITION so default to 1
     }
   }
@@ -944,7 +944,7 @@ sub output_header () {
       $illustrators =~ s/_//;
     }
   }
-  if ($illustrators) { 
+  if ($illustrators) {
     @illustrators = process_names($illustrators);
   } else {
     $illustrated_by_tag = '';
@@ -981,7 +981,7 @@ sub output_header () {
   shift(@dates_sorted);
 
 
-  # How many releases/updates have there been? 
+  # How many releases/updates have there been?
   # Checking here so we can assign a new (and proper?) value to $edition.
   if ($edition < @dates_sorted + 1) {
     $edition = @dates_sorted + 1; # Add the original release back on.
@@ -1040,8 +1040,8 @@ sub output_header () {
     } else {
       $last_updated_by = 'Unknown';
     }
-    $file_updates_list[$tmp_count] = "    <change when=\"$dates_sorted->[0]\" who=\"$last_updated_by\">\n" . 
-                                     "      Project Gutenberg Update Release.\n" . 
+    $file_updates_list[$tmp_count] = "    <change when=\"$dates_sorted->[0]\" who=\"$last_updated_by\">\n" .
+                                     "      Project Gutenberg Update Release.\n" .
                                      "    </change>\n";
 
     $tmp_count++;
@@ -1386,7 +1386,7 @@ sub pre_process {
 
   # Remove spaces from the start of any [Illustration] tags
   $c =~ s|\s+\[Illustration|\n\n[Illustration|gi;
-  
+
 
   ###################################
   ### PAGES NUMBERS or FOOTNOTES? ###
@@ -1394,8 +1394,8 @@ sub pre_process {
 
   ### <milestone>, <pb n=$1 /> and <footnote> are replaced with full tags in the "post_process" sub
 
-  $c =~ s|\{(\d+)\}\n|<pb n=$1>\n|g;  # Comment out if a eText uses {curly brackets} as footnotes.  
-  
+  $c =~ s|\{(\d+)\}\n|<pb n=$1>\n|g;  # Comment out if a eText uses {curly brackets} as footnotes.
+
   # substitute * * * * * for <milestone> BEFORE footnotes
   # <milestone> will be replaced later, on line: ~1250
   $c =~ s|\n *(\* +){2,}\*\n\n|\n<milestone>\n\n|g;
@@ -1404,7 +1404,7 @@ sub pre_process {
   $c =~ s|(?<!\[)\* \* \* \*(?!\])|<stars=4>|g;
   $c =~ s|(?<!\[)\* \* \*(?!\])|<stars=3>|g;
   $c =~ s|(?<!\[)\* \*(?!\])|<stars=2>|g;
-  
+
 
   #### -------------------------------------- ####
   #### Some pre-processing for the Footnotes. ####
@@ -1456,7 +1456,7 @@ sub pre_process {
   $c =~ s|\n\[(\d+)\] |\n[Footnote $1: |g;         # If a footnote uses [1 ...] then replace (footnote 1)
   $c =~ s|\n\[(\d+[a-z]+)\] |\n[Footnote $1: |g;   # If a footnote uses [1a ...] then replace (footnote 1a)
 
-  # FOOTNOTES: Semi-auto process on footnotes.    
+  # FOOTNOTES: Semi-auto process on footnotes.
   if ($c =~ s/\[([\d*+]+|\w)\]/<footnote=$1>/g) {
     $footnote_exists = 1;
   }  elsif ($c =~ s/\[(\d+[a-z]+)\]/<footnote=$1>/g) {
@@ -1500,7 +1500,7 @@ sub pre_process {
 
 sub post_process {
   my $c = shift;
-  
+
   # UNICODE Quote Replacement: Smart DOUBLE Quotes.
   # x84 = „ | x93 = “ | x94 = ”
   # x201C = “ (English Open)
@@ -1526,11 +1526,11 @@ sub post_process {
   # UNICODE Apostrophe Replacement: SINGLE HIGH-REVERSED-9
   # x201B = ‛
   #     U+201B (HTML: &#8219;) – single high-reversed-9, or single reversed comma, quotation mark.
-  #     This is sometimes used to show dropped characters at the end of words, 
+  #     This is sometimes used to show dropped characters at the end of words,
   #     such as goin‛ instead of using goin‘, goin’, goin`, or goin' (see wikipedia)
   $c =~ s|\x{201B}|&#8219;|g;
   # Perhaps create a sub() with a word list for changing these dropped characters?
-  
+
   # UNICODE Quote Replacement: Smart SINGLE Quotes.
   # x60 = ` | x91 = ‘ | x92 = ’
   # x2018 = ‘
@@ -1611,8 +1611,8 @@ sub post_process {
   $c =~ s|<qpost>|<q>|g;
 
   # [BLANK PAGE]
-  $c =~ s|\s+\[Blank Page\]|\n\n<pb type="blankpage" />|gi;
-  $c =~ s|\s+\[page intentionally blank\]|\n\n<pb type="blankpage" />|gi;
+  $c =~ s|\s*\[Blank Page\]|\n\n<pb type="blankpage" />|gi;
+  $c =~ s|\s*\[page intentionally blank\]|\n\n<pb type="blankpage" />|gi;
 
   # ILLUSTRATIONS ...
   $c =~ s|\[illustration omitted\]|[Illustration]|gi; # Fix-up the odd PG text.
@@ -1654,7 +1654,7 @@ sub post_process {
   #  $c =~ s|&hellip;|&#8230;|g;
   #  $c =~ s|&deg;|&#176;|g;
 
-  # Stars "*", held within a line of text--usually to hide a persons name--are 
+  # Stars "*", held within a line of text--usually to hide a persons name--are
   # replaced with <stars=2> in the pre-process. Now to convert back to * *
   $c =~ s|<stars=(\d+)>|multistars($1)|eg;
   sub  multistars {
@@ -1689,7 +1689,7 @@ sub process_dates {
   my $wdate = shift;
 
   return if $wdate eq '';
-  
+
   # Look for: 1990-12-23
   if ($wdate =~ m|^(\d{4})-([01]?[0-9])-([0123]?[0-9])$|) {
     ($year, $month, $day) = ($1, $2, $3);
@@ -1698,7 +1698,7 @@ sub process_dates {
   # Look for: January 22, 2002
   } elsif ($wdate =~ m|^(\w+)\s+([0123]?[0-9]),?\s+(\d{2,4})$|) {
     ($year, $month, $day) = ($3, $1, $2);
-  
+
   # Look for: 9/19/01 or 9-19-2002
   } elsif ($wdate =~ m|^(\d{1,2})[/-]([0123]?[0-9])[/-](\d{2,4})$|) {
     ($year, $month, $day) = ($3, $1, $2);
@@ -1777,7 +1777,7 @@ sub encode_numbers {
   my $tmp_num = shift;
 
   $tmp_num = uc($tmp_num); # removes anys case sensitivity.
-  
+
   # fix numbers
   my %numbers = (
      1     => "ONE",
@@ -1871,7 +1871,7 @@ sub process_names {
   my @names = ();
 
   $names_string = change_case($names_string);
-  
+
   # Tidy things up
   $names_string =~ s!\s*(&amp;|\band\b|&)\s*!+!gi; # Replace any form of "and" to '+' for the split
   $names_string =~ s|, *|+|g;                  # Replace any commas '+' for the split
@@ -1913,9 +1913,9 @@ sub process_names {
       if ($lastname eq 'Wodehouse'  and $firstname =~ m/P\. ?G\./)        { $firstname = 'Pelham Grenville'; }
       $names[$count] = ([$firstname, $orig_firstname, $lastname]);
     } elsif ($name =~ m/^Anon/i) {
-      $names[$count] = (['Anonymous']);    
+      $names[$count] = (['Anonymous']);
     } else {
-      $names[$count] = ([$name]);    
+      $names[$count] = ([$name]);
     }
     $count++;
   }
@@ -2094,7 +2094,7 @@ sub is_para_verse {
   # decide if paragraph is a verse
   # param is result from study_paragraph
   my $o = shift;
-  
+
   # If only one line and no indent then we don't know if it is a <l>
   return 0 if $o->{'cnt_lines'} < 2 && $o->{'min_indent'} == 0;
 
