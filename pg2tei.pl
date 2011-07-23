@@ -25,7 +25,12 @@ use POSIX qw(strftime);
 use POSIX qw(locale_h);
 use Text::Wrap;            # Only needed when re-wrapping text in <epigraph>
 
-use utf8; # This .pl document is endoed as utf-8 so state it here. Does not affect input/output files!
+# For the Perl "internals" only
+use utf8;
+
+# ":utf8"           -> treat as if it is UTF-8
+# ":encoding(utf8)" -> actually check if it is UTF-8
+use open IN => ":encoding(utf8)", OUT => ":utf8";
 
 
 ################################################################################
