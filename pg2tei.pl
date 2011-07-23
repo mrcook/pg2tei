@@ -339,6 +339,8 @@ sub output_para {
 
     if ($p =~ m/^\s*\[Footnote/i) {
       $p = "<p$rend>$p</p>";
+    } elsif ($p =~ m/type="blankpage"/) {
+      # do nothing
     } else {
       $p = "<p$rend>$p</p>";
       $is_first_para = 0; # Now that we've confirmed the opening para is not an epigraph...
@@ -1611,8 +1613,8 @@ sub post_process {
   $c =~ s|<qpost>|<q>|g;
 
   # [BLANK PAGE]
-  $c =~ s|\s*\[Blank Page\]|\n\n<pb type="blankpage" />|gi;
-  $c =~ s|\s*\[page intentionally blank\]|\n\n<pb type="blankpage" />|gi;
+  $c =~ s|\[Blank Page\]|<pb type="blankpage" />|gi;
+  $c =~ s|\[page intentionally blank\]|<pb type="blankpage" />|gi;
 
   # ILLUSTRATIONS ...
   $c =~ s|\[illustration omitted\]|[Illustration]|gi; # Fix-up the odd PG text.
