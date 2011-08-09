@@ -20,7 +20,7 @@ use vars '$line';
 ##################################
 ## Get correct DRIVES and PATHS ##
 ##################################
-my $current_drive = DS . 'media' . DS . 'Development';
+my $current_drive = DS . 'media' . DS . 'development';
 my $books_folder  = $current_drive . DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script

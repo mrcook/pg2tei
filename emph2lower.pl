@@ -10,8 +10,8 @@
 #
 
 ## DRIVE & PATH to .epub files.
-$path = 'E:/conversions/';
-$file = '968.tei';
+$path = '/media/Development/conversions/';
+$file = '2450.tei';
 
 my $convert = 1;
 
@@ -57,7 +57,6 @@ if ($convert == 1) {
 
   $data =~ s|<emph>(.*?)(mr\.?)&#160;(.*?)</emph>|<emph>$1\u$2&#160;\u$3</emph>|gs;
   $data =~ s!((Mr|Ms|Dr|Capt|Sgt|Gen|Rev|Mme|Mrs)\.?&#160;)<emph>(.*?)</emph>!$1<emph>\u$3</emph>!gs;
-
 
   ############################
   ## Write out new TEI file ##
