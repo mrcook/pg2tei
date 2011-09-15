@@ -24,7 +24,7 @@ my $current_drive = DS . 'media' . DS . 'development';
 my $books_folder  = $current_drive . DS . 'BOOK-Files' . DS . '04-TEI' . DS;  ## Default Books Path
 
 # PATH to pg2tei.pl Perl script
-my $pg2tei_script = $current_drive . DS . 'projects' . DS . 'epubbooks-pg2tei' . DS . 'pg2tei.pl';
+my $pg2tei_script = $current_drive . DS . 'projects' . DS . 'pg-converter' . DS . 'pg2tei.pl';
 
 ######################################
 ## Search and execute all TXT files ##

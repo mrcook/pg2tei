@@ -14,7 +14,6 @@
 # Starting 2007-05-09, many additions and fixes have been made by Michael Cook.
 #
 
-require 5.004;
 use strict;
 
 use Data::UUID;
@@ -30,7 +29,7 @@ use utf8;
 
 # ":utf8"           -> treat as if it is UTF-8
 # ":encoding(utf8)" -> actually check if it is UTF-8
-use open IN => ":encoding(utf8)", OUT => ":utf8";
+#use open IN => ":encoding(utf8)", OUT => ":utf8";
 
 
 ################################################################################
@@ -205,9 +204,7 @@ while (<>) {
   s|\t| |g;      # replace tabs
   s| +\n|\n|g;   # remove spaces at end of line
 
-  # substitute & for &amp;
-  s|&|&amp;|g;
-
+  s|&|&amp;|g;   # substitute & for &amp;
 
   ####--------------------------------------------------####
   #### Quick check to see if the doc is British English ####
